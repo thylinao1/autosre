@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Env / secrets
+.env
+.env.local
+*.key
+service-account*.json
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+
+# Build / deploy
+*.log
+.gcloud/

@@ -1,0 +1,19 @@
+# AutoSRE agent — served via `adk api_server` on Cloud Run.
+FROM python:3.13-slim
+
+# Node is needed only for DYNATRACE_MCP_MODE=stdio (npx official server).
+RUN apt-get update && apt-get install -y --no-install-recommends nodejs npm \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY autosre ./autosre
+
+ENV PYTHONUNBUFFERED=1 \
+    DYNATRACE_MCP_MODE=remote \
+    AUTOSRE_MODEL=gemini-3-pro
+
+# Cloud Run provides $PORT. adk api_server exposes the agent over HTTP.
+CMD exec adk api_server autosre --host 0.0.0.0 --port ${PORT:-8080}
