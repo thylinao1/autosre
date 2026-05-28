@@ -13,6 +13,12 @@ venv/
 *.key
 service-account*.json
 
+# Local dev-loop MCP config (points at a specific Dynatrace tenant)
+.mcp.json
+
+# Strategy doc (kept local, not for the public repo)
+HACKATHON-BATTLEPLAN.md
+
 # Node
 node_modules/
 

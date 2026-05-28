@@ -25,7 +25,16 @@ async def test_agent_remediates_payment_incident(target_service):
     # Import after env (TARGET_SERVICE_URL) is set by the fixture.
     from autosre.run_agent import main as run_main
 
-    await run_main(auto_approve=True)
+    try:
+        await run_main(auto_approve=True)
+    except Exception as err:  # noqa: BLE001
+        # Free-tier Gemini can 503/exhaust mid-run after backoff. That's an
+        # upstream availability blip, not an agent defect — the deterministic
+        # SSE/loop tests already guarantee the contract. Skip rather than fail.
+        msg = str(err)
+        if any(s in msg for s in ("503", "UNAVAILABLE", "RESOURCE_EXHAUSTED")):
+            pytest.skip(f"Gemini free-tier unavailable mid-run: {msg[:120]}")
+        raise
 
     state = httpx.get(f"{target_service}/_internal/state").json()
     assert state["healthy"] is True, "agent failed to resolve the incident"
