@@ -119,7 +119,18 @@ Available faults: `payment_errors` (fix: disable feature flag or roll back) and
 ### Visual UI (great for the demo)
 
 ```bash
-adk web autosre        # opens the ADK dev UI; pick the "agent" app
+# from the repo root (so .env is picked up); then open http://127.0.0.1:8000
+adk web autosre/agent
+```
+
+In the web UI, ask the agent to "run an incident sweep on checkout-api". When it
+decides on a fix, ADK shows a native **approve / reject** button for the
+remediation — that's the human-in-the-loop step, enforced by the framework.
+
+Or launch the target service + web UI together:
+
+```bash
+bash scripts/start_demo.sh
 ```
 
 ---
