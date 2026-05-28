@@ -22,7 +22,7 @@ the service recovered.
 | **Multi-step mission with planning** | Runs a 6-step loop: detect → diagnose → propose → approve → act → verify. The model plans which DQL to run and which single remediation resolves the diagnosed cause. |
 | **Keeps the human in control** | A Python-enforced approval gate blocks every mutating action until a human approves the specific proposed plan. The model cannot bypass it. |
 | **Meaningful partner integration (MCP)** | Dynatrace is the agent's senses. Detection and diagnosis are driven entirely by Dynatrace MCP tools (`list_problems`, `execute_dql`, `get_kubernetes_events`, `list_vulnerabilities`). |
-| **Gemini 3 + Google Cloud Agent Builder** | Implemented on ADK (the code-first path of Google Cloud's Agent Platform), reasoning on `gemini-3-pro`, deployable to Cloud Run / Vertex AI. |
+| **Gemini 3 + Google Cloud Agent Builder** | Implemented on ADK (the code-first path of Google Cloud's Agent Platform), reasoning on `gemini-3-pro-preview`, deployable to Cloud Run / Vertex AI. |
 
 ---
 
@@ -30,7 +30,7 @@ the service recovered.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  AutoSRE Agent  (ADK LlmAgent · gemini-3-pro)                      │
+│  AutoSRE Agent  (ADK LlmAgent · gemini-3-pro-preview)              │
 │                                                                    │
 │  Toolset 1 — Dynatrace MCP   (DETECT + DIAGNOSE, read-only)        │
 │     list_problems · execute_dql · get_kubernetes_events            │
@@ -108,6 +108,13 @@ propose disabling the flag, pause for your approval, execute it, and confirm
 
 Available faults: `payment_errors` (fix: disable feature flag or roll back) and
 `latency_spike` (fix: scale replicas).
+
+> **Model & quota note.** `gemini-3-flash-preview` (the default) runs on the free
+> Google AI Studio tier — but the free tier allows only ~5 requests/minute, and a
+> full incident loop makes several model calls. The runner automatically backs off
+> and resumes when rate-limited, so it still completes (just pauses briefly). For a
+> smooth demo, enable billing on the project (or use Vertex AI) and switch to
+> `AUTOSRE_MODEL=gemini-3-pro-preview` for stronger reasoning.
 
 ### Visual UI (great for the demo)
 

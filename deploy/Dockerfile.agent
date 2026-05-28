@@ -13,7 +13,7 @@ COPY autosre ./autosre
 
 ENV PYTHONUNBUFFERED=1 \
     DYNATRACE_MCP_MODE=remote \
-    AUTOSRE_MODEL=gemini-3-pro
+    AUTOSRE_MODEL=gemini-3-pro-preview
 
 # Cloud Run provides $PORT. adk api_server exposes the agent over HTTP.
 CMD exec adk api_server autosre --host 0.0.0.0 --port ${PORT:-8080}

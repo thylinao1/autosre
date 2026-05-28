@@ -25,7 +25,7 @@ from .remediation import (
     toggle_feature_flag,
 )
 
-MODEL = os.environ.get("AUTOSRE_MODEL", "gemini-3-pro")
+MODEL = os.environ.get("AUTOSRE_MODEL", "gemini-3-pro-preview")
 
 INSTRUCTION = """\
 You are AutoSRE, an autonomous Site Reliability Engineer for a retail platform.

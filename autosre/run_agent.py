@@ -14,13 +14,19 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import re
 
 from dotenv import load_dotenv
-from google.adk.runners import InMemoryRunner
-from google.genai import types
 
-from autosre.agent.agent import root_agent
-from autosre.agent.remediation import APPROVAL_GATE
+# Load .env BEFORE importing the agent: the agent reads AUTOSRE_MODEL and the
+# Dynatrace mode at import time, so the environment must be populated first.
+load_dotenv()
+
+from google.adk.runners import InMemoryRunner  # noqa: E402
+from google.genai import types  # noqa: E402
+
+from autosre.agent.agent import root_agent  # noqa: E402
+from autosre.agent.remediation import APPROVAL_GATE  # noqa: E402
 
 APP = "autosre"
 USER = "operator"
@@ -44,6 +50,32 @@ async def _run_turn(runner: InMemoryRunner, session_id: str, text: str) -> str:
     return final
 
 
+def _retry_delay(err: Exception) -> int:
+    """Pull the server-suggested retry delay (seconds) out of a 429 error."""
+    m = re.search(r"retry in ([\d.]+)s", str(err)) or \
+        re.search(r"retryDelay'?: ?'?(\d+)", str(err))
+    return int(float(m.group(1))) + 2 if m else 20
+
+
+async def _run_turn_resilient(runner: InMemoryRunner, session_id: str, text: str,
+                              max_retries: int = 6) -> str:
+    """Run a turn, transparently backing off and resuming on free-tier 429s."""
+    message = text
+    for attempt in range(max_retries + 1):
+        try:
+            return await _run_turn(runner, session_id, message)
+        except Exception as err:  # noqa: BLE001
+            if "RESOURCE_EXHAUSTED" not in str(err) and "429" not in str(err):
+                raise
+            if attempt == max_retries:
+                raise
+            delay = _retry_delay(err)
+            print(f"   [rate-limited by free tier; waiting {delay}s then resuming…]")
+            await asyncio.sleep(delay)
+            message = "Continue from where you left off."
+    return ""
+
+
 async def main(auto_approve: bool) -> None:
     load_dotenv()
     runner = InMemoryRunner(agent=root_agent, app_name=APP)
@@ -59,7 +91,7 @@ async def main(auto_approve: bool) -> None:
 
     while True:
         print("\n--- agent turn ---")
-        answer = await _run_turn(runner, session.id, message)
+        answer = await _run_turn_resilient(runner, session.id, message)
         if answer:
             print(f"\nAutoSRE: {answer}")
 

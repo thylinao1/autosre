@@ -30,7 +30,7 @@ echo "==> Deploying autosre agent (Gemini 3 via Vertex AI)"
 gcloud run deploy autosre \
   --source . --region "$REGION" --project "$PROJECT_ID" \
   --dockerfile deploy/Dockerfile.agent --allow-unauthenticated --quiet \
-  --set-env-vars "GOOGLE_GENAI_USE_VERTEXAI=TRUE,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GOOGLE_CLOUD_LOCATION=$REGION,AUTOSRE_MODEL=gemini-3-pro,DYNATRACE_MCP_MODE=remote,DT_ENVIRONMENT=$DT_ENVIRONMENT,DT_PLATFORM_TOKEN=$DT_PLATFORM_TOKEN,TARGET_SERVICE_URL=$TARGET_URL"
+  --set-env-vars "GOOGLE_GENAI_USE_VERTEXAI=TRUE,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GOOGLE_CLOUD_LOCATION=$REGION,AUTOSRE_MODEL=gemini-3-pro-preview,DYNATRACE_MCP_MODE=remote,DT_ENVIRONMENT=$DT_ENVIRONMENT,DT_PLATFORM_TOKEN=$DT_PLATFORM_TOKEN,TARGET_SERVICE_URL=$TARGET_URL"
 
 AGENT_URL=$(gcloud run services describe autosre \
   --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')
