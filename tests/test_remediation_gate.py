@@ -1,51 +1,26 @@
-"""Verify the human-in-the-loop gate and that remediations resolve incidents."""
+"""Verify remediation tools resolve incidents, and that the mutating tools are
+declared as requiring human approval (ADK-native HITL)."""
 
 from __future__ import annotations
 
 import httpx
-import pytest
 
+from google.adk.tools import FunctionTool
+
+from autosre.agent import agent as A
 from autosre.agent import remediation as R
 
 
-class _FakeTool:
-    def __init__(self, name):
-        self.name = name
-
-
-@pytest.fixture(autouse=True)
-def _reset_gate():
-    R.APPROVAL_GATE.update({"approved": False, "plan": None})
-    yield
-
-
-def test_gate_blocks_mutating_tool_without_approval():
-    out = R.approval_gate_callback(_FakeTool("scale_service"), {"replicas": 8}, None)
-    assert out["status"] == "BLOCKED"
-
-
-def test_gate_allows_after_approval_and_consumes_it():
-    R.APPROVAL_GATE["approved"] = True
-    assert R.approval_gate_callback(_FakeTool("scale_service"), {}, None) is None
-    # single-use: a second action is blocked again
-    assert R.APPROVAL_GATE["approved"] is False
-    assert R.approval_gate_callback(_FakeTool("scale_service"), {}, None)["status"] == "BLOCKED"
-
-
-def test_gate_never_blocks_read_tools():
-    assert R.approval_gate_callback(_FakeTool("list_problems"), {}, None) is None
-    assert R.approval_gate_callback(_FakeTool("propose_remediation"), {}, None) is None
-
-
-def test_propose_records_plan_without_executing(target_service):
-    httpx.post(f"{target_service}/_admin/inject", json={"fault": "payment_errors"})
-    out = R.propose_remediation(
-        summary="payment errors", action="toggle_feature_flag",
-        args={"name": "new_payment_gateway", "enabled": False},
-        rationale="disable the broken gateway flag")
-    assert out["status"] == "AWAITING_HUMAN_APPROVAL"
-    # service is still unhealthy — nothing was executed
-    assert httpx.get(f"{target_service}/_internal/state").json()["healthy"] is False
+def test_mutating_tools_require_confirmation():
+    """All three mutating actions must be gated behind human approval."""
+    by_name = {}
+    for t in A.root_agent.tools:
+        if isinstance(t, FunctionTool):
+            by_name[t.name] = t
+    for name in ("scale_service", "rollback_deployment", "toggle_feature_flag"):
+        assert name in by_name, f"{name} not registered as a FunctionTool"
+        assert by_name[name]._require_confirmation is True, \
+            f"{name} must require human confirmation"
 
 
 def test_correct_remediation_resolves_payment_incident(target_service):
@@ -67,3 +42,10 @@ def test_wrong_remediation_does_not_resolve(target_service):
     res = R.scale_service(8)  # scaling doesn't fix a feature-flag bug
     assert res["resolved_incident"] is False
     assert res["service_healthy"] is False
+
+
+def test_get_service_health_reads_live_state(target_service):
+    httpx.post(f"{target_service}/_admin/inject", json={"fault": "payment_errors"})
+    health = R.get_service_health()
+    assert health["healthy"] is False
+    assert health["injected_fault"] == "payment_errors"
