@@ -1,0 +1,159 @@
+@import "tailwindcss";
+
+/* ────────────────────────────────────────────────────────
+   AutoSRE Mission Control — Design System
+   Aesthetic: ops war-room / dark terminal / military ops
+   Type: JetBrains Mono (telemetry) + Inter (UI)
+   Palette: deep slate bg · electric cyan accent ·
+            amber approval · red severity · green healthy
+   ──────────────────────────────────────────────────────── */
+
+@theme inline {
+  --font-sans:  'Inter', system-ui, sans-serif;
+  --font-mono:  'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Surfaces */
+  --color-bg:           #0b0e14;
+  --color-surface-0:    #0f1319;
+  --color-surface-1:    #141920;
+  --color-surface-2:    #1a2030;
+  --color-surface-3:    #212840;
+
+  /* Borders */
+  --color-border-subtle: #1e2535;
+  --color-border:        #253048;
+  --color-border-strong: #354060;
+
+  /* Text */
+  --color-text-primary:  #e8edf5;
+  --color-text-secondary:#8a9ab8;
+  --color-text-muted:    #546080;
+  --color-text-dim:      #3a4560;
+
+  /* Accent — electric cyan */
+  --color-accent:        #00c8e0;
+  --color-accent-dim:    rgba(0,200,224,0.12);
+  --color-accent-glow:   rgba(0,200,224,0.35);
+
+  /* Amber — approval / pending */
+  --color-amber:         #f0a030;
+  --color-amber-dim:     rgba(240,160,48,0.12);
+  --color-amber-glow:    rgba(240,160,48,0.40);
+
+  /* Red — AVAILABILITY / error */
+  --color-red:           #e03c4a;
+  --color-red-dim:       rgba(224,60,74,0.12);
+  --color-red-glow:      rgba(224,60,74,0.35);
+  --color-red-text:      #f07880;
+
+  /* Orange — PERFORMANCE */
+  --color-orange:        #e07830;
+  --color-orange-dim:    rgba(224,120,48,0.12);
+  --color-orange-text:   #f0a060;
+
+  /* Green — healthy / resolved */
+  --color-green:         #22c880;
+  --color-green-dim:     rgba(34,200,128,0.12);
+  --color-green-glow:    rgba(34,200,128,0.40);
+  --color-green-text:    #50e0a0;
+
+  /* Phase colors */
+  --color-detect:        #00c8e0;
+  --color-diagnose:      #8060f0;
+  --color-act:           #f0a030;
+  --color-verify:        #22c880;
+}
+
+/* ── Global reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--color-surface-1); }
+::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 2px; }
+
+/* ── Selection ── */
+::selection { background: var(--color-accent-dim); color: var(--color-text-primary); }
+
+/* ── Focus ── */
+:focus-visible { outline: 1.5px solid var(--color-accent); outline-offset: 2px; border-radius: 3px; }
+
+/* ── Animations ── */
+@keyframes slide-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+@keyframes status-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.15; }
+}
+@keyframes approval-ring {
+  0%, 100% {
+    box-shadow: 0 0 0 0 var(--color-amber-glow), 0 0 30px var(--color-amber-dim);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(240,160,48,0), 0 0 50px var(--color-amber-glow);
+  }
+}
+@keyframes scan-progress {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(500%); }
+}
+@keyframes flip-healthy {
+  0%   { background-color: var(--color-red-dim); }
+  40%  { background-color: rgba(34,200,128,0.06); }
+  100% { background-color: var(--color-green-dim); }
+}
+@keyframes typing-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+@keyframes incident-appear {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.animate-slide-in-up   { animation: slide-in-up   0.4s cubic-bezier(0.16,1,0.3,1) forwards; }
+.animate-slide-in-left { animation: slide-in-left 0.35s cubic-bezier(0.16,1,0.3,1) forwards; }
+.animate-fade-in       { animation: fade-in       0.25s ease-out forwards; }
+.animate-pulse-glow    { animation: pulse-glow 2s ease-in-out infinite; }
+.animate-status-blink  { animation: status-blink 1.2s ease-in-out infinite; }
+.animate-approval-ring { animation: approval-ring 2s ease-in-out infinite; }
+.animate-flip-healthy  { animation: flip-healthy 0.8s ease-out forwards; }
+.animate-incident      { animation: incident-appear 0.35s cubic-bezier(0.16,1,0.3,1) forwards; }
+
+/* ── Responsive layout helpers ── */
+.layout-desktop { display: none; }
+.layout-mobile  { display: flex; }
+
+@media (min-width: 1024px) {
+  .layout-desktop { display: grid; }
+  .layout-mobile  { display: none; }
+}

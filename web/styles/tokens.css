@@ -1,0 +1,99 @@
+/* AutoSRE Mission Control — Design Tokens
+   Visual direction: ops war-room / dark terminal, military ops aesthetic
+   Type pairing: JetBrains Mono (telemetry/code) + Inter (UI labels/copy)
+   Palette: deep slate background, amber alert states, electric cyan accent,
+            muted zinc surfaces, red/green for incident severity
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Core surfaces */
+  --color-bg:            oklch(11% 0.01 240);
+  --color-surface-0:     oklch(14% 0.012 240);
+  --color-surface-1:     oklch(17% 0.014 240);
+  --color-surface-2:     oklch(21% 0.015 240);
+  --color-surface-3:     oklch(26% 0.015 240);
+
+  /* Borders */
+  --color-border-subtle: oklch(28% 0.015 240);
+  --color-border:        oklch(33% 0.018 240);
+  --color-border-strong: oklch(42% 0.022 240);
+
+  /* Text */
+  --color-text-primary:  oklch(93% 0.008 240);
+  --color-text-secondary:oklch(68% 0.012 240);
+  --color-text-muted:    oklch(48% 0.01 240);
+  --color-text-dim:      oklch(36% 0.008 240);
+
+  /* Accent — electric cyan for active/live states */
+  --color-accent:        oklch(72% 0.18 200);
+  --color-accent-dim:    oklch(72% 0.18 200 / 0.15);
+  --color-accent-glow:   oklch(72% 0.18 200 / 0.35);
+
+  /* Amber — pending/warning/approval */
+  --color-amber:         oklch(78% 0.19 70);
+  --color-amber-dim:     oklch(78% 0.19 70 / 0.12);
+  --color-amber-glow:    oklch(78% 0.19 70 / 0.4);
+
+  /* Red — AVAILABILITY severity / error */
+  --color-red:           oklch(65% 0.22 25);
+  --color-red-dim:       oklch(65% 0.22 25 / 0.12);
+  --color-red-glow:      oklch(65% 0.22 25 / 0.35);
+  --color-red-text:      oklch(74% 0.18 25);
+
+  /* Orange — PERFORMANCE severity */
+  --color-orange:        oklch(73% 0.2 45);
+  --color-orange-dim:    oklch(73% 0.2 45 / 0.12);
+  --color-orange-text:   oklch(82% 0.16 45);
+
+  /* Green — healthy / resolved */
+  --color-green:         oklch(67% 0.18 145);
+  --color-green-dim:     oklch(67% 0.18 145 / 0.12);
+  --color-green-glow:    oklch(67% 0.18 145 / 0.4);
+  --color-green-text:    oklch(76% 0.15 145);
+
+  /* Phase colors for timeline steps */
+  --color-detect:        var(--color-accent);
+  --color-diagnose:      oklch(72% 0.18 270);
+  --color-act:           var(--color-amber);
+  --color-verify:        var(--color-green);
+
+  /* Typography */
+  --font-mono:   'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --font-ui:     'Inter', -apple-system, system-ui, sans-serif;
+
+  --text-xs:     0.6875rem;   /* 11px */
+  --text-sm:     0.75rem;     /* 12px */
+  --text-base:   0.875rem;    /* 14px */
+  --text-md:     1rem;        /* 16px */
+  --text-lg:     1.125rem;    /* 18px */
+  --text-xl:     1.25rem;     /* 20px */
+  --text-2xl:    1.5rem;      /* 24px */
+  --text-3xl:    2rem;        /* 32px */
+
+  /* Spacing */
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-5:  1.25rem;
+  --space-6:  1.5rem;
+  --space-8:  2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Radius */
+  --radius-sm: 3px;
+  --radius:    5px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* Motion */
+  --duration-fast:   120ms;
+  --duration-normal: 250ms;
+  --duration-slow:   400ms;
+  --ease-out-expo:   cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out:     cubic-bezier(0.4, 0, 0.2, 1);
+}
