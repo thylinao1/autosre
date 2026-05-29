@@ -1,13 +1,13 @@
-# AutoSRE Devpost Submission — Draft
+# AutoSRE Devpost Submission (Draft)
 
 ## Project Name
-**AutoSRE — The Autonomous On-Call Engineer**
+**AutoSRE: The Autonomous On-Call Engineer**
 
 ---
 
 ## Elevator Pitch (≤ 1 sentence)
 
-AutoSRE detects production incidents from Dynatrace, diagnoses the root cause from live telemetry with Gemini 3 reasoning, proposes a fix, waits for your one-tap approval, executes it, and verifies recovery — collapsing incident MTTR from 30+ minutes to seconds, with a human gating every action.
+AutoSRE detects production incidents from Dynatrace, diagnoses the root cause from live telemetry with Gemini 3 reasoning, proposes a fix, waits for your one-tap approval, executes it, and verifies recovery, collapsing incident MTTR from 30+ minutes to seconds, with a human gating every action.
 
 ---
 
@@ -17,21 +17,21 @@ AutoSRE is an autonomous incident-response agent built on **Google Cloud's Agent
 
 The agent runs a **6-step loop**:
 
-1. **DETECT** — Pull open problems from Dynatrace (anomalies, threshold violations, deployment events).
-2. **DIAGNOSE** — Run DQL queries to correlate the problem with recent changes (feature flags, deployments, config).
-3. **PROPOSE** — Reason about the root cause and name exactly one remediation (disable flag, rollback, scale service).
-4. **PAUSE** — Block until a human approves the proposed action (ADK-native `require_confirmation=True`, not a prompt).
-5. **ACT** — Execute the approved remediation.
-6. **VERIFY** — Re-check service health and confirm recovery.
+1. **DETECT**: Pull open problems from Dynatrace (anomalies, threshold violations, deployment events).
+2. **DIAGNOSE**: Run DQL queries to correlate the problem with recent changes (feature flags, deployments, config).
+3. **PROPOSE**: Reason about the root cause and name exactly one remediation (disable flag, rollback, scale service).
+4. **PAUSE**: Block until a human approves the proposed action (ADK-native `require_confirmation=True`, not a prompt).
+5. **ACT**: Execute the approved remediation.
+6. **VERIFY**: Re-check service health and confirm recovery.
 
 **The core value proposition:** Compress incident diagnosis from 30+ minutes of manual triage to ~10 seconds of automated analysis, while keeping a human as the accountable decision-maker. The agent does the 3am grunt work; the operator just approves the fix.
 
 **The web UI:** A dark ops "Mission Control" dashboard streams the loop live over SSE. The operator watches the agent pull the Dynatrace problem, run evidence queries, propose the fix, and then taps **APPROVE** to execute. The incident card flips green on recovery.
 
 **Key differentiators:**
-- **Dynatrace MCP is load-bearing** — the agent's only sensory system for detect and diagnose. Not ornamental.
-- **Human-in-the-loop is framework-enforced** — ADK `require_confirmation=True` is built into the remediation tool definition. The model cannot bypass it.
-- **Mode-agnostic guarantee** — The agent code is identical across `DYNATRACE_MCP_MODE=mock | stdio | remote`. Offline (mock), local (official MCP server), or against a real tenant — the UI and events are byte-identical.
+- **Dynatrace MCP is load-bearing:** the agent's only sensory system for detect and diagnose. Not ornamental.
+- **Human-in-the-loop is framework-enforced:** ADK `require_confirmation=True` is built into the remediation tool definition. The model cannot bypass it.
+- **Mode-agnostic guarantee:** The agent code is identical across `DYNATRACE_MCP_MODE=mock | stdio | remote`. Offline (mock), local (official MCP server), or against a real tenant, the UI and events are byte-identical.
 
 ---
 
@@ -41,7 +41,7 @@ The agent runs a **6-step loop**:
 
 - **Reasoning engine:** Gemini 3 (`gemini-3-pro-preview`) via **Vertex AI**.
 - **Agent framework:** **Google Cloud's Agent Development Kit (ADK)**, the code-first surface of **Agent Builder / Agent Platform**. Deployed to **Vertex AI Agent Engine** (the managed Agent Platform runtime).
-- **Observability partner:** **Dynatrace MCP server** (official `@dynatrace-oss/dynatrace-mcp-server` or hosted remote gateway). Tools: `query-problems`, `execute-dql`, `get-events-for-kubernetes-cluster` (read-only for detect + diagnose) — the exact names the real Dynatrace MCP gateway exposes.
+- **Observability partner:** **Dynatrace MCP server** (official `@dynatrace-oss/dynatrace-mcp-server` or hosted remote gateway). Tools: `query-problems`, `execute-dql`, `get-events-for-kubernetes-cluster` (read-only for detect + diagnose): the exact names the real Dynatrace MCP gateway exposes.
 - **Remediation tools:** Python `FunctionTool` with `require_confirmation=True` (human-gated): `toggle_feature_flag`, `scale_service`, `rollback_deployment`, `get_service_health`.
 - **Web UI:** Next.js 16 (App Router), Tailwind CSS v4, TypeScript. Streams SSE events and renders real-time timeline + approval modal.
 - **Backend:** FastAPI HTTP + SSE service. Per-run session management, pause/resume bridge for approval round-trip.
@@ -54,7 +54,7 @@ The agent runs a **6-step loop**:
 
 2. **Streaming events contract:** All comms between agent and UI are typed JSON SSE frames (9 event types: `step`, `tool_call`, `tool_result`, `approval_request`, `approval_resolved`, `agent_message`, `final`, `error`). This enables the web UI to render the agent's reasoning in real time.
 
-3. **Mode-agnostic guarantee:** Dynatrace toolset is abstracted behind a factory function (`build_dynatrace_toolset(mode)`). `mock` mode runs a bundled MCP server (derives telemetry from the target service's state). `stdio` and `remote` modes point to the official server. The agent code is identical in all three — only env vars change.
+3. **Mode-agnostic guarantee:** Dynatrace toolset is abstracted behind a factory function (`build_dynatrace_toolset(mode)`). `mock` mode runs a bundled MCP server (derives telemetry from the target service's state). `stdio` and `remote` modes point to the official server. The agent code is identical in all three; only env vars change.
 
 4. **No other AI models:** Only Google Cloud AI (Gemini) + Dynatrace's built-in AI (Davis). No other LLMs, no retrieval, no fine-tuning.
 
@@ -62,11 +62,11 @@ The agent runs a **6-step loop**:
 
 ## Challenges
 
-1. **Dynatrace MCP availability:** The official `@dynatrace-oss/dynatrace-mcp-server` was not available early; we built a deterministic mock MCP server with identical tool shapes to unblock development. This proved to be a feature: the `mock` mode is now a robust fallback for offline demos.
+1. **Dynatrace MCP availability:** The official `@dynatrace-oss/dynatrace-mcp-server` was not available early; we built a deterministic mock MCP server with identical tool shapes to unblock development. This proved to be a feature: the `mock` mode is now a reliable fallback for offline demos.
 
 2. **SSE streaming + approval pause:** Holding an SSE stream open while pausing for human input required careful session management. Solution: per-run state machine in `autosre/server/` tracks pending approvals and resumes the loop on decision POST.
 
-3. **Gemini rate-limiting on free tier:** `gemini-3-flash-preview` (free) allows ~5 req/min. A full incident loop makes 4–5 model calls. Solution: exponential backoff + retry in `run_agent.py`. For demo smoothness, use a free API key (no billing) or enable billing for higher quota.
+3. **Gemini rate-limiting on free tier:** `gemini-3-flash-preview` (free) allows ~5 req/min. A full incident loop makes 4-5 model calls. Solution: exponential backoff + retry in `run_agent.py`. For demo smoothness, use a free API key (no billing) or enable billing for higher quota.
 
 4. **Mode-agnostic testing:** Ensuring the agent behaves identically in `mock`, `stdio`, and `remote` modes required a unified toolset interface. Solution: `FunctionTool` list is built dynamically; tool names and response shapes are tested against the contract.
 
@@ -88,7 +88,7 @@ The agent runs a **6-step loop**:
 
 ## Selected Track
 
-**Dynatrace** — The agent is entirely powered by Dynatrace MCP for observability. Dynatrace Davis (built-in AI) is named as a partner superpower; the Dynatrace MCP is the load-bearing observability source.
+**Dynatrace.** The agent is entirely powered by Dynatrace MCP for observability. Dynatrace Davis (built-in AI) is named as a partner superpower; the Dynatrace MCP is the load-bearing observability source.
 
 ---
 
@@ -96,11 +96,11 @@ The agent runs a **6-step loop**:
 
 | Field | Content |
 |-------|---------|
-| **Project Name** | AutoSRE — The Autonomous On-Call Engineer |
-| **Tagline** | The on-call engineer that diagnoses and fixes production incidents from Dynatrace — but never acts without your approval. |
+| **Project Name** | AutoSRE: The Autonomous On-Call Engineer |
+| **Tagline** | The on-call engineer that diagnoses and fixes production incidents from Dynatrace, but never acts without your approval. |
 | **Demo video** | [YouTube URL] (≤3:00, shows full DETECT→DIAGNOSE→APPROVE→ACT→VERIFY loop) |
-| **Try it** | https://autosre-ui-w6llqyu5fq-uc.a.run.app — live Cloud Run deployment. Works from incognito. |
-| **Code** | https://github.com/thylinao1/autosre — Open-source MIT. License visible in About box. |
+| **Try it** | https://autosre-ui-w6llqyu5fq-uc.a.run.app (live Cloud Run deployment). Works from incognito. |
+| **Code** | https://github.com/thylinao1/autosre (open-source MIT). License visible in About box. |
 | **Inspiration** | Gartner: IT downtime costs $5,600/minute; MTTR is dominated by the identify phase (30+ min). AutoSRE collapses triage to seconds. |
 | **What it does** | (See section above) |
 | **How we built it** | (See section above) |
@@ -115,13 +115,13 @@ The agent runs a **6-step loop**:
 
 ## Submission Checklist
 
-- [ ] **Hosted live URL** — Cloud Run Mission-Control UI that works from incognito (Stage-1 requirement).
-- [ ] **Public GitHub repo** — `public` visibility; MIT license auto-detected in About box.
-- [ ] **~3 minute demo video** — Shows the full 6-step loop. Criterion-tagged (Tech / Design / Impact / Idea). Audio narration of the real-world pain stat ($5,600/min) and the value prop (30+ min → ~1 min).
-- [ ] **Devpost form** — All fields filled. Track selected: Dynatrace.
-- [ ] **Reproducibility** — Judges can clone the repo, set `GOOGLE_API_KEY=...` (free from Google AI Studio) and `DYNATRACE_MCP_MODE=mock`, and run the full demo offline in <5 minutes.
-- [ ] **No leaked secrets** — `.env` is gitignored. No hardcoded API keys, tokens, or project IDs in the codebase.
-- [ ] **Tech claims verified** — README and video name the exact tools: Gemini 3, Agent Development Kit (ADK), Vertex AI Agent Engine, Dynatrace MCP, SSE, Cloud Run. All claims match the working code.
+- [ ] **Hosted live URL:** Cloud Run Mission-Control UI that works from incognito (Stage-1 requirement).
+- [ ] **Public GitHub repo:** `public` visibility; MIT license auto-detected in About box.
+- [ ] **~3 minute demo video:** Shows the full 6-step loop. Criterion-tagged (Tech / Design / Impact / Idea). Audio narration of the real-world pain stat ($5,600/min) and the value prop (30+ min → ~1 min).
+- [ ] **Devpost form:** All fields filled. Track selected: Dynatrace.
+- [ ] **Reproducibility:** Judges can clone the repo, set `GOOGLE_API_KEY=...` (free from Google AI Studio) and `DYNATRACE_MCP_MODE=mock`, and run the full demo offline in <5 minutes.
+- [ ] **No leaked secrets:** `.env` is gitignored. No hardcoded API keys, tokens, or project IDs in the codebase.
+- [ ] **Tech claims verified:** README and video name the exact tools: Gemini 3, Agent Development Kit (ADK), Vertex AI Agent Engine, Dynatrace MCP, SSE, Cloud Run. All claims match the working code.
 
 ---
 
@@ -142,9 +142,9 @@ The agent runs a **6-step loop**:
 ## Judging Alignment
 
 **Technological Implementation (25%)**
-- ✅ Gemini 3 reasoning on ADK (Agent Development Kit) — the code-first path of Google Cloud's Agent Platform.
+- ✅ Gemini 3 reasoning on ADK (Agent Development Kit): the code-first path of Google Cloud's Agent Platform.
 - ✅ Dynatrace MCP is the only sensory system (detect + diagnose); load-bearing, not ornamental.
-- ✅ ADK-native human-in-the-loop (`require_confirmation=True`) — framework-enforced, stronger than prompt instruction.
+- ✅ ADK-native human-in-the-loop (`require_confirmation=True`): framework-enforced, stronger than prompt instruction.
 - ✅ Mode-agnostic guarantee: identical agent across mock/stdio/remote.
 
 **Design (25%)**
@@ -155,7 +155,7 @@ The agent runs a **6-step loop**:
 
 **Potential Impact (25%)**
 - ✅ Quantified pain: $5,600/min IT downtime (Gartner); identify phase 30+ min.
-- ✅ Clear leverage: on-call SREs, DevOps, retail/financial ops.
+- ✅ Clear target users: on-call SREs, DevOps, retail/financial ops.
 - ✅ Deployment path: Cloud Run + Vertex AI Agent Engine (no custom infrastructure).
 - ✅ Generalizable loop: works for any incident type with appropriate observability + remediation tools.
 

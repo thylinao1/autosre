@@ -1,12 +1,12 @@
-# AutoSRE — autonomous incident response, with you in the loop
+# AutoSRE: autonomous incident response, with you in the loop
 
 **Track: Dynatrace** · Built with **Gemini 3** on **Google Cloud's Agent Platform (Agent Builder)** using the **Agent Development Kit (ADK)** · Deployed to **Vertex AI Agent Engine** · Partner superpower via the **Dynatrace MCP server**.
 
 ## The Real-World Problem
 
-Production incidents don't wait. When a checkout service crashes at scale, **every minute of downtime costs money — a lot of it.** According to Gartner, IT downtime averages **$5,600 per minute** for businesses; large enterprises face $14,000+ per minute. Yet diagnosing the root cause typically takes **30+ minutes** of manual triage by an on-call engineer: opening dashboards, running queries, correlating events, narrowing the blast radius. That's $168,000–$420,000 in lost revenue *before* the fix even starts.
+Production incidents don't wait. When a checkout service crashes at scale, **every minute of downtime costs money, a lot of it.** According to Gartner, IT downtime averages **$5,600 per minute** for businesses; large enterprises face $14,000+ per minute. Yet diagnosing the root cause typically takes **30+ minutes** of manual triage by an on-call engineer: opening dashboards, running queries, correlating events, narrowing the blast radius. That's $168,000 to $420,000 in lost revenue *before* the fix even starts.
 
-**AutoSRE collapses the triage phase to seconds.** It's the autonomous on-call engineer that detects an incident from Dynatrace, diagnoses the root cause from live telemetry, proposes exactly one fix, waits for your one-tap approval, executes it, and verifies recovery — **but it never touches production without your authority.**
+**AutoSRE collapses the triage phase to seconds.** It's the autonomous on-call engineer that detects an incident from Dynatrace, diagnoses the root cause from live telemetry, proposes exactly one fix, waits for your one-tap approval, executes it, and verifies recovery. **But it never touches production without your authority.**
 
 ---
 
@@ -28,14 +28,14 @@ AutoSRE targets **on-call SREs, DevOps teams, and ops platforms** in retail, fin
 
 The agent runs a **6-step loop**, driven by **Gemini 3 reasoning on Google Cloud's Agent Platform**:
 
-1. **DETECT** — List open problems from Dynatrace (anomalies, threshold violations, deployment events).
-2. **DIAGNOSE** — Run DQL queries to correlate the problem with recent changes (deploys, feature flags, configuration).
-3. **PROPOSE** — Reason about the root cause and name exactly one remediation (disable flag, rollback, scale service).
-4. **PAUSE** — Stream the proposed action to the web UI and block until a human approves.
-5. **ACT** — Execute the approved remediation.
-6. **VERIFY** — Re-check service health via Dynatrace and the target service API.
+1. **DETECT**: List open problems from Dynatrace (anomalies, threshold violations, deployment events).
+2. **DIAGNOSE**: Run DQL queries to correlate the problem with recent changes (deploys, feature flags, configuration).
+3. **PROPOSE**: Reason about the root cause and name exactly one remediation (disable flag, rollback, scale service).
+4. **PAUSE**: Stream the proposed action to the web UI and block until a human approves.
+5. **ACT**: Execute the approved remediation.
+6. **VERIFY**: Re-check service health via Dynatrace and the target service API.
 
-The web "Mission Control" UI streams this loop live — the operator watches the agent pull the problem card, run evidence queries, propose the fix, and then **taps Approve** to execute. The incident card flips green when recovery is verified.
+The web "Mission Control" UI streams this loop live. The operator watches the agent pull the problem card, run evidence queries, propose the fix, and then **taps Approve** to execute. The incident card flips green when recovery is verified.
 
 ---
 
@@ -73,13 +73,13 @@ graph LR
 **Key architectural points:**
 
 - **Agent:** An ADK `LlmAgent` on `gemini-3-pro-preview` via **Vertex AI**, registered on **Vertex AI Agent Engine** (Google Cloud's managed Agent Platform runtime). Runs the 6-step loop.
-- **Dynatrace MCP (the agent's senses):** The agent's **only** observability source. Detection and diagnosis run entirely on Dynatrace tools (`query-problems`, `execute-dql`, `get-events-for-kubernetes-cluster`). The Dynatrace MCP is **load-bearing** — the agent cannot reason without it.
+- **Dynatrace MCP (the agent's senses):** The agent's **only** observability source. Detection and diagnosis run entirely on Dynatrace tools (`query-problems`, `execute-dql`, `get-events-for-kubernetes-cluster`). The Dynatrace MCP is **load-bearing**: the agent cannot reason without it.
 - **Human-in-the-loop:** ADK-native `FunctionTool(require_confirmation=True)` enforces the approval gate in Python. The model cannot bypass it.
 - **Web Mission Control UI:** A Next.js dashboard that streams the loop over SSE and renders the **APPROVE / REJECT** moment as a blocking modal. This is the "web" platform requirement.
 - **Three swappable Dynatrace backends** (agent code unchanged):
-  - **`mock`** — offline bundled server; demo with zero accounts.
-  - **`stdio`** — official `npx @dynatrace-oss/dynatrace-mcp-server` locally.
-  - **`remote`** — your Dynatrace tenant's hosted MCP gateway (HTTP + token).
+  - **`mock`**: offline bundled server; demo with zero accounts.
+  - **`stdio`**: official `npx @dynatrace-oss/dynatrace-mcp-server` locally.
+  - **`remote`**: your Dynatrace tenant's hosted MCP gateway (HTTP + token).
 
 ---
 
@@ -91,11 +91,11 @@ The approval gate is **not** a prompt instruction the model might ignore. It's a
 
 ### Mode-Agnostic Guarantee
 
-The agent core is **identical** across `DYNATRACE_MCP_MODE=mock | stdio | remote`. The tool names, response formats, and streaming events are byte-identical in all three modes. The UI, the streaming contract, and every integration never branch on mode. For the demo, you can run detect/diagnose against a **real Dynatrace trial tenant** (for credibility) and act/verify in `mock` mode (for reliability) — both are the same agent, just different env settings.
+The agent core is **identical** across `DYNATRACE_MCP_MODE=mock | stdio | remote`. The tool names, response formats, and streaming events are byte-identical in all three modes. The UI, the streaming contract, and every integration never branch on mode. For the demo, you can run detect/diagnose against a **real Dynatrace trial tenant** (for credibility) and act/verify in `mock` mode (for reliability). Both are the same agent, just different env settings.
 
 ### Streaming Visibility
 
-Every step streams to the web UI over SSE — tool calls, results, reasoning chunks, and the approval moment. The operator *sees* the agent work in real time. This is the "visible autonomy" that makes the moment credible.
+Every step streams to the web UI over SSE: tool calls, results, reasoning chunks, and the approval moment. The operator *sees* the agent work in real time. This is the "visible autonomy" that makes the moment credible.
 
 ---
 
@@ -134,8 +134,8 @@ Watch the agent:
 - Verify the service is healthy again.
 
 **Available faults:**
-- `payment_errors` — failure rate spikes to 22%; correct fix: disable `new_payment_gateway` flag or rollback to v2.3.0.
-- `latency_spike` — p99 latency jumps to 4200ms; correct fix: scale replicas to 8+.
+- `payment_errors`: failure rate spikes to 22%; correct fix: disable `new_payment_gateway` flag or rollback to v2.3.0.
+- `latency_spike`: p99 latency jumps to 4200ms; correct fix: scale replicas to 8+.
 
 ### With the Web UI (Mission Control)
 
@@ -296,7 +296,7 @@ LICENSE                       # MIT
 **Technological Implementation (25%)**
 - Gemini 3 reasoning on Google Cloud's **Agent Platform (ADK)**, deployable to **Vertex AI Agent Engine**.
 - Dynatrace MCP is the **only** sensory system (load-bearing, not ornamental).
-- ADK-native human-in-the-loop (`require_confirmation=True`) — framework-enforced, not prompt-hackable.
+- ADK-native human-in-the-loop (`require_confirmation=True`): framework-enforced, not prompt-hackable.
 - Mode-agnostic: works offline (mock), locally (stdio), or against a real tenant (remote), all with identical agent code.
 
 **Design (25%)**
@@ -308,9 +308,9 @@ LICENSE                       # MIT
 
 **Potential Impact (25%)**
 - Addresses a **quantified real-world pain**: Gartner pegs IT downtime at $5,600/minute; MTTR is dominated by the identify phase (30+ min). AutoSRE collapses that to seconds.
-- Targets high-leverage users: on-call SREs, DevOps, retail/financial ops.
+- Targets high-value users: on-call SREs, DevOps, retail/financial ops.
 - Deployment path clear: Cloud Run + Vertex AI Agent Engine (no custom infrastructure).
-- Dynatrace integration is seamless (no manual setup of separate observability).
+- Dynatrace integration is built in (no manual setup of separate observability).
 
 **Quality of the Idea (25%)**
 - Sharp, differentiated framing: **"Autonomous, but on your authority."** Not a chatbot (chat is read-only). Not reckless auto-remediation (humans decide). Not a cargo-cult AI addition (the MCP is central).
@@ -322,16 +322,16 @@ LICENSE                       # MIT
 ## Troubleshooting
 
 **Q: The agent times out or rate-limits.**
-A: You're hitting Gemini's free-tier quota (~5 req/min). Get a free API key from [Google AI Studio](https://aistudio.google.com) and put it in `.env` — no billing needed yet. If you enable billing on your GCP project, you can use `AUTOSRE_MODEL=gemini-3-pro-preview` for faster reasoning and higher quota.
+A: You're hitting Gemini's free-tier quota (~5 req/min). Get a free API key from [Google AI Studio](https://aistudio.google.com) and put it in `.env` (no billing needed yet). If you enable billing on your GCP project, you can use `AUTOSRE_MODEL=gemini-3-pro-preview` for faster reasoning and higher quota.
 
 **Q: The web UI shows "Connection refused" when I click "Run Incident Sweep".**
 A: Make sure the SSE backend is running (`python -m autosre.server`) and listening on the port the UI expects. By default, the UI looks for `localhost:8080`; set `NEXT_PUBLIC_AGENT_BASE_URL=http://127.0.0.1:8080` in `.env.local` in the `web/` directory if the backend is on a different port.
 
 **Q: I want to test against a real Dynatrace tenant but don't see any problems.**
-A: The mock `checkout-api` service must be running and injected with a fault first. Dynatrace's `query-problems` only returns anomalies it has detected; if the service is healthy, there's nothing to report. Inject a fault (`curl -X POST localhost:8081/_admin/inject -H 'content-type: application/json' -d '{"fault":"payment_errors"}'`) and wait 1–2 minutes for Dynatrace to detect and alert.
+A: The mock `checkout-api` service must be running and injected with a fault first. Dynatrace's `query-problems` only returns anomalies it has detected; if the service is healthy, there's nothing to report. Inject a fault (`curl -X POST localhost:8081/_admin/inject -H 'content-type: application/json' -d '{"fault":"payment_errors"}'`) and wait 1-2 minutes for Dynatrace to detect and alert.
 
 **Q: The approval modal never appears.**
-A: The agent may not be reaching the remediation step. Check the timeline in the UI — if it stops at DIAGNOSE, the agent may not have reasoned its way to a fix (wrong model, bad DQL results, or timeout). Check the agent logs for errors. If a remediation tool was called, ensure the `FunctionTool(require_confirmation=True)` is in place in `autosre/agent/remediation.py` (it should be; don't remove it for testing).
+A: The agent may not be reaching the remediation step. Check the timeline in the UI. If it stops at DIAGNOSE, the agent may not have reasoned its way to a fix (wrong model, bad DQL results, or timeout). Check the agent logs for errors. If a remediation tool was called, ensure the `FunctionTool(require_confirmation=True)` is in place in `autosre/agent/remediation.py` (it should be; don't remove it for testing).
 
 **Q: The incident card never turns green even after I approve.**
 A: The VERIFY step reads the service's `/_internal/state` endpoint. Ensure the remediation actually fixed the fault. For a payment-error fault, disabling the feature flag should work; for latency, scaling to 8+ replicas should work. If the fix runs but the service is still unhealthy, the agent's reasoning about the root cause may have been wrong. Check the DIAGNOSE DQL results in the timeline.
