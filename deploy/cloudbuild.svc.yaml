@@ -1,0 +1,28 @@
+# deploy/cloudbuild.svc.yaml — generic Cloud Build config for the Python services.
+#
+# `gcloud run deploy --source` only honors a Dockerfile at the build-context root,
+# but checkout-api and the autosre agent need DIFFERENT Dockerfiles built from the
+# same repo root. This config builds an arbitrary Dockerfile path (`-f`) so each
+# service can be built from `.` with its own Dockerfile, then pushed.
+#
+# Used by deploy/deploy_cloud_run.sh steps 1 & 2:
+#   gcloud builds submit . \
+#     --config deploy/cloudbuild.svc.yaml \
+#     --substitutions "_DOCKERFILE=deploy/Dockerfile.agent,_IMAGE=gcr.io/PROJ/autosre:TS"
+
+substitutions:
+  _DOCKERFILE: ""
+  _IMAGE: ""
+
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - build
+      - -f
+      - "${_DOCKERFILE}"
+      - -t
+      - "${_IMAGE}"
+      - .
+
+images:
+  - "${_IMAGE}"

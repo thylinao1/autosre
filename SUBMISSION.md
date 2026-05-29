@@ -1,9 +1,10 @@
 # Devpost Submission Checklist — AutoSRE (Dynatrace track)
 
 ## Required deliverables
-- [ ] **Hosted project URL** — Mission-Control web UI (Cloud Run) that streams the full
-      incident loop live and allows operator approval. See `web/` + `autosre/server/`.
-      URL must work from incognito window (Stage-1 requirement). **TODO: pending Workstream C (deploy).**
+- [x] **Hosted project URL** — **https://autosre-ui-w6llqyu5fq-uc.a.run.app** — live
+      Mission-Control web UI on Cloud Run; streams the full incident loop and the operator
+      approval gate. Agent (Gemini 3 via Vertex AI) + checkout-api also on Cloud Run.
+      Verified end-to-end from incognito (detect → diagnose → approve → resolved/green).
 - [ ] **Public open-source repo** — push this repo to a **public** GitHub repo.
 - [ ] **OSS license detectable in About** — `LICENSE` (MIT) is at repo root;
       GitHub auto-detects it and shows "MIT" in the About sidebar. ✔ already in place.

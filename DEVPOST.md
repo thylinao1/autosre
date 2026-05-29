@@ -99,8 +99,8 @@ The agent runs a **6-step loop**:
 | **Project Name** | AutoSRE — The Autonomous On-Call Engineer |
 | **Tagline** | The on-call engineer that diagnoses and fixes production incidents from Dynatrace — but never acts without your approval. |
 | **Demo video** | [YouTube URL] (≤3:00, shows full DETECT→DIAGNOSE→APPROVE→ACT→VERIFY loop) |
-| **Try it** | [Hosted Mission-Control UI URL] — live Cloud Run deployment. Works from incognito. |
-| **Code** | [GitHub public repo URL] — Open-source MIT. License visible in About box. |
+| **Try it** | https://autosre-ui-w6llqyu5fq-uc.a.run.app — live Cloud Run deployment. Works from incognito. |
+| **Code** | https://github.com/thylinao1/autosre — Open-source MIT. License visible in About box. |
 | **Inspiration** | Gartner: IT downtime costs $5,600/minute; MTTR is dominated by the identify phase (30+ min). AutoSRE collapses triage to seconds. |
 | **What it does** | (See section above) |
 | **How we built it** | (See section above) |

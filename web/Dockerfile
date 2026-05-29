@@ -13,10 +13,13 @@
 # .next/standalone directory with an embedded Node.js server (server.js).
 
 # ── Stage 1: dependencies ────────────────────────────────────────────────────
+# Full install (incl. devDependencies): the Next.js production build needs
+# tailwindcss / @tailwindcss/postcss / typescript, which are devDependencies.
+# The final `runner` stage copies only .next/standalone, so the image stays lean.
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev
+RUN npm ci
 
 # ── Stage 2: builder ─────────────────────────────────────────────────────────
 FROM node:20-alpine AS builder

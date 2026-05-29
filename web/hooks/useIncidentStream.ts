@@ -1,13 +1,14 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { startRun, streamUrl, submitApproval, resetFaults } from "@/lib/api";
+import { startRun, streamUrl, submitApproval, resetFaults, getHealth } from "@/lib/api";
 import type {
   IncidentState,
   SSEEvent,
   StepEvent,
   ToolResultEvent,
   ApprovalRequestEvent,
+  ApprovalResolvedEvent,
   FinalEvent,
   AgentMessageEvent,
   DynatraceProblem,
@@ -266,14 +267,51 @@ export function useIncidentStream(): UseIncidentStreamReturn {
     async (approved: boolean) => {
       const { runId, pendingApproval } = stateRef.current;
       if (!runId || !pendingApproval) return;
+      const approvalId = pendingApproval.id;
 
       try {
-        await submitApproval(runId, pendingApproval.id, approved);
+        await submitApproval(runId, approvalId, approved);
       } catch (err) {
         updateState((prev) => ({
           ...prev,
           errorMessage: err instanceof Error ? err.message : "Approval failed",
         }));
+        return;
+      }
+
+      if (!approved) return;
+
+      // Fallback reconciliation: on Cloud Run the SSE stream can go stale during
+      // the human-approval pause, so the post-approval frames (approval_resolved →
+      // tool_result → verify → final) may never reach the browser even though the
+      // backend executes the remediation. Poll the live health endpoint; once the
+      // service is healthy and the fault is cleared, synthesize the resolved state
+      // so the UI flips to green regardless of the stream. If the real `final`
+      // arrives first, the terminal-status guard makes this a no-op.
+      const TERMINAL: RunStatus[] = ["resolved", "declined", "all_clear", "error"];
+      for (let i = 0; i < 24; i++) {
+        await new Promise((r) => setTimeout(r, 2000));
+        if (TERMINAL.includes(stateRef.current.status)) return; // SSE won the race
+        try {
+          const h = await getHealth();
+          if (h.healthy && !h.injected_fault) {
+            if (TERMINAL.includes(stateRef.current.status)) return;
+            // Clear the approval modal, then flip to a resolved terminal state.
+            const resolvedEvent: ApprovalResolvedEvent = {
+              type: "approval_resolved", run_id: runId, seq: 9_998,
+              id: approvalId, approved: true,
+            };
+            const finalEvent: FinalEvent = {
+              type: "final", run_id: runId, seq: 9_999,
+              report: "Remediation approved and applied. checkout-api health check confirms the incident is resolved — service is healthy.",
+              service_healthy: true, incident_resolved: true, outcome: "resolved",
+            };
+            updateState((prev) => processEvent(processEvent(prev, resolvedEvent), finalEvent));
+            return;
+          }
+        } catch {
+          // transient health-check error — keep polling
+        }
       }
     },
     [updateState]

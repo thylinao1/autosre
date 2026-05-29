@@ -52,17 +52,32 @@ set -euo pipefail
 : "${PROJECT_ID:?ERROR: set PROJECT_ID before running}"
 : "${REGION:=us-central1}"
 : "${DYNATRACE_MCP_MODE:=mock}"
+# Reasoning model. Default pro (best for the submission demo); override with
+# AUTOSRE_MODEL=gemini-3-flash-preview for a cheaper run. On Vertex there is no
+# free-tier rate cap, so either works without backoff.
+: "${AUTOSRE_MODEL:=gemini-3-pro-preview}"
 
 IMAGE_TS="$(date +%Y%m%d%H%M%S)"
 UI_IMAGE="gcr.io/${PROJECT_ID}/autosre-ui:${IMAGE_TS}"
+TARGET_IMAGE="gcr.io/${PROJECT_ID}/checkout-api:${IMAGE_TS}"
+AGENT_IMAGE="gcr.io/${PROJECT_ID}/autosre:${IMAGE_TS}"
 
 # ── 1. checkout-api (demo target) ────────────────────────────────────────────
+# `gcloud run deploy --source` only honors a root Dockerfile, but our two Python
+# services need different Dockerfiles from the same repo root — so we build each
+# image via Cloud Build (deploy/cloudbuild.svc.yaml builds an arbitrary -f path)
+# then deploy by --image. (Cloud Build respects .gitignore, so .venv/node_modules
+# are not uploaded.)
 echo "==> [1/4] Building + deploying checkout-api (demo target)"
+gcloud builds submit . \
+  --config deploy/cloudbuild.svc.yaml \
+  --project "${PROJECT_ID}" \
+  --substitutions "_DOCKERFILE=deploy/Dockerfile.target,_IMAGE=${TARGET_IMAGE}" \
+  --quiet
 gcloud run deploy checkout-api \
-  --source . \
+  --image "${TARGET_IMAGE}" \
   --region "${REGION}" \
   --project "${PROJECT_ID}" \
-  --dockerfile deploy/Dockerfile.target \
   --allow-unauthenticated \
   --quiet
 
@@ -74,18 +89,22 @@ echo "    checkout-api: ${TARGET_URL}"
 
 # ── 2. autosre agent (python -m autosre.server, Gemini 3 via Vertex AI) ─────
 echo "==> [2/4] Building + deploying autosre agent (SSE backend, Vertex AI)"
+gcloud builds submit . \
+  --config deploy/cloudbuild.svc.yaml \
+  --project "${PROJECT_ID}" \
+  --substitutions "_DOCKERFILE=deploy/Dockerfile.agent,_IMAGE=${AGENT_IMAGE}" \
+  --quiet
 gcloud run deploy autosre \
-  --source . \
+  --image "${AGENT_IMAGE}" \
   --region "${REGION}" \
   --project "${PROJECT_ID}" \
-  --dockerfile deploy/Dockerfile.agent \
   --allow-unauthenticated \
   --quiet \
   --set-env-vars "\
 GOOGLE_GENAI_USE_VERTEXAI=TRUE,\
 GOOGLE_CLOUD_PROJECT=${PROJECT_ID},\
 GOOGLE_CLOUD_LOCATION=${REGION},\
-AUTOSRE_MODEL=gemini-3-pro-preview,\
+AUTOSRE_MODEL=${AUTOSRE_MODEL},\
 DYNATRACE_MCP_MODE=${DYNATRACE_MCP_MODE},\
 TARGET_SERVICE_URL=${TARGET_URL},\
 ALLOWED_ORIGIN=*"
@@ -106,7 +125,6 @@ echo "==> [3/4] Building Mission-Control UI image via Cloud Build"
 echo "    baking NEXT_PUBLIC_AGENT_BASE_URL=${AGENT_URL}"
 gcloud builds submit web/ \
   --config web/cloudbuild.yaml \
-  --region "${REGION}" \
   --project "${PROJECT_ID}" \
   --substitutions "_NEXT_PUBLIC_AGENT_BASE_URL=${AGENT_URL},_IMAGE=${UI_IMAGE}" \
   --quiet

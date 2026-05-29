@@ -28,6 +28,7 @@ node_modules/
 # Local verification artifacts (Playwright screenshots / traces)
 .playwright-mcp/
 verify-*.png
+prod-*.png
 
 # Build / deploy
 *.log
