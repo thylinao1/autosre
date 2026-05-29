@@ -56,8 +56,8 @@ def test_unwraps_content_text_when_no_structured_content():
 
 def test_summary_is_meaningful_after_unwrap():
     parsed = parse_tool_response(_mcp_envelope(_PROBLEMS_JSON))
-    summary = summarize_tool_result("list_problems", parsed)
-    # Not the generic "list_problems returned." fallback.
+    summary = summarize_tool_result("query-problems", parsed)
+    # Not the generic "query-problems returned." fallback.
     assert "1 open problem" in summary
     assert "22%" in summary
 

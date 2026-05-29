@@ -21,7 +21,7 @@
   tools; Python-enforced approval gate that blocks tool execution.
   Tested in `tests/test_remediation_gate.py`.
 - **Meaningful MCP partner integration** → Dynatrace MCP is the **only** sensory system.
-  Detection + diagnosis run entirely on `list_problems`, `execute_dql`, `get_kubernetes_events`.
+  Detection + diagnosis run entirely on `query-problems`, `execute-dql`, `get-events-for-kubernetes-cluster`.
   Toolset built in `autosre/agent/dynatrace.py`; mode-agnostic (mock/stdio/remote).
 - **Gemini 3 + Google Cloud Agent Builder** → ADK `LlmAgent` on `gemini-3-pro-preview`,
   reasoning on **Vertex AI**, deployable to **Vertex AI Agent Engine** (Agent Platform) + Cloud Run.

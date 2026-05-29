@@ -42,7 +42,7 @@ def test_parse_tool_response_parses_problem_json_string():
     )
     resp = E.parse_tool_response(raw)
     assert resp["problems"][0]["problemId"] == "P-2026-0042"
-    summary = E.summarize_tool_result("list_problems", resp)
+    summary = E.summarize_tool_result("query-problems", resp)
     assert "1 open problem" in summary
     assert "22%" in summary
 
@@ -70,13 +70,13 @@ def test_parse_tool_response_falls_back_for_non_json():
 @pytest.mark.unit
 def test_phase_tracker_advances_monotonically():
     pt = E.PhaseTracker()
-    assert pt.advance_for_tool("list_problems")["phase"] == "detect"
-    assert pt.advance_for_tool("get_environment_info") is None  # still detect
-    assert pt.advance_for_tool("execute_dql")["phase"] == "diagnose"
+    assert pt.advance_for_tool("query-problems")["phase"] == "detect"
+    assert pt.advance_for_tool("get-problem-by-id") is None  # still detect
+    assert pt.advance_for_tool("execute-dql")["phase"] == "diagnose"
     assert pt.advance_for_approval()["phase"] == "act"
     assert pt.advance_for_tool("get_service_health")["phase"] == "verify"
     # never regress to an earlier phase
-    assert pt.advance_for_tool("list_problems") is None
+    assert pt.advance_for_tool("query-problems") is None
 
 
 # ── end-to-end SSE test (gated on Gemini credentials) ────────────────────────
@@ -150,9 +150,9 @@ class _ScriptedRunner:
         self._turn += 1
         if self._turn == 1:
             # DETECT
-            yield _ev([types.Part(function_call=types.FunctionCall(name="list_problems", args={}))])
+            yield _ev([types.Part(function_call=types.FunctionCall(name="query-problems", args={}))])
             yield _ev([types.Part(function_response=types.FunctionResponse(
-                name="list_problems",
+                name="query-problems",
                 response={"result": json.dumps({
                     "problems": [{
                         "problemId": "P-2026-0042",
@@ -162,9 +162,9 @@ class _ScriptedRunner:
                     }], "total": 1})}))])
             # DIAGNOSE
             yield _ev([types.Part(function_call=types.FunctionCall(
-                name="execute_dql", args={"query": "fetch events | filter event.kind == \"DEPLOYMENT_EVENT\""}))])
+                name="execute-dql", args={"dqlQueryString": "fetch events | filter event.kind == \"DEPLOYMENT_EVENT\""}))])
             yield _ev([types.Part(function_response=types.FunctionResponse(
-                name="execute_dql",
+                name="execute-dql",
                 response={"result": json.dumps({"records": [{
                     "version": "2.3.1", "feature_flags": {"new_payment_gateway": True}}]})}))])
             yield _ev([types.Part(text="Root cause: deploy v2.3.1 enabled 'new_payment_gateway' which throws on AMEX.")])
@@ -275,9 +275,9 @@ class _AllClearRunner:
         self.session_service = _ScriptedSessionService()
 
     async def run_async(self, *, user_id, session_id, new_message):
-        yield _ev([types.Part(function_call=types.FunctionCall(name="list_problems", args={}))])
+        yield _ev([types.Part(function_call=types.FunctionCall(name="query-problems", args={}))])
         yield _ev([types.Part(function_response=types.FunctionResponse(
-            name="list_problems",
+            name="query-problems",
             response={"result": json.dumps({"problems": [], "total": 0})}))])
         yield _ev([types.Part(text="All clear — no open problems on checkout-api.")], final=True)
 

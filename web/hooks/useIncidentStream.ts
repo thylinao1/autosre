@@ -71,10 +71,10 @@ function processEvent(prev: IncidentState, event: SSEEvent): IncidentState {
       return {
         ...prev,
         timeline: addEntry(`${tc.name}(${argStr})`, undefined),
-        // Capture DQL query when we see execute_dql
+        // Capture the DQL string when we see execute-dql (real Dynatrace param name)
         dqlQuery:
-          tc.name === "execute_dql" && tc.args.query
-            ? (tc.args.query as string)
+          tc.name === "execute-dql" && tc.args.dqlQueryString
+            ? (tc.args.dqlQueryString as string)
             : prev.dqlQuery,
       };
     }
@@ -83,16 +83,16 @@ function processEvent(prev: IncidentState, event: SSEEvent): IncidentState {
       const tr = event as ToolResultEvent;
       let nextState = { ...prev };
 
-      // Extract problem from list_problems result
-      if (tr.name === "list_problems") {
+      // Extract problem from query-problems result
+      if (tr.name === "query-problems") {
         const problems = (tr.response?.problems as DynatraceProblem[]) ?? [];
         if (problems.length > 0) {
           nextState.problem = problems[0];
         }
       }
 
-      // Extract DQL records from execute_dql result
-      if (tr.name === "execute_dql" && tr.response?.records) {
+      // Extract DQL records from execute-dql result
+      if (tr.name === "execute-dql" && tr.response?.records) {
         nextState.dqlRecords = tr.response.records as DqlRecord[];
       }
 

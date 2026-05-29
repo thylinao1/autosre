@@ -79,7 +79,7 @@ event's `type`, and the JSON object is sent in `data:`. Example wire bytes:
 
 ```
 event: tool_call
-data: {"type":"tool_call","run_id":"5f1c...","seq":3,"name":"execute_dql","args":{"query":"fetch events | filter event.kind == \"DEPLOYMENT_EVENT\""}}
+data: {"type":"tool_call","run_id":"5f1c...","seq":3,"name":"execute-dql","args":{"dqlQueryString":"fetch events | filter event.kind == \"DEPLOYMENT_EVENT\""}}
 
 event: approval_request
 data: {"type":"approval_request","run_id":"5f1c...","seq":7,"id":"adk-fc-abc123","tool":"toggle_feature_flag","args":{"name":"new_payment_gateway","enabled":false},"hint":"Disable the offending feature flag on checkout-api."}
@@ -119,7 +119,7 @@ against `run_agent.py` as committed at `749f512`).
 Emitted when the backend infers a loop-phase boundary. Source: the backend classifies
 the agent's progress (which tool was called / final response) into one of the four
 phases of the instruction loop in `autosre/agent/agent.py:33-57`. `detect` precedes the
-first `list_problems`; `diagnose` precedes `execute_dql`/`get_kubernetes_events`; `act`
+first `query-problems`; `diagnose` precedes `execute-dql`/`get-events-for-kubernetes-cluster`; `act`
 precedes the first remediation/`adk_request_confirmation`; `verify` precedes
 `get_service_health`.
 
@@ -137,17 +137,17 @@ precedes the first remediation/`adk_request_confirmation`; `verify` precedes
 
 ### 2.2 `tool_call` — the agent called a tool
 Source: `run_agent.py:47-48,57-58` — a `part.function_call` (`fc`) whose name is **not**
-`adk_request_confirmation`. Covers read-only Dynatrace tools (`list_problems`,
-`execute_dql`, `verify_dql`, `get_kubernetes_events`, `list_vulnerabilities`,
-`get_environment_info`) and `get_service_health`.
+`adk_request_confirmation`. Covers read-only Dynatrace tools (`query-problems`,
+`get-problem-by-id`, `execute-dql`, `get-events-for-kubernetes-cluster`,
+`get-vulnerabilities`) and `get_service_health`.
 
 ```json
 {
   "type": "tool_call",
   "run_id": "5f1c2a9e-7d3b-4f0a-9c11-2b6e4d8a1f33",
   "seq": 2,
-  "name": "execute_dql",
-  "args": { "query": "fetch events | filter event.kind == \"DEPLOYMENT_EVENT\" and entity.name == \"checkout-api\" | sort timestamp desc | limit 1" }
+  "name": "execute-dql",
+  "args": { "dqlQueryString": "fetch events | filter event.kind == \"DEPLOYMENT_EVENT\" and entity.name == \"checkout-api\" | sort timestamp desc | limit 1" }
 }
 ```
 - `name` — the tool name (string).
@@ -164,7 +164,7 @@ Source: `run_agent.py:48,59-60` — a `part.function_response` (`fr`) whose name
   "type": "tool_result",
   "run_id": "5f1c2a9e-7d3b-4f0a-9c11-2b6e4d8a1f33",
   "seq": 1,
-  "name": "list_problems",
+  "name": "query-problems",
   "summary": "1 open problem: Checkout failure rate spiked to 22% after deploy v2.3.1",
   "response": {
     "problems": [
@@ -190,7 +190,7 @@ Source: `run_agent.py:48,59-60` — a `part.function_response` (`fr`) whose name
   backend MAY pass it through as `{ "text": "<raw>" }`. The exact field shapes per
   tool are defined by `autosre/mock_dynatrace/server.py` and are identical on a real
   tenant. The UI's **problem card** reads `response.problems[0]`; the **DQL evidence
-  panel** reads `response.records` (from `execute_dql`).
+  panel** reads `response.records` (from `execute-dql`).
 
 ### 2.4 `approval_request` — remediation awaiting human approval (THE money shot)
 Source: `run_agent.py:49-56` — a `function_call` whose name **is**
@@ -310,8 +310,8 @@ exhausted-retry errors become this event).
 ### 2.9 Event ordering (typical happy path)
 
 ```
-step(detect) → tool_call(list_problems) → tool_result(list_problems)
-→ step(diagnose) → tool_call(execute_dql) → tool_result(execute_dql)
+step(detect) → tool_call(query-problems) → tool_result(query-problems)
+→ step(diagnose) → tool_call(execute-dql) → tool_result(execute-dql)
 → agent_message("root cause …")
 → step(act) → approval_request(toggle_feature_flag)        ← stream pauses here
    …UI POSTs decision…

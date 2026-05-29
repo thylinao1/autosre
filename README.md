@@ -54,7 +54,7 @@ graph LR
     end
     
     subgraph dt["Dynatrace<br/>(Partner MCP)"]
-        MCP["Dynatrace MCP<br/>list_problems · execute_dql<br/>get_kubernetes_events<br/>(Read-Only Observability)"]
+        MCP["Dynatrace MCP<br/>query-problems · execute-dql<br/>get-events-for-kubernetes-cluster<br/>(Read-Only Observability)"]
     end
     
     UI -->|SSE Stream| AGENT
@@ -73,7 +73,7 @@ graph LR
 **Key architectural points:**
 
 - **Agent:** An ADK `LlmAgent` on `gemini-3-pro-preview` via **Vertex AI**, registered on **Vertex AI Agent Engine** (Google Cloud's managed Agent Platform runtime). Runs the 6-step loop.
-- **Dynatrace MCP (the agent's senses):** The agent's **only** observability source. Detection and diagnosis run entirely on Dynatrace tools (`list_problems`, `execute_dql`, `get_kubernetes_events`). The Dynatrace MCP is **load-bearing** — the agent cannot reason without it.
+- **Dynatrace MCP (the agent's senses):** The agent's **only** observability source. Detection and diagnosis run entirely on Dynatrace tools (`query-problems`, `execute-dql`, `get-events-for-kubernetes-cluster`). The Dynatrace MCP is **load-bearing** — the agent cannot reason without it.
 - **Human-in-the-loop:** ADK-native `FunctionTool(require_confirmation=True)` enforces the approval gate in Python. The model cannot bypass it.
 - **Web Mission Control UI:** A Next.js dashboard that streams the loop over SSE and renders the **APPROVE / REJECT** moment as a blocking modal. This is the "web" platform requirement.
 - **Three swappable Dynatrace backends** (agent code unchanged):
@@ -328,7 +328,7 @@ A: You're hitting Gemini's free-tier quota (~5 req/min). Get a free API key from
 A: Make sure the SSE backend is running (`python -m autosre.server`) and listening on the port the UI expects. By default, the UI looks for `localhost:8080`; set `NEXT_PUBLIC_AGENT_BASE_URL=http://127.0.0.1:8080` in `.env.local` in the `web/` directory if the backend is on a different port.
 
 **Q: I want to test against a real Dynatrace tenant but don't see any problems.**
-A: The mock `checkout-api` service must be running and injected with a fault first. Dynatrace's `list_problems` only returns anomalies it has detected; if the service is healthy, there's nothing to report. Inject a fault (`curl -X POST localhost:8081/_admin/inject -H 'content-type: application/json' -d '{"fault":"payment_errors"}'`) and wait 1–2 minutes for Dynatrace to detect and alert.
+A: The mock `checkout-api` service must be running and injected with a fault first. Dynatrace's `query-problems` only returns anomalies it has detected; if the service is healthy, there's nothing to report. Inject a fault (`curl -X POST localhost:8081/_admin/inject -H 'content-type: application/json' -d '{"fault":"payment_errors"}'`) and wait 1–2 minutes for Dynatrace to detect and alert.
 
 **Q: The approval modal never appears.**
 A: The agent may not be reaching the remediation step. Check the timeline in the UI — if it stops at DIAGNOSE, the agent may not have reasoned its way to a fix (wrong model, bad DQL results, or timeout). Check the agent logs for errors. If a remediation tool was called, ensure the `FunctionTool(require_confirmation=True)` is in place in `autosre/agent/remediation.py` (it should be; don't remove it for testing).

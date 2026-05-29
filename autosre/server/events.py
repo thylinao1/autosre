@@ -20,8 +20,10 @@ from typing import Any
 
 # Tool-name → phase the call belongs to (CONTRACT §2.1). The boundary that fires
 # the `step` is the *first* tool that signals a new phase.
-_DETECT_TOOLS = {"list_problems", "get_environment_info"}
-_DIAGNOSE_TOOLS = {"execute_dql", "verify_dql", "get_kubernetes_events", "list_vulnerabilities"}
+# Dynatrace MCP tool names match the real gateway exactly (kebab-case). The verify
+# tool (`get_service_health`) and remediation tools are LOCAL functions, not Dynatrace.
+_DETECT_TOOLS = {"query-problems", "get-problem-by-id"}
+_DIAGNOSE_TOOLS = {"execute-dql", "get-events-for-kubernetes-cluster", "get-vulnerabilities"}
 _VERIFY_TOOLS = {"get_service_health"}
 _REMEDIATION_TOOLS = {"scale_service", "rollback_deployment", "toggle_feature_flag"}
 

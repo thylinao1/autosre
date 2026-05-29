@@ -41,7 +41,7 @@ The agent runs a **6-step loop**:
 
 - **Reasoning engine:** Gemini 3 (`gemini-3-pro-preview`) via **Vertex AI**.
 - **Agent framework:** **Google Cloud's Agent Development Kit (ADK)**, the code-first surface of **Agent Builder / Agent Platform**. Deployed to **Vertex AI Agent Engine** (the managed Agent Platform runtime).
-- **Observability partner:** **Dynatrace MCP server** (official `@dynatrace-oss/dynatrace-mcp-server` or hosted remote gateway). Tools: `list_problems`, `execute_dql`, `get_kubernetes_events` (read-only for detect + diagnose).
+- **Observability partner:** **Dynatrace MCP server** (official `@dynatrace-oss/dynatrace-mcp-server` or hosted remote gateway). Tools: `query-problems`, `execute-dql`, `get-events-for-kubernetes-cluster` (read-only for detect + diagnose) — the exact names the real Dynatrace MCP gateway exposes.
 - **Remediation tools:** Python `FunctionTool` with `require_confirmation=True` (human-gated): `toggle_feature_flag`, `scale_service`, `rollback_deployment`, `get_service_health`.
 - **Web UI:** Next.js 16 (App Router), Tailwind CSS v4, TypeScript. Streams SSE events and renders real-time timeline + approval modal.
 - **Backend:** FastAPI HTTP + SSE service. Per-run session management, pause/resume bridge for approval round-trip.

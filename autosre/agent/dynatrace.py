@@ -7,7 +7,8 @@ One switch (DYNATRACE_MCP_MODE) selects where observability data comes from:
   remote -> your Dynatrace tenant's hosted remote MCP gateway (HTTP + Bearer)
 
 The agent code above this layer never changes — the tool names are identical
-across all three modes (list_problems, execute_dql, get_kubernetes_events, ...).
+across all three modes (query-problems, execute-dql, get-events-for-kubernetes-cluster,
+...), matching the real Dynatrace MCP gateway's tool surface exactly.
 """
 
 from __future__ import annotations
@@ -22,15 +23,16 @@ from google.adk.tools.mcp_tool.mcp_session_manager import (
 )
 from mcp import StdioServerParameters
 
-# Read-only Dynatrace tools the agent is allowed to use. Keeping this explicit
-# means a misconfigured real tenant can't expose write tools to the agent.
+# Read-only Dynatrace tools the agent is allowed to use. These are the EXACT
+# tool names the real Dynatrace MCP gateway exposes (kebab-case), so the same
+# filter + agent work against the hosted tenant and the bundled mock. Keeping it
+# explicit means a misconfigured real tenant can't expose write tools to the agent.
 DYNATRACE_TOOL_FILTER = [
-    "get_environment_info",
-    "list_problems",
-    "execute_dql",
-    "verify_dql",
-    "get_kubernetes_events",
-    "list_vulnerabilities",
+    "query-problems",
+    "get-problem-by-id",
+    "execute-dql",
+    "get-events-for-kubernetes-cluster",
+    "get-vulnerabilities",
 ]
 
 

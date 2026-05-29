@@ -56,9 +56,9 @@ npm start
 
 ## What the UI does
 
-1. Problem Card — reads `tool_result.response.problems[0]` from `list_problems`; severity badge, affected service, observed metric vs baseline. Animates to green on `final` with `service_healthy && incident_resolved`.
+1. Problem Card — reads `tool_result.response.problems[0]` from `query-problems`; severity badge, affected service, observed metric vs baseline. Animates to green on `final` with `service_healthy && incident_resolved`.
 2. Streaming Timeline — one entry per SSE event: step phase markers (DETECT / DIAGNOSE / ACT / VERIFY), tool_call, tool_result, agent_message reasoning chunks. Phase progress bar at the bottom.
-3. DQL Evidence Panel — shows `execute_dql` query and `response.records` table once DIAGNOSE runs, plus the agent's reasoning block.
+3. DQL Evidence Panel — shows the `execute-dql` query and `response.records` table once DIAGNOSE runs, plus the agent's reasoning block.
 4. Approval Modal — surfaces on `approval_request`: exact tool, args, hint. Blocks until operator clicks. POSTs `{confirmation_id, approved}` back. No auto-approve.
 5. Demo Controls — select fault type, click Run (calls `/api/incident/start`), Reset between takes.
 

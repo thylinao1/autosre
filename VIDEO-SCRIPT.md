@@ -54,7 +54,7 @@ Or click "Run Incident Sweep → payment_errors" in the UI.
 **Visual:** Watch the web UI timeline light up in real time:
 
 1. **DETECT phase** — A problem card appears: "Checkout failure rate spiked to 22% after deploy v2.3.1." Show the problem details (severity: AVAILABILITY, affected entity: checkout-api, metrics).
-2. **DIAGNOSE phase** — Tool calls stream: `execute_dql "fetch events | filter..."`. Evidence appears: "Deploy v2.3.1 enabled feature flag 'new_payment_gateway'."
+2. **DIAGNOSE phase** — Tool calls stream: `execute-dql(dqlQueryString="fetch events | filter...")`. Evidence appears: "Deploy v2.3.1 enabled feature flag 'new_payment_gateway'."
 3. **Agent reasoning** — A text bubble appears: "Root cause: feature flag 'new_payment_gateway' introduced a bug in AMEX card processing, causing 22% of checkouts to fail."
 
 **Narration:**

@@ -55,7 +55,7 @@ flowchart LR
   end
 
   subgraph dt["Dynatrace (partner MCP — the agent's senses)"]
-    MCP["Dynatrace MCP gateway<br/>list_problems · execute_dql ·<br/>get_kubernetes_events (read-only)"]
+    MCP["Dynatrace MCP gateway<br/>query-problems · execute-dql ·<br/>get-events-for-kubernetes-cluster (read-only)"]
   end
 
   UI -- "1. POST /api/incident/start (+inject)" --> AGENT

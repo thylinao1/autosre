@@ -36,19 +36,19 @@ async def test_lists_tools(target_service):
         async with ClientSession(read, write) as session:
             await session.initialize()
             names = {t.name for t in (await session.list_tools()).tools}
-    assert {"list_problems", "execute_dql", "get_kubernetes_events"} <= names
+    assert {"query-problems", "execute-dql", "get-events-for-kubernetes-cluster"} <= names
 
 
 @pytest.mark.asyncio
 async def test_no_problems_when_healthy(target_service):
-    out = await _call("list_problems")
+    out = await _call("query-problems")
     assert out["total"] == 0
 
 
 @pytest.mark.asyncio
 async def test_surfaces_injected_problem(target_service):
     httpx.post(f"{target_service}/_admin/inject", json={"fault": "payment_errors"})
-    out = await _call("list_problems")
+    out = await _call("query-problems")
     assert out["total"] == 1
     assert out["problems"][0]["impacted_metric"] == "failure_rate"
     assert out["problems"][0]["observed_value"] == 22.0
@@ -57,7 +57,7 @@ async def test_surfaces_injected_problem(target_service):
 @pytest.mark.asyncio
 async def test_execute_dql_returns_metric(target_service):
     httpx.post(f"{target_service}/_admin/inject", json={"fault": "latency_spike"})
-    out = await _call("execute_dql", {"query": "fetch p99 latency for checkout-api"})
+    out = await _call("execute-dql", {"dqlQueryString": "fetch p99 latency for checkout-api"})
     rec = out["records"][0]
     assert rec["metric"] == "p99_latency_ms"
     assert rec["value"] == 4200.0

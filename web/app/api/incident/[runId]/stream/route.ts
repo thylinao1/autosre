@@ -26,20 +26,20 @@ function makeEvents(runId: string, inject: string): object[] {
       phase: "detect",
       status: "Pulling open problems from Dynatrace…",
     },
-    // 1 — tool call: list_problems
+    // 1 — tool call: query-problems
     {
       type: "tool_call",
       run_id: runId,
       seq: 1,
-      name: "list_problems",
+      name: "query-problems",
       args: { entity: "checkout-api" },
     },
-    // 2 — tool result: list_problems
+    // 2 — tool result: query-problems
     {
       type: "tool_result",
       run_id: runId,
       seq: 2,
-      name: "list_problems",
+      name: "query-problems",
       summary: `1 open problem: ${problemTitle}`,
       response: {
         problems: [
@@ -68,24 +68,24 @@ function makeEvents(runId: string, inject: string): object[] {
       phase: "diagnose",
       status: "Running DQL evidence queries…",
     },
-    // 4 — tool call: execute_dql
+    // 4 — tool call: execute-dql
     {
       type: "tool_call",
       run_id: runId,
       seq: 4,
-      name: "execute_dql",
+      name: "execute-dql",
       args: {
-        query: isLatency
+        dqlQueryString: isLatency
           ? 'fetch metrics | filter entity.name == "checkout-api" and metric.key == "response_time" | sort timestamp desc | limit 20'
           : 'fetch events | filter event.kind == "DEPLOYMENT_EVENT" and entity.name == "checkout-api" | sort timestamp desc | limit 1',
       },
     },
-    // 5 — tool result: execute_dql
+    // 5 — tool result: execute-dql
     {
       type: "tool_result",
       run_id: runId,
       seq: 5,
-      name: "execute_dql",
+      name: "execute-dql",
       summary: isLatency
         ? "P99 latency climbed from 210ms baseline to 4,200ms after replica count dropped to 3."
         : "Deploy v2.3.1 at 14:32 UTC enabled feature flag 'new_payment_gateway' — correlated with failure spike.",
