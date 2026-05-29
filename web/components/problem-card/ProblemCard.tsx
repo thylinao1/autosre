@@ -150,6 +150,11 @@ function IncidentState({
 
   const baselineValue = problem.impacted_metric === "failure_rate" ? "< 1%" : "< 300ms";
 
+  const flagEntries = problem.active_feature_flags
+    ? Object.entries(problem.active_feature_flags)
+    : [];
+  const firstFlag = flagEntries[0];
+
   return (
     <div
       className={clsx(isResolved ? "animate-flip-healthy" : "")}
@@ -241,8 +246,10 @@ function IncidentState({
             )}
           </p>
 
-          {/* Metrics grid — primary metric is visually larger */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
+          {/* Metrics — primary metric larger. Two columns while active (the long
+              flag name gets its own full-width row below so it never overflows);
+              three when resolved (adds a Status cell). */}
+          <div style={{ display: "grid", gridTemplateColumns: isResolved ? "repeat(3, 1fr)" : "repeat(2, 1fr)", gap: "10px" }}>
             <MetricCell
               label={metricLabel}
               value={metricValue}
@@ -250,31 +257,33 @@ function IncidentState({
               ok={isResolved}
               large
             />
-            <MetricCell
-              label="Baseline"
-              value={baselineValue}
-              ok
-            />
-            {isResolved ? (
-              <MetricCell
-                label="Status"
-                value="Healthy"
-                ok
-              />
-            ) : (
-              problem.active_feature_flags &&
-              Object.entries(problem.active_feature_flags)
-                .slice(0, 1)
-                .map(([flag, val]) => (
-                  <MetricCell
-                    key={flag}
-                    label="Flag"
-                    value={`${flag.slice(0, 16)}: ${String(val)}`}
-                    alert={val === true}
-                  />
-                ))
-            )}
+            <MetricCell label="Baseline" value={baselineValue} ok />
+            {isResolved && <MetricCell label="Status" value="Healthy" ok />}
           </div>
+
+          {!isResolved && firstFlag && (
+            <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "3px", minWidth: 0 }}>
+              <span style={{
+                fontSize: "9.5px",
+                fontFamily: "var(--font-mono)",
+                textTransform: "uppercase",
+                letterSpacing: "0.12em",
+                color: "var(--color-text-muted)",
+              }}>
+                Offending flag
+              </span>
+              <span style={{
+                fontSize: "12.5px",
+                fontFamily: "var(--font-mono)",
+                fontWeight: 600,
+                color: "var(--color-red-text)",
+                wordBreak: "break-word",
+                lineHeight: 1.35,
+              }}>
+                {firstFlag[0]} = {String(firstFlag[1])}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </div>
