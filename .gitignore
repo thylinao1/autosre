@@ -25,6 +25,10 @@ node_modules/
 # OS
 .DS_Store
 
+# Local verification artifacts (Playwright screenshots / traces)
+.playwright-mcp/
+verify-*.png
+
 # Build / deploy
 *.log
 .gcloud/

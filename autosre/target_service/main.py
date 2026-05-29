@@ -33,6 +33,11 @@ FAULTS = {
         "correct_fix": {"action": "toggle_feature_flag",
                         "args": {"name": "new_payment_gateway", "enabled": False}},
         "alt_fix": {"action": "rollback_deployment", "args": {"version": "2.3.0"}},
+        # The faulty precondition this incident represents. Re-applied on every
+        # injection so a demo can be re-run repeatedly (or after a prior fix)
+        # and the agent always has a real bad flag/version to diagnose.
+        "precondition": {"version": "2.3.1",
+                         "feature_flags": {"new_payment_gateway": True}},
     },
     "latency_spike": {
         "summary": "Checkout p99 latency climbed to 4200ms under load",
@@ -41,6 +46,9 @@ FAULTS = {
         "root_cause": "Traffic surge saturated the 3 running replicas; CPU pinned at 98%.",
         "correct_fix": {"action": "scale_service", "args": {"replicas": 8}},
         "alt_fix": None,
+        # Under-provisioned baseline: 3 replicas. Restored on injection so a
+        # re-run isn't already "scaled" from a previous remediation.
+        "precondition": {"replicas": 3},
     },
 }
 
@@ -125,6 +133,19 @@ class InjectRequest(BaseModel):
     fault: str  # one of FAULTS, or "clear"
 
 
+def _apply_precondition(fault: str) -> None:
+    """Restore the faulty precondition so each injection is reproducible.
+
+    Without this, a prior remediation (flag off / scaled up) would persist and a
+    re-injected incident would have no real root cause for the agent to find.
+    """
+    for key, value in FAULTS[fault].get("precondition", {}).items():
+        if key == "feature_flags":
+            STATE.feature_flags.update(value)
+        else:
+            setattr(STATE, key, value)
+
+
 @app.post("/_admin/inject")
 def inject(req: InjectRequest):
     if req.fault == "clear":
@@ -132,6 +153,7 @@ def inject(req: InjectRequest):
         return {"injected": None}
     if req.fault not in FAULTS:
         raise HTTPException(400, f"unknown fault; choose from {list(FAULTS)} or 'clear'")
+    _apply_precondition(req.fault)
     STATE.injected_fault = req.fault
     return {"injected": req.fault, "summary": FAULTS[req.fault]["summary"]}
 
