@@ -1,37 +1,147 @@
 #!/usr/bin/env bash
-# Deploy AutoSRE + the demo target service to Google Cloud Run.
+# ============================================================================
+# deploy/deploy_cloud_run.sh — AutoSRE one-command Cloud Run deploy
+# ============================================================================
 #
-# Prereqs (one-time):
+# WHAT THIS SCRIPT DOES (in order):
+#   1. Build + deploy  checkout-api   (demo target)          → capture TARGET_URL
+#   2. Build + deploy  autosre agent  (python -m autosre.server, Vertex AI)
+#                      ALLOWED_ORIGIN="*" as permissive placeholder
+#                      → capture AGENT_URL
+#   3. Build UI image  via Cloud Build (bakes NEXT_PUBLIC_AGENT_BASE_URL at
+#                      build time — required for Next.js NEXT_PUBLIC_ vars)
+#      Deploy          autosre-ui to Cloud Run                → capture UI_URL
+#   4. Tighten CORS:   update autosre ALLOWED_ORIGIN → UI_URL  (resolves the
+#                      circular dep: agent needs UI origin, UI needs agent URL)
+#   5. Print the public submission URL (UI_URL).
+#
+# ONE-COMMAND RUN (after prereqs below):
+#   PROJECT_ID=my-project REGION=us-central1 bash deploy/deploy_cloud_run.sh
+#
+# PREREQS (one-time):
 #   gcloud auth login
-#   gcloud config set project YOUR_PROJECT_ID
-#   gcloud services enable run.googleapis.com aiplatform.googleapis.com cloudbuild.googleapis.com
+#   gcloud auth application-default login          # for Vertex ADC on Cloud Run
+#   gcloud config set project $PROJECT_ID
+#   gcloud services enable \
+#     run.googleapis.com \
+#     aiplatform.googleapis.com \
+#     cloudbuild.googleapis.com \
+#     secretmanager.googleapis.com
 #
-# Required env before running:
-#   PROJECT_ID, REGION (e.g. us-central1)
-#   DT_ENVIRONMENT   (e.g. https://abc12345.apps.dynatrace.com)
-#   DT_PLATFORM_TOKEN (scopes: mcp-gateway:servers:invoke, :read, storage:*:read)
+# REQUIRED ENV VARS (no defaults — must be set before running):
+#   PROJECT_ID          GCP project id
+#   REGION              Cloud Run / Vertex region, e.g. us-central1
+#
+# OPTIONAL ENV VARS:
+#   DYNATRACE_MCP_MODE  mock (default) | remote | stdio
+#
+# SWITCHING TO REMOTE DYNATRACE MODE:
+#   1. Store secrets in Secret Manager (never hardcode or pass on CLI):
+#        printf '%s' "$DT_ENVIRONMENT"    | gcloud secrets create dt-environment    --data-file=-
+#        printf '%s' "$DT_PLATFORM_TOKEN" | gcloud secrets create dt-platform-token --data-file=-
+#   2. Set DYNATRACE_MCP_MODE=remote before running this script.
+#   3. Add the --set-secrets flag to the autosre deploy command in step 2:
+#        --set-secrets "DT_ENVIRONMENT=dt-environment:latest,DT_PLATFORM_TOKEN=dt-platform-token:latest"
+#      (The placeholder comment below marks where to add this.)
+#
+# ============================================================================
+
 set -euo pipefail
 
-: "${PROJECT_ID:?set PROJECT_ID}"
+# ── Required var checks ──────────────────────────────────────────────────────
+: "${PROJECT_ID:?ERROR: set PROJECT_ID before running}"
 : "${REGION:=us-central1}"
-: "${DT_ENVIRONMENT:?set DT_ENVIRONMENT}"
-: "${DT_PLATFORM_TOKEN:?set DT_PLATFORM_TOKEN}"
+: "${DYNATRACE_MCP_MODE:=mock}"
 
-echo "==> Deploying checkout-api (demo target)"
+IMAGE_TS="$(date +%Y%m%d%H%M%S)"
+UI_IMAGE="gcr.io/${PROJECT_ID}/autosre-ui:${IMAGE_TS}"
+
+# ── 1. checkout-api (demo target) ────────────────────────────────────────────
+echo "==> [1/4] Building + deploying checkout-api (demo target)"
 gcloud run deploy checkout-api \
-  --source . --region "$REGION" --project "$PROJECT_ID" \
-  --dockerfile deploy/Dockerfile.target --allow-unauthenticated --quiet
+  --source . \
+  --region "${REGION}" \
+  --project "${PROJECT_ID}" \
+  --dockerfile deploy/Dockerfile.target \
+  --allow-unauthenticated \
+  --quiet
 
 TARGET_URL=$(gcloud run services describe checkout-api \
-  --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')
-echo "    target: $TARGET_URL"
+  --region "${REGION}" \
+  --project "${PROJECT_ID}" \
+  --format="value(status.url)")
+echo "    checkout-api: ${TARGET_URL}"
 
-echo "==> Deploying autosre agent (Gemini 3 via Vertex AI)"
+# ── 2. autosre agent (python -m autosre.server, Gemini 3 via Vertex AI) ─────
+echo "==> [2/4] Building + deploying autosre agent (SSE backend, Vertex AI)"
 gcloud run deploy autosre \
-  --source . --region "$REGION" --project "$PROJECT_ID" \
-  --dockerfile deploy/Dockerfile.agent --allow-unauthenticated --quiet \
-  --set-env-vars "GOOGLE_GENAI_USE_VERTEXAI=TRUE,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GOOGLE_CLOUD_LOCATION=$REGION,AUTOSRE_MODEL=gemini-3-pro-preview,DYNATRACE_MCP_MODE=remote,DT_ENVIRONMENT=$DT_ENVIRONMENT,DT_PLATFORM_TOKEN=$DT_PLATFORM_TOKEN,TARGET_SERVICE_URL=$TARGET_URL"
+  --source . \
+  --region "${REGION}" \
+  --project "${PROJECT_ID}" \
+  --dockerfile deploy/Dockerfile.agent \
+  --allow-unauthenticated \
+  --quiet \
+  --set-env-vars "\
+GOOGLE_GENAI_USE_VERTEXAI=TRUE,\
+GOOGLE_CLOUD_PROJECT=${PROJECT_ID},\
+GOOGLE_CLOUD_LOCATION=${REGION},\
+AUTOSRE_MODEL=gemini-3-pro-preview,\
+DYNATRACE_MCP_MODE=${DYNATRACE_MCP_MODE},\
+TARGET_SERVICE_URL=${TARGET_URL},\
+ALLOWED_ORIGIN=*"
+# ^ ALLOWED_ORIGIN starts permissive; step 4 tightens it to UI_URL.
+# ^ For remote mode add: --set-secrets "DT_ENVIRONMENT=dt-environment:latest,DT_PLATFORM_TOKEN=dt-platform-token:latest"
 
 AGENT_URL=$(gcloud run services describe autosre \
-  --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')
-echo "==> Done. Agent: $AGENT_URL   Target: $TARGET_URL"
+  --region "${REGION}" \
+  --project "${PROJECT_ID}" \
+  --format="value(status.url)")
+echo "    autosre agent: ${AGENT_URL}"
+
+# ── 3. Mission-Control UI (Next.js standalone) ───────────────────────────────
+# NEXT_PUBLIC_* vars are baked into the JS bundle at Next.js build time, so the
+# image must be built with the agent URL as a Docker build-arg. Cloud Build is
+# used (rather than `--source`) so we can pass --substitutions.
+echo "==> [3/4] Building Mission-Control UI image via Cloud Build"
+echo "    baking NEXT_PUBLIC_AGENT_BASE_URL=${AGENT_URL}"
+gcloud builds submit web/ \
+  --config web/cloudbuild.yaml \
+  --region "${REGION}" \
+  --project "${PROJECT_ID}" \
+  --substitutions "_NEXT_PUBLIC_AGENT_BASE_URL=${AGENT_URL},_IMAGE=${UI_IMAGE}" \
+  --quiet
+
+echo "    Deploying autosre-ui to Cloud Run"
+gcloud run deploy autosre-ui \
+  --image "${UI_IMAGE}" \
+  --region "${REGION}" \
+  --project "${PROJECT_ID}" \
+  --allow-unauthenticated \
+  --quiet \
+  --set-env-vars "NODE_ENV=production"
+
+UI_URL=$(gcloud run services describe autosre-ui \
+  --region "${REGION}" \
+  --project "${PROJECT_ID}" \
+  --format="value(status.url)")
+echo "    Mission-Control UI: ${UI_URL}"
+
+# ── 4. Tighten CORS: lock agent ALLOWED_ORIGIN to the actual UI origin ───────
+echo "==> [4/4] Locking agent CORS → ${UI_URL}"
+gcloud run services update autosre \
+  --region "${REGION}" \
+  --project "${PROJECT_ID}" \
+  --update-env-vars "ALLOWED_ORIGIN=${UI_URL}" \
+  --quiet
+
+# ── Summary ──────────────────────────────────────────────────────────────────
+echo ""
+echo "============================================================"
+echo "  AutoSRE deploy complete"
+echo "  Public submission URL (open in incognito to verify):"
+echo ""
+echo "    ${UI_URL}"
+echo ""
+echo "  Agent endpoint (internal):  ${AGENT_URL}"
+echo "  Target endpoint (internal): ${TARGET_URL}"
+echo "============================================================"

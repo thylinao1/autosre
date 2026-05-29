@@ -1,4 +1,6 @@
-# AutoSRE agent — served via `adk api_server` on Cloud Run.
+# AutoSRE agent — served via `python -m autosre.server` on Cloud Run.
+# Implements the CONTRACT.md HTTP+SSE endpoints (incident start/stream/approval,
+# demo inject/reset/health). sse-starlette + all requirements.txt are installed.
 FROM python:3.13-slim
 
 # Node is needed only for DYNATRACE_MCP_MODE=stdio (npx official server).
@@ -12,8 +14,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY autosre ./autosre
 
 ENV PYTHONUNBUFFERED=1 \
-    DYNATRACE_MCP_MODE=remote \
+    DYNATRACE_MCP_MODE=mock \
     AUTOSRE_MODEL=gemini-3-pro-preview
 
-# Cloud Run provides $PORT. adk api_server exposes the agent over HTTP.
-CMD exec adk api_server autosre --host 0.0.0.0 --port ${PORT:-8080}
+# Cloud Run provides $PORT.
+# python -m autosre.server starts uvicorn on that port (see autosre/server/__main__.py).
+CMD exec python -m autosre.server

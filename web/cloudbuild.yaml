@@ -1,0 +1,27 @@
+# web/cloudbuild.yaml — Cloud Build config for the Next.js UI container.
+#
+# Used by deploy/deploy_cloud_run.sh step 3.
+# _NEXT_PUBLIC_AGENT_BASE_URL and _IMAGE are supplied by the deploy script
+# via --substitutions so the agent origin is baked into the Next.js bundle.
+#
+# Trigger manually:
+#   gcloud builds submit web/ \
+#     --config web/cloudbuild.yaml \
+#     --substitutions "_NEXT_PUBLIC_AGENT_BASE_URL=https://autosre-xxxx.run.app,_IMAGE=gcr.io/MY_PROJECT/autosre-ui:latest"
+
+substitutions:
+  _NEXT_PUBLIC_AGENT_BASE_URL: ""
+  _IMAGE: ""
+
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - build
+      - --build-arg
+      - "NEXT_PUBLIC_AGENT_BASE_URL=${_NEXT_PUBLIC_AGENT_BASE_URL}"
+      - -t
+      - "${_IMAGE}"
+      - .
+
+images:
+  - "${_IMAGE}"
