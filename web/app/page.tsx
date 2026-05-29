@@ -93,12 +93,19 @@ export default function MissionControlPage() {
                 height: "6px",
                 borderRadius: "50%",
                 flexShrink: 0,
+                transition: "background-color 0.5s ease, box-shadow 0.5s ease",
                 backgroundColor:
-                  state.status === "resolved" ? "var(--color-green)" :
+                  state.status === "resolved" || state.status === "all_clear" ? "var(--color-green)" :
                   state.status === "awaiting_approval" ? "var(--color-amber)" :
                   isBusy ? "var(--color-accent)" :
+                  state.status === "error" ? "var(--color-red)" :
                   "var(--color-text-dim)",
-                animation: (isBusy || state.status === "awaiting_approval") ? "status-blink 1.2s ease-in-out infinite" : "none",
+                boxShadow:
+                  state.status === "resolved" || state.status === "all_clear" ? "0 0 6px var(--color-green-glow)" :
+                  state.status === "awaiting_approval" ? "0 0 6px var(--color-amber-glow)" :
+                  isBusy ? "0 0 5px var(--color-accent-glow)" :
+                  "none",
+                animation: (isBusy || state.status === "awaiting_approval") ? "status-blink 1.4s ease-in-out infinite" : "none",
               }}
             />
             {state.status === "idle" && "STANDBY"}
@@ -345,7 +352,7 @@ function CenterTimeline({
             padding: "12px 16px",
           }}
         >
-          <div style={{ display: "flex", gap: "4px", marginBottom: "4px" }}>
+          <div style={{ display: "flex", gap: "4px", marginBottom: "6px" }}>
             {(["detect", "diagnose", "act", "verify"] as const).map((phase) => {
               const phases = ["detect", "diagnose", "act", "verify"] as const;
               const currentIdx = state.currentPhase ? phases.indexOf(state.currentPhase) : -1;
@@ -359,6 +366,16 @@ function CenterTimeline({
                 act: "var(--color-act)",
                 verify: "var(--color-verify)",
               };
+              const activeGlow: Record<string, string> = {
+                detect: "0 0 6px 1px rgba(0,200,224,0.55)",
+                diagnose: "0 0 6px 1px rgba(128,96,240,0.55)",
+                act: "0 0 6px 1px rgba(240,160,48,0.55)",
+                verify: "0 0 6px 1px rgba(34,200,128,0.55)",
+              };
+              const fillColor = isDone
+                ? isTerminal && phase === "verify" ? "var(--color-green)" : "var(--color-accent)"
+                : isActive ? activeColors[phase]
+                : "transparent";
 
               return (
                 <div
@@ -367,23 +384,54 @@ function CenterTimeline({
                     flex: 1,
                     height: "3px",
                     borderRadius: "2px",
-                    transition: "all 0.5s ease",
-                    backgroundColor: isDone
-                      ? phase === "verify" ? "var(--color-green)" : "var(--color-accent)"
-                      : isActive ? activeColors[phase]
-                      : "var(--color-border)",
-                    opacity: isDone ? 0.7 : isActive ? 1 : 0.3,
+                    overflow: "hidden",
+                    backgroundColor: "var(--color-border)",
+                    position: "relative",
                   }}
-                />
+                >
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      borderRadius: "2px",
+                      backgroundColor: fillColor,
+                      opacity: isDone ? 0.7 : isActive ? 1 : 0,
+                      boxShadow: isActive ? activeGlow[phase] : "none",
+                      transform: `scaleX(${isDone || isActive ? 1 : 0})`,
+                      transformOrigin: "left",
+                      transition: "transform 0.55s cubic-bezier(0.16,1,0.3,1), opacity 0.4s ease, background-color 0.6s ease, box-shadow 0.4s ease",
+                    }}
+                  />
+                </div>
               );
             })}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            {["DETECT", "DIAGNOSE", "ACT", "VERIFY"].map((label) => (
-              <span key={label} style={{ fontSize: "8px", fontFamily: "var(--font-mono)", color: "var(--color-text-dim)" }}>
-                {label}
-              </span>
-            ))}
+            {(["detect", "diagnose", "act", "verify"] as const).map((phase, i) => {
+              const labels = ["DETECT", "DIAGNOSE", "ACT", "VERIFY"];
+              const phases = ["detect", "diagnose", "act", "verify"] as const;
+              const currentIdx = state.currentPhase ? phases.indexOf(state.currentPhase) : -1;
+              const isDone = isTerminal || i < currentIdx;
+              const isActive = phase === state.currentPhase;
+              return (
+                <span
+                  key={phase}
+                  style={{
+                    fontSize: "8px",
+                    fontFamily: "var(--font-mono)",
+                    transition: "color 0.4s ease",
+                    color: isActive
+                      ? "var(--color-text-secondary)"
+                      : isDone
+                      ? "var(--color-text-muted)"
+                      : "var(--color-text-dim)",
+                    fontWeight: isActive ? "600" : "400",
+                  }}
+                >
+                  {labels[i]}
+                </span>
+              );
+            })}
           </div>
         </div>
       )}

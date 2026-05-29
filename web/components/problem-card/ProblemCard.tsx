@@ -15,7 +15,7 @@ function HealthyState({ health }: { health: ServiceHealth | null }) {
   return (
     <div className="p-6 animate-fade-in">
       <div className="flex items-start gap-4">
-        <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-[var(--color-green-dim)] border border-[var(--color-green)] border-opacity-30 flex items-center justify-center">
+        <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-[var(--color-green-dim)] border border-[rgba(34,200,128,0.3)] flex items-center justify-center">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-green)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
             <polyline points="22 4 12 14.01 9 11.01"/>
@@ -49,7 +49,7 @@ function MetricCell({ label, value, ok, alert }: { label: string; value: string;
       </span>
       <span
         className={clsx(
-          "text-base font-mono font-semibold",
+          "text-base font-mono font-semibold transition-colors duration-500",
           ok ? "text-[var(--color-green-text)]" : alert ? "text-[var(--color-red-text)]" : "text-[var(--color-text-primary)]"
         )}
       >
@@ -59,26 +59,41 @@ function MetricCell({ label, value, ok, alert }: { label: string; value: string;
   );
 }
 
-function IncidentState({ problem, isResolved }: { problem: DynatraceProblem; isResolved: boolean }) {
+function IncidentState({
+  problem,
+  isResolved,
+  health,
+}: {
+  problem: DynatraceProblem;
+  isResolved: boolean;
+  health: ServiceHealth | null;
+}) {
   const severity = problem.severity;
   const isAvailability = severity === "AVAILABILITY";
-  const isPerformance = severity === "PERFORMANCE";
 
   const severityVariant = isResolved ? "healthy" : isAvailability ? "availability" : "performance";
   const severityLabel = isResolved ? "RESOLVED" : severity;
 
   const metricLabel = problem.impacted_metric === "failure_rate" ? "Failure Rate" : "P99 Latency";
-  const metricValue =
-    problem.impacted_metric === "failure_rate"
-      ? `${problem.observed_value}%`
-      : `${problem.observed_value.toLocaleString()}ms`;
+
+  // In resolved state, show recovered metrics from health if available, otherwise show baselines
+  const resolvedFailureRate = health?.metrics.failure_rate ?? 0;
+  const resolvedLatency = health?.metrics.p99_latency_ms ?? 0;
+
+  const metricValue = isResolved
+    ? problem.impacted_metric === "failure_rate"
+      ? `${resolvedFailureRate}%`
+      : `${resolvedLatency}ms`
+    : problem.impacted_metric === "failure_rate"
+    ? `${problem.observed_value}%`
+    : `${problem.observed_value.toLocaleString()}ms`;
 
   const baselineValue = problem.impacted_metric === "failure_rate" ? "< 1%" : "< 300ms";
 
   return (
     <div
       className={clsx(
-        "p-6 transition-all duration-700",
+        "p-6",
         isResolved ? "animate-flip-healthy" : ""
       )}
     >
@@ -87,10 +102,11 @@ function IncidentState({ problem, isResolved }: { problem: DynatraceProblem; isR
         <div
           className={clsx(
             "flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center border",
+            "transition-all duration-700",
             isResolved
-              ? "bg-[var(--color-green-dim)] border-[var(--color-green)] border-opacity-30"
+              ? "bg-[var(--color-green-dim)] border-[rgba(34,200,128,0.3)]"
               : isAvailability
-              ? "bg-[var(--color-red-dim)] border-[var(--color-red)] border-opacity-40"
+              ? "bg-[var(--color-red-dim)] border-[rgba(224,60,74,0.4)]"
               : "bg-[var(--color-orange-dim)] border-[var(--color-orange)] border-opacity-40"
           )}
         >
@@ -125,7 +141,7 @@ function IncidentState({ problem, isResolved }: { problem: DynatraceProblem; isR
 
           <h2
             className={clsx(
-              "text-base font-semibold leading-tight mb-1",
+              "text-base font-semibold leading-tight mb-1 transition-colors duration-700",
               isResolved ? "text-[var(--color-green-text)]" : "text-[var(--color-text-primary)]"
             )}
           >
@@ -143,7 +159,7 @@ function IncidentState({ problem, isResolved }: { problem: DynatraceProblem; isR
             )}
           </p>
 
-          {/* Metrics */}
+          {/* Metrics — show healthy values on resolve, incident values while active */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <MetricCell
               label={metricLabel}
@@ -156,7 +172,15 @@ function IncidentState({ problem, isResolved }: { problem: DynatraceProblem; isR
               value={baselineValue}
               ok
             />
-            {problem.active_feature_flags &&
+            {/* In resolved state: show replicas (healthy indicator). In incident state: show active feature flags. */}
+            {isResolved ? (
+              <MetricCell
+                label="Status"
+                value="Healthy"
+                ok
+              />
+            ) : (
+              problem.active_feature_flags &&
               Object.entries(problem.active_feature_flags)
                 .slice(0, 1)
                 .map(([flag, val]) => (
@@ -164,10 +188,10 @@ function IncidentState({ problem, isResolved }: { problem: DynatraceProblem; isR
                     key={flag}
                     label="Active Flag"
                     value={`${flag}: ${String(val)}`}
-                    alert={!isResolved && val === true}
-                    ok={isResolved}
+                    alert={val === true}
                   />
-                ))}
+                ))
+            )}
           </div>
         </div>
       </div>
@@ -181,20 +205,23 @@ export function ProblemCard({ problem, status, health, currentPhase }: ProblemCa
 
   const borderColor = problem && !isResolved
     ? problem.severity === "AVAILABILITY"
-      ? "border-[var(--color-red)] border-opacity-40"
-      : "border-[var(--color-orange)] border-opacity-40"
+      ? "border-[rgba(224,60,74,0.4)]"
+      : "border-[rgba(224,120,48,0.4)]"
     : isResolved
-    ? "border-[var(--color-green)] border-opacity-40"
+    ? "border-[rgba(34,200,128,0.4)]"
     : "border-[var(--color-border)]";
 
   return (
     <div
       className={clsx(
         "relative rounded-lg border overflow-hidden bg-[var(--color-surface-0)]",
-        "transition-all duration-500",
+        "transition-all duration-700",
         borderColor,
-        problem && !isResolved ? "shadow-[0_0_20px_var(--color-red-dim)]" : "",
-        isResolved ? "shadow-[0_0_24px_var(--color-green-dim)]" : ""
+        problem && !isResolved
+          ? "shadow-[0_0_20px_var(--color-red-dim)]"
+          : isResolved
+          ? "shadow-[0_0_28px_var(--color-green-dim),0_0_0_1px_rgba(34,200,128,0.08)]"
+          : ""
       )}
     >
       {/* Header bar */}
@@ -211,7 +238,7 @@ export function ProblemCard({ problem, status, health, currentPhase }: ProblemCa
           {currentPhase && (
             <span
               className={clsx(
-                "text-[10px] font-mono px-2 py-0.5 rounded",
+                "text-[10px] font-mono px-2 py-0.5 rounded transition-all duration-300",
                 currentPhase === "detect" ? "text-[var(--color-detect)] bg-[var(--color-accent-dim)]" :
                 currentPhase === "diagnose" ? "text-[#8060f0] bg-[rgba(128,96,240,0.12)]" :
                 currentPhase === "act" ? "text-[var(--color-act)] bg-[var(--color-amber-dim)]" :
@@ -228,6 +255,13 @@ export function ProblemCard({ problem, status, health, currentPhase }: ProblemCa
               LIVE
             </span>
           )}
+          {/* Resolved indicator */}
+          {isResolved && (
+            <span className="flex items-center gap-1 text-[10px] font-mono text-[var(--color-green)] animate-fade-in">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-green)]" />
+              RESTORED
+            </span>
+          )}
         </div>
       </div>
 
@@ -235,7 +269,7 @@ export function ProblemCard({ problem, status, health, currentPhase }: ProblemCa
       {!problem && !isResolved ? (
         <HealthyState health={health} />
       ) : problem ? (
-        <IncidentState problem={problem} isResolved={isResolved} />
+        <IncidentState problem={problem} isResolved={isResolved} health={health} />
       ) : null}
     </div>
   );

@@ -37,7 +37,7 @@ export function DemoControls({ status, onStart, onReset }: DemoControlsProps) {
       {/* Header */}
       <button
         onClick={() => setIsExpanded((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-[var(--color-surface-1)] transition-colors"
+        className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-[var(--color-surface-1)] active:brightness-95 transition-all duration-150 focus-visible:outline-none"
       >
         <div className="flex items-center gap-2">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="2">
@@ -114,11 +114,22 @@ export function DemoControls({ status, onStart, onReset }: DemoControlsProps) {
                   else onStart(selectedFault);
                 }}
                 className={clsx(
-                  "flex-1 h-9 rounded-md text-xs font-semibold font-mono transition-all duration-150",
-                  "active:scale-[0.98]",
+                  "flex-1 h-9 rounded-md text-xs font-semibold font-mono",
+                  "transition-all duration-150",
+                  "active:scale-[0.97] active:brightness-95",
+                  "focus-visible:outline-2",
                   isTerminal
-                    ? "bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)]"
-                    : "bg-[var(--color-accent)] text-[var(--color-bg)] hover:brightness-110 hover:shadow-[0_0_14px_var(--color-accent-glow)]"
+                    ? [
+                        "bg-[var(--color-surface-2)] border border-[var(--color-border)]",
+                        "text-[var(--color-text-secondary)]",
+                        "hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]",
+                        "focus-visible:outline-[var(--color-border-strong)]",
+                      ]
+                    : [
+                        "bg-[var(--color-accent)] text-[var(--color-bg)]",
+                        "hover:brightness-110 hover:shadow-[0_0_18px_var(--color-accent-glow)]",
+                        "focus-visible:outline-[var(--color-accent)]",
+                      ]
                 )}
               >
                 {isTerminal ? "Reset & Run Again" : `Run: ${selectedFault === "payment_errors" ? "Payment Errors" : "Latency Spike"}`}
@@ -136,9 +147,12 @@ export function DemoControls({ status, onStart, onReset }: DemoControlsProps) {
               <button
                 onClick={() => onStart(selectedFault)}
                 className={clsx(
-                  "h-9 px-3 rounded-md text-xs font-semibold font-mono transition-all duration-150",
-                  "active:scale-[0.98]",
-                  "bg-[var(--color-accent)] text-[var(--color-bg)] hover:brightness-110"
+                  "h-9 px-3 rounded-md text-xs font-semibold font-mono",
+                  "transition-all duration-150",
+                  "active:scale-[0.97] active:brightness-95",
+                  "bg-[var(--color-accent)] text-[var(--color-bg)]",
+                  "hover:brightness-110 hover:shadow-[0_0_18px_var(--color-accent-glow)]",
+                  "focus-visible:outline-2 focus-visible:outline-[var(--color-accent)]"
                 )}
               >
                 New Run

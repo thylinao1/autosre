@@ -18,6 +18,13 @@ function JsonValue({ value }: { value: unknown }) {
   if (value === null || value === undefined) {
     return <span className="text-[var(--color-text-dim)]">null</span>;
   }
+  if (typeof value === "object") {
+    return (
+      <span className="text-[var(--color-text-secondary)] font-mono">
+        {JSON.stringify(value)}
+      </span>
+    );
+  }
   return <span className="text-[var(--color-green-text)]">&quot;{String(value)}&quot;</span>;
 }
 

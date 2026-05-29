@@ -91,46 +91,112 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
     if (submitting || decided !== null) return;
     setSubmitting(true);
     setDecided(approved);
-    await new Promise((r) => setTimeout(r, 200)); // let the state update render
+    await new Promise((r) => setTimeout(r, 200));
     onDecide(approved);
     setSubmitting(false);
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-[var(--color-bg)] opacity-80" />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      aria-modal="true"
+      role="dialog"
+      aria-labelledby="approval-modal-title"
+    >
+      {/* Backdrop — blur + fade */}
+      <div
+        className="absolute inset-0 animate-backdrop-in"
+        style={{
+          backgroundColor: "rgba(11,14,20,0.88)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+        }}
+      />
 
       {/* Modal card */}
       <div
         className={clsx(
           "relative w-full max-w-md rounded-xl border bg-[var(--color-surface-0)]",
-          "border-[var(--color-amber)] border-opacity-50",
-          "shadow-[0_0_60px_var(--color-amber-dim)]",
-          decided === null ? "animate-approval-ring" : "",
-          "animate-incident"
+          "border-[rgba(240,160,48,0.45)]",
+          "animate-modal-in",
+          decided === null ? "animate-approval-ring" : ""
         )}
+        style={{
+          /* Layered shadow for depth */
+          boxShadow: decided !== null
+            ? decided
+              ? "0 0 0 1px rgba(34,200,128,0.2), 0 0 48px rgba(34,200,128,0.12), 0 32px 80px rgba(0,0,0,0.6)"
+              : "0 0 0 1px rgba(224,60,74,0.2), 0 0 48px rgba(224,60,74,0.08), 0 32px 80px rgba(0,0,0,0.6)"
+            : undefined,
+          transition: "box-shadow var(--duration-slow) var(--ease-out-expo)",
+        }}
       >
-        {/* Top accent bar */}
-        <div className="h-1 rounded-t-xl bg-gradient-to-r from-[var(--color-amber)] via-[#f8c060] to-[var(--color-amber)] opacity-80" />
+        {/* Top accent bar — shimmer while pending */}
+        <div
+          className="h-[3px] rounded-t-xl"
+          style={{
+            background: decided !== null
+              ? decided
+                ? "linear-gradient(90deg, var(--color-green), rgba(34,200,128,0.6), var(--color-green))"
+                : "linear-gradient(90deg, var(--color-red), rgba(224,60,74,0.6), var(--color-red))"
+              : "linear-gradient(90deg, var(--color-amber), #f8c060, rgba(240,160,48,0.7), #f8c060, var(--color-amber))",
+            backgroundSize: "200% auto",
+            animation: decided === null ? "amber-shimmer 2.4s linear infinite" : "none",
+            transition: "background var(--duration-slow) var(--ease-out-expo)",
+          }}
+        />
 
         {/* Header */}
         <div className="px-6 pt-5 pb-4 border-b border-[var(--color-border-subtle)]">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-[var(--color-amber-dim)] border border-[var(--color-amber)] border-opacity-40 flex items-center justify-center text-[var(--color-amber)]">
-              {toolCfg.icon ?? (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="12" y1="8" x2="12" y2="12"/>
-                  <line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
+            <div
+              className={clsx(
+                "w-10 h-10 rounded-lg flex items-center justify-center border",
+                "transition-all duration-500",
+                decided !== null && decided
+                  ? "bg-[var(--color-green-dim)] border-[rgba(34,200,128,0.4)] text-[var(--color-green)]"
+                  : decided !== null && !decided
+                  ? "bg-[var(--color-red-dim)] border-[rgba(224,60,74,0.4)] text-[var(--color-red-text)]"
+                  : "bg-[var(--color-amber-dim)] border-[rgba(240,160,48,0.4)] text-[var(--color-amber)]"
+              )}
+            >
+              {decided !== null ? (
+                decided ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                )
+              ) : (
+                toolCfg.icon ?? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                )
               )}
             </div>
             <div>
-              <p className="text-[10px] font-mono uppercase tracking-widest text-[var(--color-amber)] mb-0.5">
-                Approval Required — Production Action Pending
+              <p
+                className="text-[10px] font-mono uppercase tracking-widest mb-0.5 transition-colors duration-500"
+                style={{
+                  color: decided !== null
+                    ? decided ? "var(--color-green)" : "var(--color-red-text)"
+                    : "var(--color-amber)",
+                }}
+              >
+                {decided !== null
+                  ? decided
+                    ? "Approved — executing remediation"
+                    : "Rejected — standing down"
+                  : "Approval Required — Production Action Pending"}
               </p>
-              <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
+              <h2 id="approval-modal-title" className="text-base font-semibold text-[var(--color-text-primary)]">
                 {toolCfg.label}
               </h2>
             </div>
@@ -174,52 +240,55 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
           </p>
         </div>
 
-        {/* Action buttons */}
-        {decided === null ? (
-          <div className="px-6 pb-6 grid grid-cols-2 gap-3">
-            {/* Reject */}
-            <button
-              onClick={() => handleDecide(false)}
-              disabled={submitting}
-              className={clsx(
-                "h-11 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-1)]",
-                "text-sm font-semibold font-mono text-[var(--color-text-secondary)]",
-                "hover:border-[var(--color-red)] hover:border-opacity-60 hover:text-[var(--color-red-text)] hover:bg-[var(--color-red-dim)]",
-                "active:scale-[0.98]",
-                "transition-all duration-150",
-                "focus-visible:ring-2 focus-visible:ring-[var(--color-red)] focus-visible:ring-opacity-40",
-                "disabled:opacity-50 disabled:cursor-not-allowed"
-              )}
-            >
-              Reject
-            </button>
+        {/* Action buttons / confirmation */}
+        <div className="px-6 pb-6">
+          {decided === null ? (
+            <div className="grid grid-cols-2 gap-3">
+              {/* Reject */}
+              <button
+                onClick={() => handleDecide(false)}
+                disabled={submitting}
+                className={clsx(
+                  "h-11 rounded-lg border bg-[var(--color-surface-1)]",
+                  "text-sm font-semibold font-mono",
+                  "border-[var(--color-border)] text-[var(--color-text-secondary)]",
+                  "transition-all duration-150",
+                  "hover:border-[rgba(224,60,74,0.55)] hover:text-[var(--color-red-text)] hover:bg-[var(--color-red-dim)]",
+                  "hover:shadow-[0_0_12px_var(--color-red-dim)]",
+                  "active:scale-[0.97] active:brightness-95",
+                  "focus-visible:outline-2 focus-visible:outline-[var(--color-red)]",
+                  "disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
+                )}
+              >
+                Reject
+              </button>
 
-            {/* Approve */}
-            <button
-              onClick={() => handleDecide(true)}
-              disabled={submitting}
-              className={clsx(
-                "h-11 rounded-lg",
-                "bg-[var(--color-amber)] text-[#1a1000]",
-                "text-sm font-semibold font-mono",
-                "hover:brightness-110 hover:shadow-[0_0_20px_var(--color-amber-glow)]",
-                "active:scale-[0.98]",
-                "transition-all duration-150",
-                "focus-visible:ring-2 focus-visible:ring-[var(--color-amber)] focus-visible:ring-opacity-60",
-                "disabled:opacity-50 disabled:cursor-not-allowed"
-              )}
-            >
-              Approve
-            </button>
-          </div>
-        ) : (
-          <div className="px-6 pb-6">
+              {/* Approve */}
+              <button
+                onClick={() => handleDecide(true)}
+                disabled={submitting}
+                className={clsx(
+                  "h-11 rounded-lg",
+                  "bg-[var(--color-amber)] text-[#1a1000]",
+                  "text-sm font-semibold font-mono",
+                  "transition-all duration-150",
+                  "hover:brightness-110 hover:shadow-[0_0_24px_var(--color-amber-glow)]",
+                  "active:scale-[0.97] active:brightness-95",
+                  "focus-visible:outline-2 focus-visible:outline-[var(--color-amber)]",
+                  "disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
+                )}
+              >
+                Approve
+              </button>
+            </div>
+          ) : (
             <div
               className={clsx(
-                "h-11 rounded-lg flex items-center justify-center gap-2 text-sm font-semibold font-mono",
+                "h-11 rounded-lg flex items-center justify-center gap-2",
+                "text-sm font-semibold font-mono animate-confirm-in",
                 decided
-                  ? "bg-[var(--color-green-dim)] border border-[var(--color-green)] border-opacity-40 text-[var(--color-green-text)]"
-                  : "bg-[var(--color-red-dim)] border border-[var(--color-red)] border-opacity-40 text-[var(--color-red-text)]"
+                  ? "bg-[var(--color-green-dim)] border border-[rgba(34,200,128,0.35)] text-[var(--color-green-text)]"
+                  : "bg-[var(--color-red-dim)] border border-[rgba(224,60,74,0.35)] text-[var(--color-red-text)]"
               )}
             >
               {decided ? (
@@ -239,8 +308,8 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
                 </>
               )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
