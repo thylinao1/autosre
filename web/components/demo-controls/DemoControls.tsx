@@ -10,18 +10,24 @@ interface DemoControlsProps {
   onReset: () => void;
 }
 
-const faultOptions: { value: FaultType | null; label: string; description: string; badge: string }[] = [
+const faultOptions: { value: FaultType; label: string; description: string; badge: string; color: string; dim: string; textColor: string }[] = [
   {
     value: "payment_errors",
     label: "Payment Errors",
     description: "22% checkout failure rate after deploy v2.3.1 enables bad feature flag",
     badge: "AVAILABILITY",
+    color: "var(--color-red)",
+    dim: "var(--color-red-dim)",
+    textColor: "var(--color-red-text)",
   },
   {
     value: "latency_spike",
     label: "Latency Spike",
     description: "P99 4,200ms — checkout-api under-provisioned, needs scaling",
     badge: "PERFORMANCE",
+    color: "var(--color-orange)",
+    dim: "var(--color-orange-dim)",
+    textColor: "var(--color-orange-text)",
   },
 ];
 
@@ -32,135 +38,272 @@ export function DemoControls({ status, onStart, onReset }: DemoControlsProps) {
   const isActive = status !== "idle" && status !== "error";
   const isTerminal = status === "resolved" || status === "declined" || status === "all_clear";
 
+  const selectedOpt = faultOptions.find((o) => o.value === selectedFault) ?? faultOptions[0];
+  const runLabel = isTerminal
+    ? "Reset & Run Again"
+    : `Run: ${selectedOpt.label}`;
+
   return (
-    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-0)] overflow-hidden">
-      {/* Header */}
+    <div
+      style={{
+        borderRadius: "8px",
+        border: "1px solid var(--color-border)",
+        backgroundColor: "var(--color-surface-0)",
+        overflow: "hidden",
+      }}
+    >
+      {/* Collapsible header */}
       <button
         onClick={() => setIsExpanded((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-[var(--color-surface-1)] active:brightness-95 transition-all duration-150 focus-visible:outline-none"
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "8px 12px",
+          backgroundColor: "transparent",
+          border: "none",
+          cursor: "pointer",
+          transition: `background-color var(--duration-fast) ease`,
+        }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "var(--color-surface-1)"; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent"; }}
       >
-        <div className="flex items-center gap-2">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="2">
+        <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"/>
             <polygon points="10 8 16 12 10 16 10 8"/>
           </svg>
-          <span className="text-[10px] font-mono font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
+          <span style={{
+            fontSize: "9.5px",
+            fontFamily: "var(--font-mono)",
+            fontWeight: 600,
+            textTransform: "uppercase",
+            letterSpacing: "0.12em",
+            color: "var(--color-text-muted)",
+          }}>
             Demo Controls
           </span>
         </div>
         <svg
-          width="10"
-          height="10"
+          width="9"
+          height="9"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="var(--color-text-muted)"
-          strokeWidth="2"
-          className={clsx("transition-transform duration-200", isExpanded ? "rotate-180" : "")}
+          stroke="var(--color-text-dim)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{
+            transition: `transform var(--duration-fast) var(--ease-out-expo)`,
+            transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+          }}
         >
           <polyline points="18 15 12 9 6 15"/>
         </svg>
       </button>
 
       {isExpanded && (
-        <div className="px-4 pb-4 pt-1 border-t border-[var(--color-border-subtle)]">
+        <div
+          style={{
+            padding: "0 12px 12px",
+            borderTop: "1px solid var(--color-border-subtle)",
+          }}
+        >
           {/* Fault selector */}
           {!isActive && (
-            <div className="space-y-2 mb-3">
-              <p className="text-[10px] font-mono uppercase tracking-widest text-[var(--color-text-muted)] pt-2">
+            <div style={{ marginBottom: "10px" }}>
+              <p style={{
+                fontSize: "9px",
+                fontFamily: "var(--font-mono)",
+                textTransform: "uppercase",
+                letterSpacing: "0.14em",
+                color: "var(--color-text-dim)",
+                padding: "9px 0 6px",
+                fontWeight: 500,
+              }}>
                 Inject Fault
               </p>
-              {faultOptions.map((opt) => (
-                <button
-                  key={opt.value ?? "none"}
-                  onClick={() => opt.value && setSelectedFault(opt.value)}
-                  className={clsx(
-                    "w-full text-left rounded-md border px-3 py-2.5 transition-all duration-150",
-                    selectedFault === opt.value
-                      ? opt.badge === "AVAILABILITY"
-                        ? "border-[var(--color-red)] border-opacity-50 bg-[var(--color-red-dim)]"
-                        : "border-[var(--color-orange)] border-opacity-50 bg-[var(--color-orange-dim)]"
-                      : "border-[var(--color-border)] bg-[var(--color-surface-1)] hover:border-[var(--color-border-strong)]"
-                  )}
-                >
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span
-                      className={clsx(
-                        "text-[9px] font-mono font-bold uppercase tracking-widest px-1.5 py-0.5 rounded",
-                        opt.badge === "AVAILABILITY"
-                          ? "text-[var(--color-red-text)] bg-[var(--color-red-dim)]"
-                          : "text-[var(--color-orange-text)] bg-[var(--color-orange-dim)]"
-                      )}
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                {faultOptions.map((opt) => {
+                  const isSelected = selectedFault === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      onClick={() => setSelectedFault(opt.value)}
+                      style={{
+                        width: "100%",
+                        textAlign: "left",
+                        borderRadius: "6px",
+                        border: "1px solid",
+                        padding: "9px 11px",
+                        cursor: "pointer",
+                        transition: `all var(--duration-fast) var(--ease-out-expo)`,
+                        borderColor: isSelected ? opt.color + "60" : "var(--color-border)",
+                        backgroundColor: isSelected ? opt.dim : "var(--color-surface-1)",
+                        boxShadow: isSelected ? `0 0 10px ${opt.dim}` : "none",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isSelected) {
+                          const t = e.currentTarget as HTMLButtonElement;
+                          t.style.borderColor = "var(--color-border-strong)";
+                          t.style.backgroundColor = "var(--color-surface-2)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isSelected) {
+                          const t = e.currentTarget as HTMLButtonElement;
+                          t.style.borderColor = "var(--color-border)";
+                          t.style.backgroundColor = "var(--color-surface-1)";
+                        }
+                      }}
                     >
-                      {opt.badge}
-                    </span>
-                    <span className="text-xs font-semibold text-[var(--color-text-primary)]">
-                      {opt.label}
-                    </span>
-                  </div>
-                  <p className="text-[10px] font-mono text-[var(--color-text-muted)] leading-snug">
-                    {opt.description}
-                  </p>
-                </button>
-              ))}
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "3px" }}>
+                        <span
+                          style={{
+                            fontSize: "8.5px",
+                            fontFamily: "var(--font-mono)",
+                            fontWeight: 700,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.1em",
+                            padding: "1px 5px",
+                            borderRadius: "3px",
+                            color: opt.textColor,
+                            backgroundColor: opt.dim,
+                            border: `1px solid ${opt.color}40`,
+                          }}
+                        >
+                          {opt.badge}
+                        </span>
+                        <span style={{
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          color: isSelected ? "var(--color-text-primary)" : "var(--color-text-secondary)",
+                          transition: "color var(--duration-fast) ease",
+                        }}>
+                          {opt.label}
+                        </span>
+                      </div>
+                      <p style={{
+                        fontSize: "10px",
+                        fontFamily: "var(--font-mono)",
+                        color: isSelected ? "var(--color-text-muted)" : "var(--color-text-dim)",
+                        lineHeight: 1.5,
+                        transition: "color var(--duration-fast) ease",
+                      }}>
+                        {opt.description}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 
-          {/* Action buttons */}
-          <div className="flex gap-2 mt-2">
+          {/* Action row */}
+          <div style={{ display: "flex", gap: "7px", marginTop: isActive ? "10px" : "2px" }}>
             {!isActive || isTerminal ? (
-              <button
-                onClick={() => {
-                  if (isTerminal) onReset();
-                  else onStart(selectedFault);
-                }}
-                className={clsx(
-                  "flex-1 h-9 rounded-md text-xs font-semibold font-mono",
-                  "transition-all duration-150",
-                  "active:scale-[0.97] active:brightness-95",
-                  "focus-visible:outline-2",
-                  isTerminal
-                    ? [
-                        "bg-[var(--color-surface-2)] border border-[var(--color-border)]",
-                        "text-[var(--color-text-secondary)]",
-                        "hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]",
-                        "focus-visible:outline-[var(--color-border-strong)]",
-                      ]
-                    : [
-                        "bg-[var(--color-accent)] text-[var(--color-bg)]",
-                        "hover:brightness-110 hover:shadow-[0_0_18px_var(--color-accent-glow)]",
-                        "focus-visible:outline-[var(--color-accent)]",
-                      ]
-                )}
-              >
-                {isTerminal ? "Reset & Run Again" : `Run: ${selectedFault === "payment_errors" ? "Payment Errors" : "Latency Spike"}`}
-              </button>
+              <RunButton
+                label={runLabel}
+                onClick={() => isTerminal ? onReset() : onStart(selectedFault)}
+                variant={isTerminal ? "secondary" : "primary"}
+              />
             ) : (
-              <div className="flex-1 h-9 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-1)] flex items-center justify-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-status-blink" />
-                <span className="text-[11px] font-mono text-[var(--color-accent)]">
+              <div style={{
+                flex: 1,
+                height: "36px",
+                borderRadius: "7px",
+                border: "1px solid var(--color-border)",
+                backgroundColor: "var(--color-surface-1)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "7px",
+              }}>
+                <span
+                  style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "var(--color-accent)" }}
+                  className="animate-status-blink"
+                />
+                <span style={{ fontSize: "11px", fontFamily: "var(--font-mono)", color: "var(--color-accent)" }}>
                   {status === "awaiting_approval" ? "Awaiting approval" : "Agent running…"}
                 </span>
               </div>
             )}
 
             {isTerminal && (
-              <button
+              <RunButton
+                label="New Run"
                 onClick={() => onStart(selectedFault)}
-                className={clsx(
-                  "h-9 px-3 rounded-md text-xs font-semibold font-mono",
-                  "transition-all duration-150",
-                  "active:scale-[0.97] active:brightness-95",
-                  "bg-[var(--color-accent)] text-[var(--color-bg)]",
-                  "hover:brightness-110 hover:shadow-[0_0_18px_var(--color-accent-glow)]",
-                  "focus-visible:outline-2 focus-visible:outline-[var(--color-accent)]"
-                )}
-              >
-                New Run
-              </button>
+                variant="primary"
+                compact
+              />
             )}
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+function RunButton({
+  label,
+  onClick,
+  variant,
+  compact = false,
+}: {
+  label: string;
+  onClick: () => void;
+  variant: "primary" | "secondary";
+  compact?: boolean;
+}) {
+  const isPrimary = variant === "primary";
+
+  return (
+    <button
+      onClick={onClick}
+      className={clsx(
+        "font-mono font-semibold rounded-[7px]",
+        "focus-visible:outline-2 focus-visible:outline-offset-2",
+        compact ? "px-3" : "flex-1",
+        isPrimary
+          ? "focus-visible:outline-[var(--color-accent)]"
+          : "focus-visible:outline-[var(--color-border-strong)]"
+      )}
+      style={{
+        height: "36px",
+        fontSize: "12px",
+        cursor: "pointer",
+        border: isPrimary ? "none" : "1px solid var(--color-border)",
+        backgroundColor: isPrimary ? "var(--color-accent)" : "var(--color-surface-2)",
+        color: isPrimary ? "var(--color-bg)" : "var(--color-text-secondary)",
+        fontFamily: "var(--font-mono)",
+        transition: `all var(--duration-fast) var(--ease-out-expo)`,
+        boxShadow: isPrimary ? "inset 0 1px 0 rgba(255,255,255,0.12)" : "none",
+      }}
+      onMouseEnter={(e) => {
+        const t = e.currentTarget as HTMLButtonElement;
+        if (isPrimary) {
+          t.style.filter = "brightness(1.1)";
+          t.style.boxShadow = "inset 0 1px 0 rgba(255,255,255,0.12), 0 0 20px var(--color-accent-glow)";
+        } else {
+          t.style.borderColor = "var(--color-border-strong)";
+          t.style.color = "var(--color-text-primary)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        const t = e.currentTarget as HTMLButtonElement;
+        if (isPrimary) {
+          t.style.filter = "brightness(1)";
+          t.style.boxShadow = "inset 0 1px 0 rgba(255,255,255,0.12)";
+        } else {
+          t.style.borderColor = "var(--color-border)";
+          t.style.color = "var(--color-text-secondary)";
+        }
+      }}
+      onMouseDown={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.97)"; }}
+      onMouseUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}
+    >
+      {label}
+    </button>
   );
 }

@@ -29,6 +29,7 @@ node_modules/
 .playwright-mcp/
 verify-*.png
 prod-*.png
+web/screenshots/
 
 # Build / deploy
 *.log

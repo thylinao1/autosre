@@ -13,7 +13,7 @@ const toolDescriptions: Record<string, { label: string; icon: React.ReactNode; d
   toggle_feature_flag: {
     label: "Toggle Feature Flag",
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M3 3v18"/>
         <path d="M7 7h14"/>
         <path d="M7 12h8"/>
@@ -25,7 +25,7 @@ const toolDescriptions: Record<string, { label: string; icon: React.ReactNode; d
   scale_service: {
     label: "Scale Service",
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
       </svg>
     ),
@@ -34,7 +34,7 @@ const toolDescriptions: Record<string, { label: string; icon: React.ReactNode; d
   rollback_deployment: {
     label: "Rollback Deployment",
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="1 4 1 10 7 10"/>
         <path d="M3.51 15a9 9 0 1 0 .49-4"/>
       </svg>
@@ -46,9 +46,7 @@ const toolDescriptions: Record<string, { label: string; icon: React.ReactNode; d
 function ArgRow({ label, value }: { label: string; value: unknown }) {
   const displayVal =
     typeof value === "boolean"
-      ? value
-        ? "true"
-        : "false"
+      ? value ? "true" : "false"
       : typeof value === "object"
       ? JSON.stringify(value)
       : String(value);
@@ -57,19 +55,29 @@ function ArgRow({ label, value }: { label: string; value: unknown }) {
   const isFalse = isBoolean && !value;
 
   return (
-    <div className="flex items-center justify-between gap-4 py-2 border-b border-[var(--color-border-subtle)] last:border-0">
-      <span className="text-[11px] font-mono text-[var(--color-text-muted)] flex-shrink-0">
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: "16px",
+      padding: "7px 0",
+      borderBottom: "1px solid var(--color-border-subtle)",
+    }}
+    className="last:border-0"
+    >
+      <span style={{ fontSize: "11px", fontFamily: "var(--font-mono)", color: "var(--color-text-muted)", flexShrink: 0 }}>
         {label}
       </span>
       <span
-        className={clsx(
-          "text-[11px] font-mono font-medium text-right",
-          isBoolean && isFalse
-            ? "text-[var(--color-red-text)]"
-            : isBoolean
-            ? "text-[var(--color-green-text)]"
-            : "text-[var(--color-amber)]"
-        )}
+        style={{
+          fontSize: "11px",
+          fontFamily: "var(--font-mono)",
+          fontWeight: 500,
+          textAlign: "right",
+          color: isBoolean
+            ? isFalse ? "var(--color-red-text)" : "var(--color-green-text)"
+            : "var(--color-amber)",
+        }}
       >
         {displayVal}
       </span>
@@ -91,10 +99,13 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
     if (submitting || decided !== null) return;
     setSubmitting(true);
     setDecided(approved);
-    await new Promise((r) => setTimeout(r, 200));
+    await new Promise((r) => setTimeout(r, 180));
     onDecide(approved);
     setSubmitting(false);
   }
+
+  const isApproved = decided === true;
+  const isRejected = decided === false;
 
   return (
     <div
@@ -103,77 +114,98 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
       role="dialog"
       aria-labelledby="approval-modal-title"
     >
-      {/* Backdrop — blur + fade */}
+      {/* Backdrop */}
       <div
         className="absolute inset-0 animate-backdrop-in"
         style={{
-          backgroundColor: "rgba(11,14,20,0.88)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
+          backgroundColor: "rgba(9,12,17,0.9)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
         }}
       />
 
-      {/* Modal card */}
+      {/* Modal card — layered depth */}
       <div
         className={clsx(
-          "relative w-full max-w-md rounded-xl border bg-[var(--color-surface-0)]",
-          "border-[rgba(240,160,48,0.45)]",
-          "animate-modal-in",
+          "relative w-full max-w-[420px] rounded-xl border animate-modal-in",
           decided === null ? "animate-approval-ring" : ""
         )}
         style={{
-          /* Layered shadow for depth */
+          backgroundColor: "var(--color-surface-0)",
+          borderColor: decided !== null
+            ? isApproved ? "rgba(32,204,128,0.35)" : "rgba(224,58,72,0.3)"
+            : "rgba(242,168,50,0.4)",
+          /* Layered shadow: ambient + directional + inner highlight */
           boxShadow: decided !== null
-            ? decided
-              ? "0 0 0 1px rgba(34,200,128,0.2), 0 0 48px rgba(34,200,128,0.12), 0 32px 80px rgba(0,0,0,0.6)"
-              : "0 0 0 1px rgba(224,60,74,0.2), 0 0 48px rgba(224,60,74,0.08), 0 32px 80px rgba(0,0,0,0.6)"
-            : undefined,
-          transition: "box-shadow var(--duration-slow) var(--ease-out-expo)",
+            ? isApproved
+              ? "0 0 0 1px rgba(32,204,128,0.12), 0 0 60px rgba(32,204,128,0.1), 0 40px 100px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04)"
+              : "0 0 0 1px rgba(224,58,72,0.12), 0 0 60px rgba(224,58,72,0.08), 0 40px 100px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04)"
+            : "0 0 0 1px rgba(242,168,50,0.06), 0 40px 100px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04)",
+          transition: "box-shadow var(--duration-slow) var(--ease-out-expo), border-color var(--duration-slow) var(--ease-out-expo)",
+          /* Scanline texture */
+          backgroundImage: "linear-gradient(rgba(255,255,255,0.01) 1px, transparent 1px)",
+          backgroundSize: "100% 3px",
         }}
       >
-        {/* Top accent bar — shimmer while pending */}
+        {/* Top accent bar — shimmer while pending, solid on decide */}
         <div
-          className="h-[3px] rounded-t-xl"
           style={{
-            background: decided !== null
-              ? decided
-                ? "linear-gradient(90deg, var(--color-green), rgba(34,200,128,0.6), var(--color-green))"
-                : "linear-gradient(90deg, var(--color-red), rgba(224,60,74,0.6), var(--color-red))"
-              : "linear-gradient(90deg, var(--color-amber), #f8c060, rgba(240,160,48,0.7), #f8c060, var(--color-amber))",
-            backgroundSize: "200% auto",
-            animation: decided === null ? "amber-shimmer 2.4s linear infinite" : "none",
+            height: "2.5px",
+            borderRadius: "12px 12px 0 0",
             transition: "background var(--duration-slow) var(--ease-out-expo)",
+            background: decided !== null
+              ? isApproved
+                ? "linear-gradient(90deg, transparent 0%, var(--color-green) 20%, var(--color-green-text) 50%, var(--color-green) 80%, transparent 100%)"
+                : "linear-gradient(90deg, transparent 0%, var(--color-red) 20%, var(--color-red-text) 50%, var(--color-red) 80%, transparent 100%)"
+              : "linear-gradient(90deg, var(--color-amber) 0%, #f8c860 25%, rgba(242,168,50,0.5) 50%, #f8c860 75%, var(--color-amber) 100%)",
+            backgroundSize: "200% auto",
+            animation: decided === null ? "amber-shimmer 2.2s linear infinite" : "none",
           }}
         />
 
         {/* Header */}
-        <div className="px-6 pt-5 pb-4 border-b border-[var(--color-border-subtle)]">
-          <div className="flex items-center gap-3 mb-3">
+        <div style={{ padding: "18px 22px 14px", borderBottom: "1px solid var(--color-border-subtle)" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", marginBottom: "10px" }}>
+            {/* Icon container */}
             <div
-              className={clsx(
-                "w-10 h-10 rounded-lg flex items-center justify-center border",
-                "transition-all duration-500",
-                decided !== null && decided
-                  ? "bg-[var(--color-green-dim)] border-[rgba(34,200,128,0.4)] text-[var(--color-green)]"
-                  : decided !== null && !decided
-                  ? "bg-[var(--color-red-dim)] border-[rgba(224,60,74,0.4)] text-[var(--color-red-text)]"
-                  : "bg-[var(--color-amber-dim)] border-[rgba(240,160,48,0.4)] text-[var(--color-amber)]"
-              )}
+              style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: "10px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "1px solid",
+                flexShrink: 0,
+                transition: "all 0.45s var(--ease-out-expo)",
+                borderColor: decided !== null
+                  ? isApproved ? "rgba(32,204,128,0.4)" : "rgba(224,58,72,0.4)"
+                  : "rgba(242,168,50,0.4)",
+                backgroundColor: decided !== null
+                  ? isApproved ? "var(--color-green-dim)" : "var(--color-red-dim)"
+                  : "var(--color-amber-dim)",
+                color: decided !== null
+                  ? isApproved ? "var(--color-green)" : "var(--color-red-text)"
+                  : "var(--color-amber)",
+                boxShadow: decided !== null
+                  ? isApproved ? "0 0 12px rgba(32,204,128,0.15)" : "0 0 12px rgba(224,58,72,0.12)"
+                  : "0 0 12px rgba(242,168,50,0.12)",
+              }}
             >
               {decided !== null ? (
-                decided ? (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                isApproved ? (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12"/>
                   </svg>
                 ) : (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"/>
                     <line x1="6" y1="6" x2="18" y2="18"/>
                   </svg>
                 )
               ) : (
                 toolCfg.icon ?? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10"/>
                     <line x1="12" y1="8" x2="12" y2="12"/>
                     <line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -181,38 +213,76 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
                 )
               )}
             </div>
-            <div>
+
+            {/* Title block */}
+            <div style={{ flex: 1, minWidth: 0 }}>
               <p
-                className="text-[10px] font-mono uppercase tracking-widest mb-0.5 transition-colors duration-500"
                 style={{
+                  fontSize: "9.5px",
+                  fontFamily: "var(--font-mono)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.14em",
+                  marginBottom: "3px",
+                  transition: "color 0.45s var(--ease-out-expo)",
                   color: decided !== null
-                    ? decided ? "var(--color-green)" : "var(--color-red-text)"
+                    ? isApproved ? "var(--color-green)" : "var(--color-red-text)"
                     : "var(--color-amber)",
+                  fontWeight: 500,
                 }}
               >
                 {decided !== null
-                  ? decided
+                  ? isApproved
                     ? "Approved — executing remediation"
                     : "Rejected — standing down"
-                  : "Approval Required — Production Action Pending"}
+                  : "Approval Required"}
               </p>
-              <h2 id="approval-modal-title" className="text-base font-semibold text-[var(--color-text-primary)]">
+              <h2
+                id="approval-modal-title"
+                style={{
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                  color: "var(--color-text-primary)",
+                  lineHeight: 1.3,
+                  letterSpacing: "-0.01em",
+                }}
+              >
                 {toolCfg.label}
               </h2>
             </div>
           </div>
-          <p className="text-xs text-[var(--color-text-muted)] font-mono leading-relaxed">
-            {toolCfg.description}
-            {" "}Nothing has touched production. This action is blocked until you decide.
+
+          <p style={{
+            fontSize: "11.5px",
+            fontFamily: "var(--font-mono)",
+            color: "var(--color-text-muted)",
+            lineHeight: 1.65,
+          }}>
+            {toolCfg.description}{" "}
+            <span style={{ color: "var(--color-text-dim)" }}>
+              Nothing has touched production. This action is blocked until you decide.
+            </span>
           </p>
         </div>
 
         {/* Args */}
-        <div className="px-6 py-4">
-          <p className="text-[10px] font-mono uppercase tracking-widest text-[var(--color-text-muted)] mb-2">
+        <div style={{ padding: "14px 22px" }}>
+          <p style={{
+            fontSize: "9.5px",
+            fontFamily: "var(--font-mono)",
+            textTransform: "uppercase",
+            letterSpacing: "0.14em",
+            color: "var(--color-text-dim)",
+            marginBottom: "8px",
+            fontWeight: 500,
+          }}>
             Proposed Arguments
           </p>
-          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-1)] px-3 divide-y divide-[var(--color-border-subtle)]">
+          <div style={{
+            borderRadius: "8px",
+            border: "1px solid var(--color-border)",
+            backgroundColor: "var(--color-surface-1)",
+            padding: "0 12px",
+          }}>
             {Object.entries(event.args).map(([k, v]) => (
               <ArgRow key={k} label={k} value={v} />
             ))}
@@ -221,12 +291,30 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
 
         {/* Hint */}
         {event.hint && (
-          <div className="px-6 pb-4">
-            <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-1)] px-3 py-2.5">
-              <p className="text-[10px] font-mono uppercase tracking-widest text-[var(--color-text-muted)] mb-1">
+          <div style={{ padding: "0 22px 14px" }}>
+            <div style={{
+              borderRadius: "8px",
+              border: "1px solid rgba(120,85,240,0.2)",
+              backgroundColor: "rgba(120,85,240,0.06)",
+              padding: "10px 12px",
+            }}>
+              <p style={{
+                fontSize: "9.5px",
+                fontFamily: "var(--font-mono)",
+                textTransform: "uppercase",
+                letterSpacing: "0.14em",
+                color: "#7855f0",
+                marginBottom: "4px",
+                fontWeight: 500,
+              }}>
                 Agent note
               </p>
-              <p className="text-xs font-mono text-[var(--color-text-secondary)] leading-relaxed">
+              <p style={{
+                fontSize: "11.5px",
+                fontFamily: "var(--font-mono)",
+                color: "var(--color-text-secondary)",
+                lineHeight: 1.6,
+              }}>
                 {event.hint}
               </p>
             </div>
@@ -234,73 +322,121 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
         )}
 
         {/* Confirmation ID */}
-        <div className="px-6 pb-4">
-          <p className="text-[10px] font-mono text-[var(--color-text-dim)]">
-            confirmation_id: <span className="text-[var(--color-text-muted)]">{event.id}</span>
+        <div style={{ padding: "0 22px 12px" }}>
+          <p style={{
+            fontSize: "9px",
+            fontFamily: "var(--font-mono)",
+            color: "var(--color-text-dim)",
+            letterSpacing: "0.04em",
+          }}>
+            confirmation_id:{" "}
+            <span style={{ color: "var(--color-text-muted)" }}>{event.id}</span>
           </p>
         </div>
 
-        {/* Action buttons / confirmation */}
-        <div className="px-6 pb-6">
+        {/* Action buttons */}
+        <div style={{ padding: "0 22px 20px" }}>
           {decided === null ? (
-            <div className="grid grid-cols-2 gap-3">
-              {/* Reject */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+              {/* Reject button */}
               <button
                 onClick={() => handleDecide(false)}
                 disabled={submitting}
                 className={clsx(
-                  "h-11 rounded-lg border bg-[var(--color-surface-1)]",
-                  "text-sm font-semibold font-mono",
-                  "border-[var(--color-border)] text-[var(--color-text-secondary)]",
-                  "transition-all duration-150",
-                  "hover:border-[rgba(224,60,74,0.55)] hover:text-[var(--color-red-text)] hover:bg-[var(--color-red-dim)]",
-                  "hover:shadow-[0_0_12px_var(--color-red-dim)]",
-                  "active:scale-[0.97] active:brightness-95",
+                  "h-11 rounded-lg border text-sm font-semibold font-mono",
+                  "transition-all",
                   "focus-visible:outline-2 focus-visible:outline-[var(--color-red)]",
                   "disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
                 )}
+                style={{
+                  backgroundColor: "var(--color-surface-1)",
+                  borderColor: "var(--color-border)",
+                  color: "var(--color-text-secondary)",
+                  transitionDuration: "var(--duration-fast)",
+                  transitionTimingFunction: "var(--ease-out-expo)",
+                }}
+                onMouseEnter={(e) => {
+                  const t = e.currentTarget as HTMLButtonElement;
+                  t.style.borderColor = "rgba(224,58,72,0.5)";
+                  t.style.color = "var(--color-red-text)";
+                  t.style.backgroundColor = "var(--color-red-dim)";
+                  t.style.boxShadow = "0 0 14px rgba(224,58,72,0.1)";
+                }}
+                onMouseLeave={(e) => {
+                  const t = e.currentTarget as HTMLButtonElement;
+                  t.style.borderColor = "var(--color-border)";
+                  t.style.color = "var(--color-text-secondary)";
+                  t.style.backgroundColor = "var(--color-surface-1)";
+                  t.style.boxShadow = "none";
+                }}
+                onMouseDown={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.97)"; }}
+                onMouseUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}
               >
                 Reject
               </button>
 
-              {/* Approve */}
+              {/* Approve button */}
               <button
                 onClick={() => handleDecide(true)}
                 disabled={submitting}
                 className={clsx(
-                  "h-11 rounded-lg",
-                  "bg-[var(--color-amber)] text-[#1a1000]",
-                  "text-sm font-semibold font-mono",
-                  "transition-all duration-150",
-                  "hover:brightness-110 hover:shadow-[0_0_24px_var(--color-amber-glow)]",
-                  "active:scale-[0.97] active:brightness-95",
+                  "h-11 rounded-lg text-sm font-semibold font-mono",
+                  "transition-all",
                   "focus-visible:outline-2 focus-visible:outline-[var(--color-amber)]",
                   "disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
                 )}
+                style={{
+                  backgroundColor: "var(--color-amber)",
+                  color: "#1a0e00",
+                  transitionDuration: "var(--duration-fast)",
+                  transitionTimingFunction: "var(--ease-out-expo)",
+                  boxShadow: "0 1px 0 rgba(255,255,255,0.15) inset",
+                }}
+                onMouseEnter={(e) => {
+                  const t = e.currentTarget as HTMLButtonElement;
+                  t.style.filter = "brightness(1.1)";
+                  t.style.boxShadow = "0 1px 0 rgba(255,255,255,0.15) inset, 0 0 28px var(--color-amber-glow)";
+                }}
+                onMouseLeave={(e) => {
+                  const t = e.currentTarget as HTMLButtonElement;
+                  t.style.filter = "brightness(1)";
+                  t.style.boxShadow = "0 1px 0 rgba(255,255,255,0.15) inset";
+                }}
+                onMouseDown={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.97)"; }}
+                onMouseUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}
               >
                 Approve
               </button>
             </div>
           ) : (
             <div
-              className={clsx(
-                "h-11 rounded-lg flex items-center justify-center gap-2",
-                "text-sm font-semibold font-mono animate-confirm-in",
-                decided
-                  ? "bg-[var(--color-green-dim)] border border-[rgba(34,200,128,0.35)] text-[var(--color-green-text)]"
-                  : "bg-[var(--color-red-dim)] border border-[rgba(224,60,74,0.35)] text-[var(--color-red-text)]"
-              )}
+              className="animate-confirm-in"
+              style={{
+                height: "44px",
+                borderRadius: "10px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                fontSize: "13px",
+                fontWeight: 600,
+                fontFamily: "var(--font-mono)",
+                border: "1px solid",
+                borderColor: isApproved ? "rgba(32,204,128,0.3)" : "rgba(224,58,72,0.3)",
+                backgroundColor: isApproved ? "var(--color-green-dim)" : "var(--color-red-dim)",
+                color: isApproved ? "var(--color-green-text)" : "var(--color-red-text)",
+              }}
             >
-              {decided ? (
+              {isApproved ? (
                 <>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12"/>
                   </svg>
                   Approved — executing…
                 </>
               ) : (
                 <>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"/>
                     <line x1="6" y1="6" x2="18" y2="18"/>
                   </svg>

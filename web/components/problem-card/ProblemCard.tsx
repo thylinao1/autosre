@@ -11,50 +11,111 @@ interface ProblemCardProps {
   currentPhase: string | null;
 }
 
+function MetricCell({
+  label,
+  value,
+  ok,
+  alert,
+  large,
+}: {
+  label: string;
+  value: string;
+  ok?: boolean;
+  alert?: boolean;
+  large?: boolean;
+}) {
+  const valueColor = ok
+    ? "var(--color-green-text)"
+    : alert
+    ? "var(--color-red-text)"
+    : "var(--color-text-primary)";
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column" }}>
+      <span style={{
+        fontSize: "9.5px",
+        fontFamily: "var(--font-mono)",
+        textTransform: "uppercase",
+        letterSpacing: "0.12em",
+        color: "var(--color-text-muted)",
+        marginBottom: "2px",
+        fontWeight: 400,
+      }}>
+        {label}
+      </span>
+      <span
+        style={{
+          fontSize: large ? "1.25rem" : "0.9375rem",
+          fontFamily: "var(--font-mono)",
+          fontWeight: 600,
+          color: valueColor,
+          transition: "color 0.5s var(--ease-out-expo)",
+          letterSpacing: large ? "-0.02em" : "-0.01em",
+          lineHeight: 1.2,
+        }}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
 function HealthyState({ health }: { health: ServiceHealth | null }) {
   return (
-    <div className="p-6 animate-fade-in">
-      <div className="flex items-start gap-4">
-        <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-[var(--color-green-dim)] border border-[rgba(34,200,128,0.3)] flex items-center justify-center">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-green)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <div
+      className="animate-fade-in"
+      style={{ padding: "16px 14px" }}
+    >
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+        {/* Icon */}
+        <div style={{
+          flexShrink: 0,
+          width: "42px",
+          height: "42px",
+          borderRadius: "10px",
+          backgroundColor: "var(--color-green-dim)",
+          border: "1px solid rgba(32,204,128,0.28)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: "0 0 16px rgba(32,204,128,0.08)",
+        }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-green)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
             <polyline points="22 4 12 14.01 9 11.01"/>
           </svg>
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-mono uppercase tracking-widest text-[var(--color-green)] mb-1">
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{
+            fontSize: "9.5px",
+            fontFamily: "var(--font-mono)",
+            textTransform: "uppercase",
+            letterSpacing: "0.14em",
+            color: "var(--color-green)",
+            marginBottom: "2px",
+            fontWeight: 500,
+          }}>
             All Systems Operational
           </p>
-          <h2 className="text-lg font-semibold text-[var(--color-text-primary)] leading-tight">
+          <h2 style={{
+            fontSize: "1rem",
+            fontWeight: 600,
+            color: "var(--color-text-primary)",
+            lineHeight: 1.3,
+            letterSpacing: "-0.01em",
+          }}>
             checkout-api
           </h2>
           {health && (
-            <div className="mt-3 grid grid-cols-3 gap-3">
-              <MetricCell label="Failure Rate" value={`${health.metrics.failure_rate}%`} ok />
-              <MetricCell label="P99 Latency" value={`${health.metrics.p99_latency_ms}ms`} ok />
+            <div style={{ marginTop: "12px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
+              <MetricCell label="Fail Rate" value={`${health.metrics.failure_rate}%`} ok />
+              <MetricCell label="P99" value={`${health.metrics.p99_latency_ms}ms`} ok />
               <MetricCell label="Replicas" value={String(health.metrics.replicas)} ok />
             </div>
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-function MetricCell({ label, value, ok, alert }: { label: string; value: string; ok?: boolean; alert?: boolean }) {
-  return (
-    <div className="flex flex-col">
-      <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-0.5">
-        {label}
-      </span>
-      <span
-        className={clsx(
-          "text-base font-mono font-semibold transition-colors duration-500",
-          ok ? "text-[var(--color-green-text)]" : alert ? "text-[var(--color-red-text)]" : "text-[var(--color-text-primary)]"
-        )}
-      >
-        {value}
-      </span>
     </div>
   );
 }
@@ -76,7 +137,6 @@ function IncidentState({
 
   const metricLabel = problem.impacted_metric === "failure_rate" ? "Failure Rate" : "P99 Latency";
 
-  // In resolved state, show recovered metrics from health if available, otherwise show baselines
   const resolvedFailureRate = health?.metrics.failure_rate ?? 0;
   const resolvedLatency = health?.metrics.p99_latency_ms ?? 0;
 
@@ -92,37 +152,52 @@ function IncidentState({
 
   return (
     <div
-      className={clsx(
-        "p-6",
-        isResolved ? "animate-flip-healthy" : ""
-      )}
+      className={clsx(isResolved ? "animate-flip-healthy" : "")}
+      style={{ padding: "16px 14px" }}
     >
-      <div className="flex items-start gap-4">
-        {/* Severity indicator */}
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+        {/* Severity icon */}
         <div
-          className={clsx(
-            "flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center border",
-            "transition-all duration-700",
-            isResolved
-              ? "bg-[var(--color-green-dim)] border-[rgba(34,200,128,0.3)]"
+          style={{
+            flexShrink: 0,
+            width: "42px",
+            height: "42px",
+            borderRadius: "10px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            border: "1px solid",
+            transition: "all 0.7s var(--ease-out-expo)",
+            borderColor: isResolved
+              ? "rgba(32,204,128,0.28)"
               : isAvailability
-              ? "bg-[var(--color-red-dim)] border-[rgba(224,60,74,0.4)]"
-              : "bg-[var(--color-orange-dim)] border-[var(--color-orange)] border-opacity-40"
-          )}
+              ? "rgba(224,58,72,0.35)"
+              : "rgba(224,120,48,0.35)",
+            backgroundColor: isResolved
+              ? "var(--color-green-dim)"
+              : isAvailability
+              ? "var(--color-red-dim)"
+              : "var(--color-orange-dim)",
+            boxShadow: isResolved
+              ? "0 0 16px rgba(32,204,128,0.08)"
+              : isAvailability
+              ? "0 0 16px rgba(224,58,72,0.08)"
+              : "0 0 16px rgba(224,120,48,0.08)",
+          }}
         >
           {isResolved ? (
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-green)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-green)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
               <polyline points="22 4 12 14.01 9 11.01"/>
             </svg>
           ) : isAvailability ? (
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-red-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-red-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
               <line x1="12" y1="9" x2="12" y2="13"/>
               <line x1="12" y1="17" x2="12.01" y2="17"/>
             </svg>
           ) : (
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-orange-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-orange-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10"/>
               <line x1="12" y1="8" x2="12" y2="12"/>
               <line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -131,48 +206,55 @@ function IncidentState({
         </div>
 
         {/* Problem details */}
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2 mb-2">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", marginBottom: "5px" }}>
             <Badge label={severityLabel} variant={severityVariant} pulse={!isResolved} />
-            <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
+            <span style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", color: "var(--color-text-dim)" }}>
               {problem.problemId}
             </span>
           </div>
 
           <h2
-            className={clsx(
-              "text-base font-semibold leading-tight mb-1 transition-colors duration-700",
-              isResolved ? "text-[var(--color-green-text)]" : "text-[var(--color-text-primary)]"
-            )}
+            style={{
+              fontSize: "0.9375rem",
+              fontWeight: 600,
+              lineHeight: 1.35,
+              marginBottom: "4px",
+              transition: "color 0.7s var(--ease-out-expo)",
+              color: isResolved ? "var(--color-green-text)" : "var(--color-text-primary)",
+              letterSpacing: "-0.01em",
+            }}
           >
-            {isResolved ? "Incident resolved — " : ""}
+            {isResolved ? "Resolved: " : ""}
             {problem.title}
           </h2>
 
-          <p className="text-xs text-[var(--color-text-muted)] mb-3 font-mono">
-            Service: <span className="text-[var(--color-text-secondary)]">{problem.affected_entity}</span>
+          <p style={{
+            fontSize: "10.5px",
+            fontFamily: "var(--font-mono)",
+            color: "var(--color-text-muted)",
+            marginBottom: "12px",
+          }}>
+            {problem.affected_entity}
             {problem.deploy_version && (
-              <>
-                {" "}· Deploy:{" "}
-                <span className="text-[var(--color-text-secondary)]">{problem.deploy_version}</span>
-              </>
+              <span style={{ color: "var(--color-text-dim)" }}> · {problem.deploy_version}</span>
             )}
           </p>
 
-          {/* Metrics — show healthy values on resolve, incident values while active */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {/* Metrics grid — primary metric is visually larger */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
             <MetricCell
               label={metricLabel}
               value={metricValue}
               alert={!isResolved}
               ok={isResolved}
+              large
             />
             <MetricCell
               label="Baseline"
               value={baselineValue}
               ok
             />
-            {/* In resolved state: show replicas (healthy indicator). In incident state: show active feature flags. */}
             {isResolved ? (
               <MetricCell
                 label="Status"
@@ -186,8 +268,8 @@ function IncidentState({
                 .map(([flag, val]) => (
                   <MetricCell
                     key={flag}
-                    label="Active Flag"
-                    value={`${flag}: ${String(val)}`}
+                    label="Flag"
+                    value={`${flag.slice(0, 16)}: ${String(val)}`}
                     alert={val === true}
                   />
                 ))
@@ -205,60 +287,120 @@ export function ProblemCard({ problem, status, health, currentPhase }: ProblemCa
 
   const borderColor = problem && !isResolved
     ? problem.severity === "AVAILABILITY"
-      ? "border-[rgba(224,60,74,0.4)]"
-      : "border-[rgba(224,120,48,0.4)]"
+      ? "rgba(224,58,72,0.35)"
+      : "rgba(224,120,48,0.35)"
     : isResolved
-    ? "border-[rgba(34,200,128,0.4)]"
-    : "border-[var(--color-border)]";
+    ? "rgba(32,204,128,0.35)"
+    : "var(--color-border)";
+
+  const outerGlow = problem && !isResolved
+    ? "0 0 24px var(--color-red-dim)"
+    : isResolved
+    ? "0 0 32px var(--color-green-dim), 0 0 0 1px rgba(32,204,128,0.06)"
+    : "none";
 
   return (
     <div
-      className={clsx(
-        "relative rounded-lg border overflow-hidden bg-[var(--color-surface-0)]",
-        "transition-all duration-700",
-        borderColor,
-        problem && !isResolved
-          ? "shadow-[0_0_20px_var(--color-red-dim)]"
-          : isResolved
-          ? "shadow-[0_0_28px_var(--color-green-dim),0_0_0_1px_rgba(34,200,128,0.08)]"
-          : ""
-      )}
+      style={{
+        position: "relative",
+        borderRadius: "10px",
+        border: `1px solid ${borderColor}`,
+        overflow: "hidden",
+        backgroundColor: "var(--color-surface-0)",
+        transition: "border-color 0.7s var(--ease-out-expo), box-shadow 0.7s var(--ease-out-expo)",
+        boxShadow: outerGlow,
+      }}
+      className={isResolved ? "animate-green-flash" : ""}
     >
-      {/* Header bar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--color-border-subtle)]">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-mono font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
+      {/* Card header bar */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "6px 14px",
+        borderBottom: `1px solid ${isResolved ? "rgba(32,204,128,0.15)" : "var(--color-border-subtle)"}`,
+        backgroundColor: "var(--color-surface-0)",
+        transition: "border-color 0.7s ease",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span style={{
+            fontSize: "9.5px",
+            fontFamily: "var(--font-mono)",
+            fontWeight: 600,
+            textTransform: "uppercase",
+            letterSpacing: "0.12em",
+            color: "var(--color-text-dim)",
+          }}>
             Dynatrace Problem
           </span>
           {isRunning && !problem && (
-            <span className="text-[10px] font-mono text-[var(--color-accent)]">— scanning…</span>
+            <span style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", color: "var(--color-accent)" }}>
+              · scanning…
+            </span>
           )}
         </div>
-        <div className="flex items-center gap-1.5">
+
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          {/* Current phase chip */}
           {currentPhase && (
             <span
-              className={clsx(
-                "text-[10px] font-mono px-2 py-0.5 rounded transition-all duration-300",
-                currentPhase === "detect" ? "text-[var(--color-detect)] bg-[var(--color-accent-dim)]" :
-                currentPhase === "diagnose" ? "text-[#8060f0] bg-[rgba(128,96,240,0.12)]" :
-                currentPhase === "act" ? "text-[var(--color-act)] bg-[var(--color-amber-dim)]" :
-                currentPhase === "verify" ? "text-[var(--color-verify)] bg-[var(--color-green-dim)]" : ""
-              )}
+              style={{
+                fontSize: "9.5px",
+                fontFamily: "var(--font-mono)",
+                padding: "1.5px 6px",
+                borderRadius: "4px",
+                transition: "all 0.3s ease",
+                color: currentPhase === "detect" ? "var(--color-detect)" :
+                       currentPhase === "diagnose" ? "var(--color-diagnose)" :
+                       currentPhase === "act" ? "var(--color-act)" :
+                       currentPhase === "verify" ? "var(--color-verify)" : "transparent",
+                backgroundColor: currentPhase === "detect" ? "var(--color-accent-dim)" :
+                                  currentPhase === "diagnose" ? "rgba(120,85,240,0.12)" :
+                                  currentPhase === "act" ? "var(--color-amber-dim)" :
+                                  currentPhase === "verify" ? "var(--color-green-dim)" : "transparent",
+                border: "1px solid",
+                borderColor: currentPhase === "detect" ? "rgba(0,204,232,0.25)" :
+                              currentPhase === "diagnose" ? "rgba(120,85,240,0.25)" :
+                              currentPhase === "act" ? "rgba(242,168,50,0.25)" :
+                              currentPhase === "verify" ? "rgba(32,204,128,0.25)" : "transparent",
+              }}
             >
               {currentPhase.toUpperCase()}
             </span>
           )}
+
           {/* Live indicator */}
           {isRunning && (
-            <span className="flex items-center gap-1 text-[10px] font-mono text-[var(--color-accent)]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-status-blink" />
+            <span style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              fontSize: "9.5px",
+              fontFamily: "var(--font-mono)",
+              color: "var(--color-accent)",
+            }}>
+              <span
+                style={{ width: "5px", height: "5px", borderRadius: "50%", backgroundColor: "var(--color-accent)" }}
+                className="animate-status-blink"
+              />
               LIVE
             </span>
           )}
-          {/* Resolved indicator */}
+
+          {/* Restored indicator */}
           {isResolved && (
-            <span className="flex items-center gap-1 text-[10px] font-mono text-[var(--color-green)] animate-fade-in">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-green)]" />
+            <span
+              className="animate-fade-in"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                fontSize: "9.5px",
+                fontFamily: "var(--font-mono)",
+                color: "var(--color-green)",
+              }}
+            >
+              <span style={{ width: "5px", height: "5px", borderRadius: "50%", backgroundColor: "var(--color-green)" }} />
               RESTORED
             </span>
           )}

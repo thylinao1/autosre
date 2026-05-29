@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import clsx from "clsx";
 import { useIncidentStream } from "@/hooks/useIncidentStream";
 import { ProblemCard } from "@/components/problem-card/ProblemCard";
 import { Timeline } from "@/components/timeline/Timeline";
@@ -45,86 +44,102 @@ export default function MissionControlPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* ── Top navigation bar ── */}
+      {/* ── Top navigation bar — lifted surface, layered depth ── */}
       <header
         style={{
           flexShrink: 0,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "0 1.5rem",
-          height: "48px",
+          padding: "0 20px",
+          height: "52px",
           borderBottom: "1px solid var(--color-border-subtle)",
-          backgroundColor: "var(--color-surface-0)",
+          backgroundColor: "var(--color-surface-nav)",
+          /* Inner shadow to simulate surface lift */
+          boxShadow: "inset 0 -1px 0 rgba(0,204,232,0.04), 0 1px 0 rgba(0,0,0,0.5)",
+          position: "relative",
+          zIndex: 10,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        {/* Logo + wordmark */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <div
             style={{
-              width: "24px",
-              height: "24px",
-              borderRadius: "4px",
+              width: "28px",
+              height: "28px",
+              borderRadius: "6px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              background: "var(--color-accent-dim)",
-              border: "1px solid rgba(0,200,224,0.4)",
+              background: "linear-gradient(135deg, rgba(0,204,232,0.18) 0%, rgba(0,204,232,0.06) 100%)",
+              border: "1px solid rgba(0,204,232,0.35)",
+              boxShadow: "0 0 12px rgba(0,204,232,0.12), inset 0 1px 0 rgba(255,255,255,0.06)",
+              flexShrink: 0,
             }}
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" strokeWidth="2.5">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
             </svg>
           </div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
-            <span style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--color-text-primary)", letterSpacing: "-0.01em" }}>
+
+          <div style={{ display: "flex", alignItems: "baseline", gap: "7px" }}>
+            <span style={{
+              fontSize: "0.9375rem",
+              fontWeight: 700,
+              color: "var(--color-text-primary)",
+              letterSpacing: "-0.02em",
+              lineHeight: 1,
+            }}>
               AutoSRE
             </span>
-            <span style={{ fontSize: "10px", fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--color-text-muted)" }}>
+            <span style={{
+              fontSize: "9.5px",
+              fontFamily: "var(--font-mono)",
+              textTransform: "uppercase",
+              letterSpacing: "0.18em",
+              color: "var(--color-text-dim)",
+              fontWeight: 400,
+            }}>
               Mission Control
             </span>
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, overflow: "hidden" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", fontFamily: "var(--font-mono)", color: "var(--color-text-muted)", whiteSpace: "nowrap" }}>
-            <span
-              style={{
-                width: "6px",
-                height: "6px",
-                borderRadius: "50%",
-                flexShrink: 0,
-                transition: "background-color 0.5s ease, box-shadow 0.5s ease",
-                backgroundColor:
-                  state.status === "resolved" || state.status === "all_clear" ? "var(--color-green)" :
-                  state.status === "awaiting_approval" ? "var(--color-amber)" :
-                  isBusy ? "var(--color-accent)" :
-                  state.status === "error" ? "var(--color-red)" :
-                  "var(--color-text-dim)",
-                boxShadow:
-                  state.status === "resolved" || state.status === "all_clear" ? "0 0 6px var(--color-green-glow)" :
-                  state.status === "awaiting_approval" ? "0 0 6px var(--color-amber-glow)" :
-                  isBusy ? "0 0 5px var(--color-accent-glow)" :
-                  "none",
-                animation: (isBusy || state.status === "awaiting_approval") ? "status-blink 1.4s ease-in-out infinite" : "none",
-              }}
-            />
-            {state.status === "idle" && "STANDBY"}
-            {state.status === "starting" && "STARTING"}
-            {state.status === "running" && "RUNNING"}
-            {state.status === "awaiting_approval" && "APPROVAL"}
-            {state.status === "resolved" && "RESOLVED"}
-            {state.status === "declined" && "DECLINED"}
-            {state.status === "all_clear" && "CLEAR"}
-            {state.status === "error" && "ERROR"}
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", fontFamily: "var(--font-mono)", color: "var(--color-text-muted)", whiteSpace: "nowrap" }}>
-            <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "var(--color-accent)", flexShrink: 0 }} />
-            <span className="hidden xs:inline">Dynatrace MCP</span>
-          </div>
-          <div className="hidden md:flex" style={{ alignItems: "center", gap: "6px", fontSize: "10px", fontFamily: "var(--font-mono)", color: "var(--color-text-muted)", whiteSpace: "nowrap" }}>
-            <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "var(--color-text-dim)", flexShrink: 0 }} />
-            Vertex AI
-          </div>
+        {/* Status indicators — right side */}
+        <div style={{ display: "flex", alignItems: "center", gap: "16px", flexShrink: 0 }}>
+          {/* Agent status */}
+          <StatusPill
+            label={
+              state.status === "idle" ? "STANDBY" :
+              state.status === "starting" ? "STARTING" :
+              state.status === "running" ? "RUNNING" :
+              state.status === "awaiting_approval" ? "APPROVAL" :
+              state.status === "resolved" ? "RESOLVED" :
+              state.status === "declined" ? "DECLINED" :
+              state.status === "all_clear" ? "CLEAR" :
+              "ERROR"
+            }
+            color={
+              state.status === "resolved" || state.status === "all_clear" ? "var(--color-green)" :
+              state.status === "awaiting_approval" ? "var(--color-amber)" :
+              isBusy ? "var(--color-accent)" :
+              state.status === "error" ? "var(--color-red)" :
+              "var(--color-text-dim)"
+            }
+            glow={
+              state.status === "resolved" || state.status === "all_clear" ? "0 0 7px var(--color-green-glow)" :
+              state.status === "awaiting_approval" ? "0 0 7px var(--color-amber-glow)" :
+              isBusy ? "0 0 6px var(--color-accent-glow)" :
+              "none"
+            }
+            blink={isBusy || state.status === "awaiting_approval"}
+          />
+
+          {/* Dynatrace MCP */}
+          <StatusPill label="Dynatrace MCP" color="var(--color-accent)" glow="none" blink={false} />
+
+          {/* Vertex AI — hidden on narrow */}
+          <StatusPillHidden label="Vertex AI" color="var(--color-text-dim)" />
         </div>
       </header>
 
@@ -138,53 +153,39 @@ export default function MissionControlPage() {
           overflow: "hidden",
         }}
       >
-        {/* 3-column layout via CSS grid — inline for full control */}
+        {/* Desktop 3-column */}
         <div
           className="layout-desktop"
           style={{
-            gridTemplateColumns: "clamp(280px, 22vw, 340px) 1fr clamp(240px, 20vw, 300px)",
+            gridTemplateColumns: "clamp(272px, 21vw, 336px) 1fr clamp(236px, 19vw, 296px)",
             minHeight: 0,
-            height: "calc(100vh - 48px)",
+            height: "calc(100vh - 52px)",
           }}
         >
-          {/* Left sidebar */}
           <LeftSidebar
             state={state}
             serviceHealth={serviceHealth}
             onStart={handleStart}
             onReset={handleReset}
           />
-
-          {/* Center timeline */}
           <CenterTimeline state={state} isBusy={isBusy} isTerminal={isTerminal} />
-
-          {/* Right DQL panel */}
           <RightPanel state={state} />
         </div>
 
-        {/* Mobile: stacked layout */}
-        <div className="layout-mobile" style={{ flexDirection: "column", overflowY: "auto", padding: "16px", gap: "16px" }}>
+        {/* Mobile stacked layout */}
+        <div className="layout-mobile" style={{ flexDirection: "column", overflowY: "auto", padding: "14px", gap: "14px" }}>
           {state.status === "error" && state.errorMessage && (
-            <div style={{ borderRadius: "8px", border: "1px solid rgba(224,60,74,0.4)", backgroundColor: "var(--color-red-dim)", padding: "12px" }}>
-              <p style={{ fontSize: "10px", fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--color-red-text)", marginBottom: "4px" }}>Error</p>
-              <p style={{ fontSize: "12px", fontFamily: "var(--font-mono)", color: "var(--color-text-secondary)" }}>{state.errorMessage}</p>
-            </div>
+            <ErrorBanner message={state.errorMessage} />
           )}
           <ProblemCard problem={state.problem} status={state.status} health={serviceHealth} currentPhase={state.currentPhase} />
           {state.finalEvent && <FinalReport event={state.finalEvent} />}
           <DemoControls status={state.status} onStart={handleStart} onReset={handleReset} />
-          <div style={{ border: "1px solid var(--color-border)", borderRadius: "8px", overflow: "hidden" }}>
-            <div style={{ borderBottom: "1px solid var(--color-border-subtle)", padding: "8px 16px" }}>
-              <span style={{ fontSize: "10px", fontFamily: "var(--font-mono)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--color-text-muted)" }}>Agent Timeline</span>
-            </div>
+          <PanelBlock title="Agent Timeline">
             <Timeline entries={state.timeline} currentPhase={state.currentPhase} />
-          </div>
-          <div style={{ border: "1px solid var(--color-border)", borderRadius: "8px", overflow: "hidden" }}>
-            <div style={{ borderBottom: "1px solid var(--color-border-subtle)", padding: "8px 16px" }}>
-              <span style={{ fontSize: "10px", fontFamily: "var(--font-mono)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--color-text-muted)" }}>DQL Evidence</span>
-            </div>
+          </PanelBlock>
+          <PanelBlock title="DQL Evidence">
             <DqlPanel query={state.dqlQuery} records={state.dqlRecords} reasoning={state.agentReasoning} />
-          </div>
+          </PanelBlock>
         </div>
       </main>
 
@@ -192,6 +193,87 @@ export default function MissionControlPage() {
       {state.pendingApproval && (
         <ApprovalModal event={state.pendingApproval} onDecide={handleApprove} />
       )}
+    </div>
+  );
+}
+
+/* ── Status pill component ── */
+function StatusPill({
+  label,
+  color,
+  glow,
+  blink,
+}: {
+  label: string;
+  color: string;
+  glow: string;
+  blink: boolean;
+}) {
+  return (
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "5px",
+      fontSize: "9.5px",
+      fontFamily: "var(--font-mono)",
+      color: "var(--color-text-muted)",
+      whiteSpace: "nowrap",
+    }}>
+      <span
+        style={{
+          width: "5px",
+          height: "5px",
+          borderRadius: "50%",
+          flexShrink: 0,
+          transition: "background-color 0.5s var(--ease-out-expo), box-shadow 0.5s var(--ease-out-expo)",
+          backgroundColor: color,
+          boxShadow: glow,
+          animation: blink ? "status-blink 1.6s ease-in-out infinite" : "none",
+        }}
+      />
+      {label}
+    </div>
+  );
+}
+
+function StatusPillHidden({ label, color }: { label: string; color: string }) {
+  return (
+    <div className="hidden md:flex" style={{
+      alignItems: "center",
+      gap: "5px",
+      fontSize: "9.5px",
+      fontFamily: "var(--font-mono)",
+      color: "var(--color-text-muted)",
+      whiteSpace: "nowrap",
+    }}>
+      <span style={{ width: "5px", height: "5px", borderRadius: "50%", backgroundColor: color, flexShrink: 0 }} />
+      {label}
+    </div>
+  );
+}
+
+function ErrorBanner({ message }: { message: string }) {
+  return (
+    <div
+      style={{
+        borderRadius: "8px",
+        border: "1px solid rgba(224,58,72,0.35)",
+        backgroundColor: "var(--color-red-dim)",
+        padding: "10px 14px",
+      }}
+      className="animate-slide-in-up"
+    >
+      <p style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--color-red-text)", marginBottom: "3px" }}>Error</p>
+      <p style={{ fontSize: "12px", fontFamily: "var(--font-mono)", color: "var(--color-text-secondary)" }}>{message}</p>
+    </div>
+  );
+}
+
+function PanelBlock({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ border: "1px solid var(--color-border-subtle)", borderRadius: "8px", overflow: "hidden" }}>
+      <div className="panel-header">{title}</div>
+      {children}
     </div>
   );
 }
@@ -215,16 +297,13 @@ function LeftSidebar({
         borderRight: "1px solid var(--color-border-subtle)",
         display: "flex",
         flexDirection: "column",
-        gap: "16px",
-        padding: "16px",
+        gap: "12px",
+        padding: "14px",
         overflowY: "auto",
       }}
     >
       {state.status === "error" && state.errorMessage && (
-        <div style={{ borderRadius: "8px", border: "1px solid rgba(224,60,74,0.4)", backgroundColor: "var(--color-red-dim)", padding: "12px" }} className="animate-slide-in-up">
-          <p style={{ fontSize: "10px", fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--color-red-text)", marginBottom: "4px" }}>Error</p>
-          <p style={{ fontSize: "12px", fontFamily: "var(--font-mono)", color: "var(--color-text-secondary)" }}>{state.errorMessage}</p>
-        </div>
+        <ErrorBanner message={state.errorMessage} />
       )}
 
       <ProblemCard
@@ -236,39 +315,58 @@ function LeftSidebar({
 
       {state.finalEvent && <FinalReport event={state.finalEvent} />}
 
-      <hr style={{ border: "none", borderTop: "1px solid var(--color-border-subtle)" }} />
+      <div style={{ height: "1px", backgroundColor: "var(--color-border-subtle)", flexShrink: 0 }} />
 
       <DemoControls status={state.status} onStart={onStart} onReset={onReset} />
 
-      {/* Stack info */}
-      <div
-        style={{
-          borderRadius: "8px",
-          border: "1px solid var(--color-border-subtle)",
-          backgroundColor: "var(--color-surface-0)",
-          padding: "12px",
-          marginTop: "auto",
-        }}
-      >
-        <p style={{ fontSize: "10px", fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--color-text-muted)", marginBottom: "8px" }}>
-          Agent Stack
-        </p>
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          {[
-            ["Agent", "ADK · Gemini 3"],
-            ["Runtime", "Vertex AI Agent Engine"],
-            ["Senses", "Dynatrace MCP"],
-            ["Gate", "require_confirmation"],
-            ["Target", "checkout-api"],
-          ].map(([label, value]) => (
-            <div key={label} style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "10px", fontFamily: "var(--font-mono)", color: "var(--color-text-muted)" }}>{label}</span>
-              <span style={{ fontSize: "10px", fontFamily: "var(--font-mono)", color: "var(--color-text-secondary)" }}>{value}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Agent Stack info — pushed to bottom */}
+      <AgentStackCard />
     </aside>
+  );
+}
+
+function AgentStackCard() {
+  const rows = [
+    ["Agent",   "ADK · Gemini 3"],
+    ["Runtime", "Vertex AI Agent Engine"],
+    ["Senses",  "Dynatrace MCP"],
+    ["Gate",    "require_confirmation"],
+    ["Target",  "checkout-api"],
+  ] as const;
+
+  return (
+    <div
+      style={{
+        borderRadius: "8px",
+        border: "1px solid var(--color-border-subtle)",
+        backgroundColor: "var(--color-surface-0)",
+        padding: "10px 12px",
+        marginTop: "auto",
+        /* Scanline texture for war-room atmosphere */
+        backgroundImage: "linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px)",
+        backgroundSize: "100% 3px",
+      }}
+    >
+      <p style={{
+        fontSize: "9.5px",
+        fontFamily: "var(--font-mono)",
+        textTransform: "uppercase",
+        letterSpacing: "0.14em",
+        color: "var(--color-text-dim)",
+        marginBottom: "8px",
+        fontWeight: 500,
+      }}>
+        Agent Stack
+      </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+        {rows.map(([label, value]) => (
+          <div key={label} style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
+            <span style={{ fontSize: "10px", fontFamily: "var(--font-mono)", color: "var(--color-text-dim)" }}>{label}</span>
+            <span style={{ fontSize: "10px", fontFamily: "var(--font-mono)", color: "var(--color-text-muted)", textAlign: "right" }}>{value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -281,6 +379,23 @@ function CenterTimeline({
   isBusy: boolean;
   isTerminal: boolean;
 }) {
+  const phases = ["detect", "diagnose", "act", "verify"] as const;
+  const phaseLabels = ["DETECT", "DIAGNOSE", "ACT", "VERIFY"] as const;
+  const activeColors: Record<string, string> = {
+    detect:   "var(--color-detect)",
+    diagnose: "var(--color-diagnose)",
+    act:      "var(--color-act)",
+    verify:   "var(--color-verify)",
+  };
+  const activeGlow: Record<string, string> = {
+    detect:   "0 0 8px 2px rgba(0,204,232,0.5)",
+    diagnose: "0 0 8px 2px rgba(120,85,240,0.5)",
+    act:      "0 0 8px 2px rgba(242,168,50,0.5)",
+    verify:   "0 0 8px 2px rgba(32,204,128,0.5)",
+  };
+
+  const currentIdx = state.currentPhase ? phases.indexOf(state.currentPhase) : -1;
+
   return (
     <div
       style={{
@@ -298,41 +413,64 @@ function CenterTimeline({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "8px 16px",
+          padding: "7px 16px",
           borderBottom: "1px solid var(--color-border-subtle)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="2">
+        <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-dim)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
           </svg>
-          <span style={{ fontSize: "10px", fontFamily: "var(--font-mono)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--color-text-muted)" }}>
+          <span style={{
+            fontSize: "9.5px",
+            fontFamily: "var(--font-mono)",
+            fontWeight: 600,
+            textTransform: "uppercase",
+            letterSpacing: "0.12em",
+            color: "var(--color-text-muted)",
+          }}>
             Agent Timeline
           </span>
           {isBusy && (
-            <span style={{ fontSize: "10px", fontFamily: "var(--font-mono)", color: "var(--color-accent)" }}>
-              — live
+            <span style={{
+              fontSize: "9.5px",
+              fontFamily: "var(--font-mono)",
+              color: "var(--color-accent)",
+              opacity: 0.9,
+            }}>
+              · live
             </span>
           )}
         </div>
         {state.runId && (
-          <span style={{ fontSize: "10px", fontFamily: "var(--font-mono)", color: "var(--color-text-dim)" }}>
+          <span style={{
+            fontSize: "9px",
+            fontFamily: "var(--font-mono)",
+            color: "var(--color-text-dim)",
+            letterSpacing: "0.04em",
+          }}>
             {state.runId.slice(0, 8)}
           </span>
         )}
       </div>
 
-      {/* Progress scan */}
+      {/* Scan progress bar — 2px with leading glow */}
       {isBusy && (
-        <div style={{ height: "2px", position: "relative", overflow: "hidden", flexShrink: 0, backgroundColor: "var(--color-surface-2)" }}>
+        <div style={{
+          height: "2px",
+          position: "relative",
+          overflow: "hidden",
+          flexShrink: 0,
+          backgroundColor: "var(--color-surface-2)",
+        }}>
           <div
             style={{
               position: "absolute",
               top: 0,
               bottom: 0,
-              width: "25%",
-              background: "linear-gradient(90deg, transparent, var(--color-accent-glow), transparent)",
-              animation: "scan-progress 1.4s ease-in-out infinite",
+              width: "20%",
+              background: "linear-gradient(90deg, transparent 0%, var(--color-accent-dim) 30%, var(--color-accent) 50%, var(--color-accent-dim) 70%, transparent 100%)",
+              animation: "scan-progress 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
             }}
           />
         </div>
@@ -343,38 +481,25 @@ function CenterTimeline({
         <Timeline entries={state.timeline} currentPhase={state.currentPhase} />
       </div>
 
-      {/* Phase progress bar */}
+      {/* Phase progress bar — premium bottom strip */}
       {(state.currentPhase || isTerminal) && (
         <div
           style={{
             flexShrink: 0,
             borderTop: "1px solid var(--color-border-subtle)",
-            padding: "12px 16px",
+            padding: "11px 16px 10px",
+            backgroundColor: "var(--color-surface-0)",
           }}
         >
-          <div style={{ display: "flex", gap: "4px", marginBottom: "6px" }}>
-            {(["detect", "diagnose", "act", "verify"] as const).map((phase) => {
-              const phases = ["detect", "diagnose", "act", "verify"] as const;
-              const currentIdx = state.currentPhase ? phases.indexOf(state.currentPhase) : -1;
-              const phaseIdx = phases.indexOf(phase);
-              const isDone = isTerminal || phaseIdx < currentIdx;
+          {/* Bars */}
+          <div style={{ display: "flex", gap: "3px", marginBottom: "5px" }}>
+            {phases.map((phase, i) => {
+              const isDone = isTerminal || i < currentIdx;
               const isActive = phase === state.currentPhase;
-
-              const activeColors: Record<string, string> = {
-                detect: "var(--color-detect)",
-                diagnose: "#8060f0",
-                act: "var(--color-act)",
-                verify: "var(--color-verify)",
-              };
-              const activeGlow: Record<string, string> = {
-                detect: "0 0 6px 1px rgba(0,200,224,0.55)",
-                diagnose: "0 0 6px 1px rgba(128,96,240,0.55)",
-                act: "0 0 6px 1px rgba(240,160,48,0.55)",
-                verify: "0 0 6px 1px rgba(34,200,128,0.55)",
-              };
               const fillColor = isDone
-                ? isTerminal && phase === "verify" ? "var(--color-green)" : "var(--color-accent)"
-                : isActive ? activeColors[phase]
+                ? (isTerminal && phase === "verify" ? "var(--color-green)" : "var(--color-accent)")
+                : isActive
+                ? activeColors[phase]
                 : "transparent";
 
               return (
@@ -395,40 +520,41 @@ function CenterTimeline({
                       inset: 0,
                       borderRadius: "2px",
                       backgroundColor: fillColor,
-                      opacity: isDone ? 0.7 : isActive ? 1 : 0,
+                      opacity: isDone ? 0.65 : isActive ? 1 : 0,
                       boxShadow: isActive ? activeGlow[phase] : "none",
                       transform: `scaleX(${isDone || isActive ? 1 : 0})`,
                       transformOrigin: "left",
-                      transition: "transform 0.55s cubic-bezier(0.16,1,0.3,1), opacity 0.4s ease, background-color 0.6s ease, box-shadow 0.4s ease",
+                      transition:
+                        "transform 0.5s var(--ease-out-expo), opacity 0.35s ease, background-color 0.55s ease, box-shadow 0.35s ease",
                     }}
                   />
                 </div>
               );
             })}
           </div>
+
+          {/* Phase labels */}
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            {(["detect", "diagnose", "act", "verify"] as const).map((phase, i) => {
-              const labels = ["DETECT", "DIAGNOSE", "ACT", "VERIFY"];
-              const phases = ["detect", "diagnose", "act", "verify"] as const;
-              const currentIdx = state.currentPhase ? phases.indexOf(state.currentPhase) : -1;
+            {phases.map((phase, i) => {
               const isDone = isTerminal || i < currentIdx;
               const isActive = phase === state.currentPhase;
               return (
                 <span
                   key={phase}
                   style={{
-                    fontSize: "8px",
+                    fontSize: "9px",
                     fontFamily: "var(--font-mono)",
-                    transition: "color 0.4s ease",
+                    transition: "color 0.35s ease",
                     color: isActive
-                      ? "var(--color-text-secondary)"
+                      ? activeColors[phase]
                       : isDone
                       ? "var(--color-text-muted)"
                       : "var(--color-text-dim)",
-                    fontWeight: isActive ? "600" : "400",
+                    fontWeight: isActive ? 600 : 400,
+                    letterSpacing: "0.06em",
                   }}
                 >
-                  {labels[i]}
+                  {phaseLabels[i]}
                 </span>
               );
             })}
@@ -449,34 +575,43 @@ function RightPanel({ state }: { state: ReturnType<typeof useIncidentStream>["st
         overflow: "hidden",
       }}
     >
+      {/* Header */}
       <div
         style={{
           flexShrink: 0,
           display: "flex",
           alignItems: "center",
-          gap: "8px",
-          padding: "8px 16px",
+          gap: "7px",
+          padding: "7px 16px",
           borderBottom: "1px solid var(--color-border-subtle)",
         }}
       >
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="2">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-dim)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <ellipse cx="12" cy="5" rx="9" ry="3"/>
           <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
           <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
         </svg>
-        <span style={{ fontSize: "10px", fontFamily: "var(--font-mono)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--color-text-muted)" }}>
+        <span style={{
+          fontSize: "9.5px",
+          fontFamily: "var(--font-mono)",
+          fontWeight: 600,
+          textTransform: "uppercase",
+          letterSpacing: "0.12em",
+          color: "var(--color-text-muted)",
+        }}>
           DQL Evidence
         </span>
         {state.dqlRecords.length > 0 && (
           <span
             style={{
               marginLeft: "auto",
-              fontSize: "10px",
+              fontSize: "9.5px",
               fontFamily: "var(--font-mono)",
-              padding: "2px 6px",
+              padding: "1px 6px",
               borderRadius: "3px",
               color: "var(--color-accent)",
               backgroundColor: "var(--color-accent-dim)",
+              border: "1px solid rgba(0,204,232,0.2)",
             }}
           >
             {state.dqlRecords.length}
@@ -493,6 +628,3 @@ function RightPanel({ state }: { state: ReturnType<typeof useIncidentStream>["st
     </aside>
   );
 }
-
-// suppress unused import warning
-const _clsx = clsx;

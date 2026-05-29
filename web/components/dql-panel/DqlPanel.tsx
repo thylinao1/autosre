@@ -10,22 +10,18 @@ interface DqlPanelProps {
 
 function JsonValue({ value }: { value: unknown }) {
   if (typeof value === "number") {
-    return <span className="text-[var(--color-accent)]">{value}</span>;
+    return <span style={{ color: "var(--color-accent)" }}>{value}</span>;
   }
   if (typeof value === "boolean") {
-    return <span className="text-[var(--color-amber)]">{String(value)}</span>;
+    return <span style={{ color: "var(--color-amber)" }}>{String(value)}</span>;
   }
   if (value === null || value === undefined) {
-    return <span className="text-[var(--color-text-dim)]">null</span>;
+    return <span style={{ color: "var(--color-text-dim)" }}>null</span>;
   }
   if (typeof value === "object") {
-    return (
-      <span className="text-[var(--color-text-secondary)] font-mono">
-        {JSON.stringify(value)}
-      </span>
-    );
+    return <span style={{ color: "var(--color-text-secondary)", fontFamily: "var(--font-mono)" }}>{JSON.stringify(value)}</span>;
   }
-  return <span className="text-[var(--color-green-text)]">&quot;{String(value)}&quot;</span>;
+  return <span style={{ color: "var(--color-green-text)" }}>&quot;{String(value)}&quot;</span>;
 }
 
 export function DqlPanel({ query, records, reasoning }: DqlPanelProps) {
@@ -33,37 +29,87 @@ export function DqlPanel({ query, records, reasoning }: DqlPanelProps) {
 
   if (!hasData) {
     return (
-      <div className="flex flex-col items-center justify-center py-10 text-center">
-        <div className="w-8 h-8 rounded border border-[var(--color-border)] flex items-center justify-center mb-3">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="1.5">
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "40px 20px",
+          textAlign: "center",
+          gap: "12px",
+        }}
+      >
+        <div
+          className="animate-idle-breathe"
+          style={{
+            width: "36px",
+            height: "36px",
+            borderRadius: "8px",
+            border: "1px solid var(--color-border)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "var(--color-surface-0)",
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <ellipse cx="12" cy="5" rx="9" ry="3"/>
             <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
             <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
           </svg>
         </div>
-        <p className="text-[11px] font-mono text-[var(--color-text-muted)]">
-          DQL evidence will appear during DIAGNOSE
+        <p style={{
+          fontSize: "11px",
+          fontFamily: "var(--font-mono)",
+          color: "var(--color-text-dim)",
+          lineHeight: 1.6,
+        }}>
+          DQL evidence appears
+          <br />
+          during DIAGNOSE
         </p>
       </div>
     );
   }
 
-  // Get column keys from records
   const columns = records.length > 0
     ? Object.keys(records[0]).filter((k) => k !== "__type")
     : [];
 
   return (
-    <div className="p-4 space-y-4 overflow-y-auto max-h-full">
+    <div style={{ padding: "14px", display: "flex", flexDirection: "column", gap: "14px", overflowY: "auto", maxHeight: "100%" }}>
       {/* DQL Query */}
       {query && (
         <div>
-          <p className="text-[10px] font-mono uppercase tracking-widest text-[var(--color-text-muted)] mb-2">
+          <p style={{
+            fontSize: "9.5px",
+            fontFamily: "var(--font-mono)",
+            textTransform: "uppercase",
+            letterSpacing: "0.12em",
+            color: "var(--color-text-dim)",
+            marginBottom: "7px",
+            fontWeight: 500,
+          }}>
             DQL Query
           </p>
-          <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface-1)] p-3 overflow-x-auto">
-            <pre className="text-[11px] font-mono text-[var(--color-text-secondary)] whitespace-pre-wrap break-all leading-relaxed">
-              <span className="text-[var(--color-accent)]">fetch</span>
+          <div style={{
+            borderRadius: "7px",
+            border: "1px solid var(--color-border)",
+            backgroundColor: "var(--color-surface-1)",
+            padding: "10px 12px",
+            overflowX: "auto",
+          }}>
+            <pre style={{
+              fontSize: "10.5px",
+              fontFamily: "var(--font-mono)",
+              color: "var(--color-text-secondary)",
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-all",
+              lineHeight: 1.65,
+              margin: 0,
+            }}>
+              <span style={{ color: "var(--color-accent)" }}>fetch</span>
               {" "}
               {query.replace(/^fetch\s+/i, "")}
             </pre>
@@ -74,17 +120,39 @@ export function DqlPanel({ query, records, reasoning }: DqlPanelProps) {
       {/* Records table */}
       {records.length > 0 && (
         <div>
-          <p className="text-[10px] font-mono uppercase tracking-widest text-[var(--color-text-muted)] mb-2">
+          <p style={{
+            fontSize: "9.5px",
+            fontFamily: "var(--font-mono)",
+            textTransform: "uppercase",
+            letterSpacing: "0.12em",
+            color: "var(--color-text-dim)",
+            marginBottom: "7px",
+            fontWeight: 500,
+          }}>
             Evidence — {records.length} record{records.length !== 1 ? "s" : ""}
           </p>
-          <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface-1)] overflow-x-auto">
-            <table className="w-full text-[11px] font-mono">
+          <div style={{
+            borderRadius: "7px",
+            border: "1px solid var(--color-border)",
+            backgroundColor: "var(--color-surface-1)",
+            overflowX: "auto",
+          }}>
+            <table style={{ width: "100%", fontSize: "10.5px", fontFamily: "var(--font-mono)", borderCollapse: "collapse" }}>
               <thead>
-                <tr className="border-b border-[var(--color-border-subtle)]">
+                <tr style={{ borderBottom: "1px solid var(--color-border-subtle)" }}>
                   {columns.map((col) => (
                     <th
                       key={col}
-                      className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-medium whitespace-nowrap"
+                      style={{
+                        padding: "7px 10px",
+                        textAlign: "left",
+                        fontSize: "9px",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.1em",
+                        color: "var(--color-text-dim)",
+                        fontWeight: 500,
+                        whiteSpace: "nowrap",
+                      }}
                     >
                       {col}
                     </th>
@@ -95,10 +163,15 @@ export function DqlPanel({ query, records, reasoning }: DqlPanelProps) {
                 {records.map((row, i) => (
                   <tr
                     key={i}
-                    className="border-b border-[var(--color-border-subtle)] last:border-0 hover:bg-[var(--color-surface-2)] transition-colors"
+                    style={{
+                      borderBottom: i < records.length - 1 ? "1px solid var(--color-border-subtle)" : "none",
+                      transition: "background-color var(--duration-fast) ease",
+                    }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLTableRowElement).style.backgroundColor = "var(--color-surface-2)"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLTableRowElement).style.backgroundColor = "transparent"; }}
                   >
                     {columns.map((col) => (
-                      <td key={col} className="px-3 py-2 whitespace-nowrap">
+                      <td key={col} style={{ padding: "7px 10px", whiteSpace: "nowrap" }}>
                         <JsonValue value={row[col]} />
                       </td>
                     ))}
@@ -113,11 +186,30 @@ export function DqlPanel({ query, records, reasoning }: DqlPanelProps) {
       {/* Agent reasoning */}
       {reasoning && (
         <div>
-          <p className="text-[10px] font-mono uppercase tracking-widest text-[var(--color-text-muted)] mb-2">
+          <p style={{
+            fontSize: "9.5px",
+            fontFamily: "var(--font-mono)",
+            textTransform: "uppercase",
+            letterSpacing: "0.12em",
+            color: "var(--color-text-dim)",
+            marginBottom: "7px",
+            fontWeight: 500,
+          }}>
             Agent Reasoning
           </p>
-          <div className="rounded border border-[rgba(128,96,240,0.25)] bg-[rgba(128,96,240,0.06)] p-3">
-            <p className="text-xs font-mono text-[var(--color-text-secondary)] leading-relaxed italic">
+          <div style={{
+            borderRadius: "7px",
+            border: "1px solid rgba(120,85,240,0.22)",
+            backgroundColor: "rgba(120,85,240,0.05)",
+            padding: "10px 12px",
+          }}>
+            <p style={{
+              fontSize: "11px",
+              fontFamily: "var(--font-mono)",
+              color: "var(--color-text-secondary)",
+              lineHeight: 1.65,
+              fontStyle: "italic",
+            }}>
               {reasoning}
             </p>
           </div>

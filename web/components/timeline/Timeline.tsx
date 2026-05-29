@@ -11,34 +11,34 @@ interface TimelineProps {
 
 const PHASE_ORDER: Phase[] = ["detect", "diagnose", "act", "verify"];
 
-const phaseConfig: Record<Phase, { label: string; color: string; bg: string; border: string; glow: string }> = {
+const phaseConfig: Record<Phase, { label: string; color: string; bg: string; glow: string; dotColor: string }> = {
   detect: {
     label: "DETECT",
-    color: "text-[var(--color-detect)]",
-    bg: "bg-[var(--color-accent-dim)]",
-    border: "border-[var(--color-detect)] border-opacity-40",
-    glow: "shadow-[0_0_8px_var(--color-accent-glow)]",
+    color: "var(--color-detect)",
+    bg: "var(--color-accent-dim)",
+    glow: "0 0 8px rgba(0,204,232,0.45)",
+    dotColor: "var(--color-detect)",
   },
   diagnose: {
     label: "DIAGNOSE",
-    color: "text-[#8060f0]",
-    bg: "bg-[rgba(128,96,240,0.12)]",
-    border: "border-[#8060f0] border-opacity-40",
-    glow: "shadow-[0_0_8px_rgba(128,96,240,0.5)]",
+    color: "var(--color-diagnose)",
+    bg: "rgba(120,85,240,0.12)",
+    glow: "0 0 8px rgba(120,85,240,0.45)",
+    dotColor: "var(--color-diagnose)",
   },
   act: {
     label: "ACT",
-    color: "text-[var(--color-act)]",
-    bg: "bg-[var(--color-amber-dim)]",
-    border: "border-[var(--color-act)] border-opacity-40",
-    glow: "shadow-[0_0_8px_var(--color-amber-glow)]",
+    color: "var(--color-act)",
+    bg: "var(--color-amber-dim)",
+    glow: "0 0 8px rgba(242,168,50,0.45)",
+    dotColor: "var(--color-act)",
   },
   verify: {
     label: "VERIFY",
-    color: "text-[var(--color-verify)]",
-    bg: "bg-[var(--color-green-dim)]",
-    border: "border-[var(--color-verify)] border-opacity-40",
-    glow: "shadow-[0_0_8px_var(--color-green-glow)]",
+    color: "var(--color-verify)",
+    bg: "var(--color-green-dim)",
+    glow: "0 0 8px rgba(32,204,128,0.45)",
+    dotColor: "var(--color-verify)",
   },
 };
 
@@ -47,81 +47,77 @@ const entryKindConfig: Record<
   { icon: React.ReactNode; dotColor: string; dotGlow: string }
 > = {
   step: {
-    icon: (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-        <polyline points="9 18 15 12 9 6"/>
-      </svg>
-    ),
-    dotColor: "bg-[var(--color-text-muted)]",
+    icon: null,
+    dotColor: "var(--color-text-dim)",
     dotGlow: "",
   },
   tool_call: {
     icon: (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
       </svg>
     ),
-    dotColor: "bg-[var(--color-accent)]",
-    dotGlow: "shadow-[0_0_5px_var(--color-accent-glow)]",
+    dotColor: "var(--color-accent)",
+    dotGlow: "0 0 5px var(--color-accent-glow)",
   },
   tool_result: {
     icon: (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="20 6 9 17 4 12"/>
       </svg>
     ),
-    dotColor: "bg-[var(--color-text-secondary)]",
+    dotColor: "var(--color-text-secondary)",
     dotGlow: "",
   },
   agent_message: {
     icon: (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
       </svg>
     ),
-    dotColor: "bg-[#8060f0]",
-    dotGlow: "shadow-[0_0_5px_rgba(128,96,240,0.6)]",
+    dotColor: "var(--color-diagnose)",
+    dotGlow: "0 0 5px rgba(120,85,240,0.5)",
   },
   approval_request: {
     icon: (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10"/>
         <line x1="12" y1="8" x2="12" y2="12"/>
         <line x1="12" y1="16" x2="12.01" y2="16"/>
       </svg>
     ),
-    dotColor: "bg-[var(--color-amber)]",
-    dotGlow: "shadow-[0_0_6px_var(--color-amber-glow)]",
+    dotColor: "var(--color-amber)",
+    dotGlow: "0 0 6px var(--color-amber-glow)",
   },
   approval_resolved: {
     icon: (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="20 6 9 17 4 12"/>
       </svg>
     ),
-    dotColor: "bg-[var(--color-green)]",
-    dotGlow: "shadow-[0_0_5px_var(--color-green-glow)]",
+    dotColor: "var(--color-green)",
+    dotGlow: "0 0 5px var(--color-green-glow)",
   },
   final: {
     icon: (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
         <polyline points="22 4 12 14.01 9 11.01"/>
       </svg>
     ),
-    dotColor: "bg-[var(--color-green)]",
-    dotGlow: "shadow-[0_0_8px_var(--color-green-glow)]",
+    dotColor: "var(--color-green)",
+    dotGlow: "0 0 8px var(--color-green-glow)",
   },
   error: {
     icon: (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10"/>
         <line x1="15" y1="9" x2="9" y2="15"/>
         <line x1="9" y1="9" x2="15" y2="15"/>
       </svg>
     ),
-    dotColor: "bg-[var(--color-red)]",
-    dotGlow: "shadow-[0_0_5px_var(--color-red-glow)]",
+    dotColor: "var(--color-red)",
+    dotGlow: "0 0 5px var(--color-red-glow)",
   },
 };
 
@@ -129,26 +125,45 @@ function PhaseHeader({ phase, isActive, isDone }: { phase: Phase; isActive: bool
   const cfg = phaseConfig[phase];
   return (
     <div
-      className={clsx(
-        "flex items-center gap-2 py-1.5",
-        "text-[10px] font-mono font-semibold uppercase tracking-widest",
-        "transition-colors duration-300",
-        isDone ? "text-[var(--color-text-dim)]" : isActive ? cfg.color : "text-[var(--color-text-dim)]"
-      )}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "6px",
+        padding: "4px 0 3px",
+        fontSize: "9.5px",
+        fontFamily: "var(--font-mono)",
+        fontWeight: 600,
+        textTransform: "uppercase",
+        letterSpacing: "0.14em",
+        transition: "color 0.3s ease",
+        color: isDone ? "var(--color-text-dim)" : isActive ? cfg.color : "var(--color-text-dim)",
+      }}
     >
+      {/* Phase number/check badge */}
       <div
-        className={clsx(
-          "w-4 h-4 rounded flex items-center justify-center border text-[8px]",
-          "transition-all duration-300",
-          isDone
-            ? "border-[var(--color-border)] text-[var(--color-text-muted)]"
+        style={{
+          width: "15px",
+          height: "15px",
+          borderRadius: "4px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          border: "1px solid",
+          fontSize: "7.5px",
+          flexShrink: 0,
+          transition: "all 0.3s ease",
+          borderColor: isDone
+            ? "var(--color-border)"
             : isActive
-            ? clsx(cfg.bg, cfg.border, cfg.color, cfg.glow)
-            : "border-[var(--color-border-subtle)] text-[var(--color-text-dim)]"
-        )}
+            ? cfg.color
+            : "var(--color-border-subtle)",
+          backgroundColor: isActive ? cfg.bg : "transparent",
+          color: isDone ? "var(--color-text-dim)" : isActive ? cfg.color : "var(--color-text-dim)",
+          boxShadow: isActive ? cfg.glow : "none",
+        }}
       >
         {isDone ? (
-          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+          <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12"/>
           </svg>
         ) : (
@@ -157,7 +172,15 @@ function PhaseHeader({ phase, isActive, isDone }: { phase: Phase; isActive: bool
       </div>
       {cfg.label}
       {isActive && (
-        <span className="w-1 h-1 rounded-full bg-current animate-pulse-glow" />
+        <span
+          style={{
+            width: "5px",
+            height: "5px",
+            borderRadius: "50%",
+            backgroundColor: "currentColor",
+          }}
+          className="animate-pulse-glow"
+        />
       )}
     </div>
   );
@@ -179,62 +202,88 @@ function EntryRow({ entry, isLast, isNewest, staggerIndex }: EntryRowProps) {
 
   if (isStep) return null;
 
+  /* Emil stagger: 40ms per entry, cap at 200ms */
   const staggerDelay = Math.min(staggerIndex * 40, 200);
 
   return (
     <div
-      className={clsx(
-        "flex gap-3 pl-6 animate-timeline-in",
-        isNewest && "entry-flash-once",
-        isLast ? "" : "pb-1"
-      )}
+      className="animate-timeline-in"
       style={{
+        display: "flex",
+        gap: "10px",
+        paddingLeft: "18px",
         animationDelay: `${staggerDelay}ms`,
         ...(isNewest
           ? {
-              animation: `timeline-entry-in var(--duration-slow) var(--ease-out-expo) both,
-                          entry-flash var(--duration-xslow) var(--ease-out-quart) both`,
+              animation: `timeline-entry-in var(--duration-slow) var(--ease-out-expo) ${staggerDelay}ms both, entry-flash var(--duration-xslow) var(--ease-out-quart) ${staggerDelay}ms both`,
             }
           : undefined),
       }}
     >
-      {/* Connector line + dot */}
-      <div className="flex flex-col items-center flex-shrink-0 w-3 -mt-0.5">
+      {/* Connector: dot + vertical line */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, width: "10px", marginTop: "1px" }}>
+        {/* Dot with icon overlay */}
         <div
-          className={clsx(
-            "w-2 h-2 rounded-full flex-shrink-0 mt-1 transition-all duration-300",
-            cfg.dotColor,
-            cfg.dotGlow
-          )}
+          style={{
+            width: "8px",
+            height: "8px",
+            borderRadius: "50%",
+            flexShrink: 0,
+            marginTop: "4px",
+            backgroundColor: cfg.dotColor,
+            boxShadow: cfg.dotGlow,
+            transition: "all 0.3s ease",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "rgba(0,0,0,0.7)",
+          }}
         />
         {!isLast && (
-          <div className="w-px flex-1 bg-[var(--color-border-subtle)] mt-1" />
+          <div style={{ width: "1px", flex: 1, backgroundColor: "var(--color-border-subtle)", marginTop: "2px" }} />
         )}
       </div>
 
       {/* Content */}
       <div
-        className={clsx(
-          "flex-1 min-w-0 pb-3",
-          isApproval ? "text-[var(--color-amber)]" : isError ? "text-[var(--color-red-text)]" : ""
-        )}
+        style={{
+          flex: 1,
+          minWidth: 0,
+          paddingBottom: "10px",
+        }}
       >
         <p
-          className={clsx(
-            "text-xs font-mono leading-snug",
-            isAgentMsg
-              ? "text-[var(--color-text-secondary)] italic"
+          style={{
+            fontSize: "11.5px",
+            fontFamily: "var(--font-mono)",
+            lineHeight: 1.45,
+            color: isAgentMsg
+              ? "var(--color-text-secondary)"
               : isApproval
-              ? "text-[var(--color-amber)] font-medium"
+              ? "var(--color-amber)"
               : isError
-              ? "text-[var(--color-red-text)]"
-              : "text-[var(--color-text-primary)]"
-          )}
+              ? "var(--color-red-text)"
+              : "var(--color-text-primary)",
+            fontStyle: isAgentMsg ? "italic" : "normal",
+            fontWeight: isApproval ? 500 : 400,
+          }}
         >
           {entry.label}
         </p>
         {entry.detail && (
-          <p className="text-[11px] font-mono text-[var(--color-text-muted)] mt-0.5 leading-snug line-clamp-2">
+          <p
+            style={{
+              fontSize: "10.5px",
+              fontFamily: "var(--font-mono)",
+              color: "var(--color-text-muted)",
+              marginTop: "2px",
+              lineHeight: 1.4,
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
             {entry.detail}
           </p>
         )}
@@ -247,12 +296,8 @@ export function Timeline({ entries, currentPhase }: TimelineProps) {
   const prevCountRef = useRef(0);
   const renderedCount = entries.filter((e) => e.kind !== "step").length;
 
-  // Group entries by phase
   const phaseEntries = PHASE_ORDER.reduce<Record<Phase, TimelineEntry[]>>(
-    (acc, phase) => {
-      acc[phase] = [];
-      return acc;
-    },
+    (acc, phase) => { acc[phase] = []; return acc; },
     { detect: [], diagnose: [], act: [], verify: [] }
   );
 
@@ -271,30 +316,63 @@ export function Timeline({ entries, currentPhase }: TimelineProps) {
   const activePhaseIndex = currentPhase ? PHASE_ORDER.indexOf(currentPhase) : -1;
   const hasAnyEntry = entries.length > 0;
 
-  // Track which entries are "new" since last render for flash effect
   const newEntriesThreshold = prevCountRef.current;
   prevCountRef.current = renderedCount;
 
   if (!hasAnyEntry) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "56px 24px",
+          textAlign: "center",
+          gap: "14px",
+        }}
+      >
+        {/* Icon — breathes gently */}
         <div
-          className="w-10 h-10 rounded-lg border border-[var(--color-border)] flex items-center justify-center mb-4"
-          style={{ transition: "border-color var(--duration-normal) var(--ease-out-expo)" }}
+          className="animate-idle-breathe"
+          style={{
+            width: "44px",
+            height: "44px",
+            borderRadius: "12px",
+            border: "1px solid var(--color-border)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "var(--color-surface-0)",
+          }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="1.5">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
           </svg>
         </div>
-        <p className="text-xs font-mono text-[var(--color-text-muted)]">
-          Start an incident sweep to see the agent&apos;s reasoning
-        </p>
+        <div>
+          <p style={{
+            fontSize: "11.5px",
+            fontFamily: "var(--font-mono)",
+            color: "var(--color-text-muted)",
+            lineHeight: 1.6,
+          }}>
+            Start an incident sweep to see
+          </p>
+          <p style={{
+            fontSize: "11.5px",
+            fontFamily: "var(--font-mono)",
+            color: "var(--color-text-dim)",
+          }}>
+            the agent&apos;s live reasoning
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="py-3 px-4 space-y-1 overflow-y-auto max-h-full">
+    <div style={{ padding: "10px 14px", overflowY: "auto", maxHeight: "100%" }}>
       {PHASE_ORDER.map((phase, i) => {
         const phaseItemEntries = phaseEntries[phase];
         const isActive = currentPhase === phase;
@@ -306,7 +384,7 @@ export function Timeline({ entries, currentPhase }: TimelineProps) {
         const visibleEntries = phaseItemEntries.filter((e) => e.kind !== "step");
 
         return (
-          <div key={phase}>
+          <div key={phase} style={{ marginBottom: "2px" }}>
             {(hasItems || isActive) && (
               <PhaseHeader phase={phase} isActive={isActive} isDone={isDone} />
             )}
@@ -324,13 +402,31 @@ export function Timeline({ entries, currentPhase }: TimelineProps) {
                   />
                 );
               })}
-              {/* Active phase "thinking" indicator */}
+              {/* Active phase "processing" indicator */}
               {isActive && visibleEntries.length === 0 && (
-                <div className="flex gap-3 pl-6 pb-3 animate-fade-in">
-                  <div className="flex flex-col items-center flex-shrink-0 w-3">
-                    <div className="w-2 h-2 rounded-full bg-[var(--color-accent)] animate-status-blink mt-1" />
+                <div
+                  className="animate-fade-in"
+                  style={{ display: "flex", gap: "10px", paddingLeft: "18px", paddingBottom: "10px" }}
+                >
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, width: "10px", marginTop: "1px" }}>
+                    <div
+                      style={{
+                        width: "8px",
+                        height: "8px",
+                        borderRadius: "50%",
+                        marginTop: "4px",
+                        backgroundColor: "var(--color-accent)",
+                      }}
+                      className="animate-status-blink"
+                    />
                   </div>
-                  <p className="text-[11px] font-mono text-[var(--color-accent)] italic">
+                  <p style={{
+                    fontSize: "11px",
+                    fontFamily: "var(--font-mono)",
+                    color: "var(--color-accent)",
+                    fontStyle: "italic",
+                    paddingTop: "3px",
+                  }}>
                     processing…
                   </p>
                 </div>

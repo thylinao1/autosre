@@ -8,54 +8,57 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  /* Core surfaces */
-  --color-bg:            oklch(11% 0.01 240);
-  --color-surface-0:     oklch(14% 0.012 240);
-  --color-surface-1:     oklch(17% 0.014 240);
-  --color-surface-2:     oklch(21% 0.015 240);
-  --color-surface-3:     oklch(26% 0.015 240);
+  /* Core surfaces — slightly warmer mid-tones for depth layering */
+  --color-bg:            oklch(10.5% 0.012 242);
+  --color-surface-0:     oklch(13.5% 0.013 242);
+  --color-surface-1:     oklch(16.5% 0.015 242);
+  --color-surface-2:     oklch(20% 0.016 242);
+  --color-surface-3:     oklch(25% 0.016 242);
+  /* Header uses a fractionally lighter surface for z-lift */
+  --color-surface-nav:   oklch(12.5% 0.012 242);
 
-  /* Borders */
-  --color-border-subtle: oklch(28% 0.015 240);
-  --color-border:        oklch(33% 0.018 240);
-  --color-border-strong: oklch(42% 0.022 240);
+  /* Borders — tighter range, more contrast at "strong" end */
+  --color-border-subtle: oklch(22% 0.014 242);
+  --color-border:        oklch(30% 0.017 242);
+  --color-border-strong: oklch(44% 0.022 242);
 
-  /* Text */
-  --color-text-primary:  oklch(93% 0.008 240);
-  --color-text-secondary:oklch(68% 0.012 240);
-  --color-text-muted:    oklch(48% 0.01 240);
-  --color-text-dim:      oklch(36% 0.008 240);
+  /* Text — Primary bumped brighter for readability */
+  --color-text-primary:  oklch(94% 0.007 242);
+  --color-text-secondary:oklch(66% 0.012 242);
+  --color-text-muted:    oklch(46% 0.01 242);
+  --color-text-dim:      oklch(32% 0.008 242);
 
   /* Accent — electric cyan for active/live states */
-  --color-accent:        oklch(72% 0.18 200);
-  --color-accent-dim:    oklch(72% 0.18 200 / 0.15);
-  --color-accent-glow:   oklch(72% 0.18 200 / 0.35);
+  --color-accent:        oklch(73% 0.19 196);
+  --color-accent-dim:    oklch(73% 0.19 196 / 0.14);
+  --color-accent-glow:   oklch(73% 0.19 196 / 0.38);
+  --color-accent-subtle: oklch(73% 0.19 196 / 0.06);
 
   /* Amber — pending/warning/approval */
-  --color-amber:         oklch(78% 0.19 70);
-  --color-amber-dim:     oklch(78% 0.19 70 / 0.12);
-  --color-amber-glow:    oklch(78% 0.19 70 / 0.4);
+  --color-amber:         oklch(79% 0.19 68);
+  --color-amber-dim:     oklch(79% 0.19 68 / 0.13);
+  --color-amber-glow:    oklch(79% 0.19 68 / 0.42);
 
   /* Red — AVAILABILITY severity / error */
-  --color-red:           oklch(65% 0.22 25);
-  --color-red-dim:       oklch(65% 0.22 25 / 0.12);
-  --color-red-glow:      oklch(65% 0.22 25 / 0.35);
-  --color-red-text:      oklch(74% 0.18 25);
+  --color-red:           oklch(64% 0.23 25);
+  --color-red-dim:       oklch(64% 0.23 25 / 0.13);
+  --color-red-glow:      oklch(64% 0.23 25 / 0.36);
+  --color-red-text:      oklch(75% 0.18 25);
 
   /* Orange — PERFORMANCE severity */
-  --color-orange:        oklch(73% 0.2 45);
-  --color-orange-dim:    oklch(73% 0.2 45 / 0.12);
-  --color-orange-text:   oklch(82% 0.16 45);
+  --color-orange:        oklch(73% 0.2 44);
+  --color-orange-dim:    oklch(73% 0.2 44 / 0.13);
+  --color-orange-text:   oklch(83% 0.15 44);
 
   /* Green — healthy / resolved */
-  --color-green:         oklch(67% 0.18 145);
-  --color-green-dim:     oklch(67% 0.18 145 / 0.12);
-  --color-green-glow:    oklch(67% 0.18 145 / 0.4);
-  --color-green-text:    oklch(76% 0.15 145);
+  --color-green:         oklch(68% 0.19 145);
+  --color-green-dim:     oklch(68% 0.19 145 / 0.13);
+  --color-green-glow:    oklch(68% 0.19 145 / 0.42);
+  --color-green-text:    oklch(78% 0.15 145);
 
   /* Phase colors for timeline steps */
   --color-detect:        var(--color-accent);
-  --color-diagnose:      oklch(72% 0.18 270);
+  --color-diagnose:      oklch(71% 0.19 272);
   --color-act:           var(--color-amber);
   --color-verify:        var(--color-green);
 
@@ -72,7 +75,7 @@
   --text-2xl:    1.5rem;      /* 24px */
   --text-3xl:    2rem;        /* 32px */
 
-  /* Spacing */
+  /* Spacing — rhythmic scale */
   --space-1:  0.25rem;
   --space-2:  0.5rem;
   --space-3:  0.75rem;
@@ -84,23 +87,32 @@
   --space-12: 3rem;
   --space-16: 4rem;
 
-  /* Radius */
+  /* Radius — consistent scale: sharp for tiny, moderate for cards */
   --radius-sm: 3px;
   --radius:    5px;
   --radius-md: 8px;
   --radius-lg: 12px;
+  --radius-xl: 16px;
 
-  /* Motion */
+  /* Motion — Emil-calibrated durations */
   --duration-instant: 80ms;
-  --duration-fast:    140ms;
-  --duration-normal:  280ms;
-  --duration-slow:    480ms;
-  --duration-xslow:   700ms;
+  --duration-fast:    150ms;   /* button press feedback */
+  --duration-normal:  260ms;   /* dropdown / small popover */
+  --duration-slow:    420ms;   /* timeline reveals */
+  --duration-xslow:   640ms;   /* state transitions */
+  --duration-modal:   340ms;   /* modal entrance */
 
-  /* Easing curves — expressive, compositor-friendly */
+  /* Easing curves — strong custom curves per Emil's guidance */
+  /* Strong ease-out: starts fast, decelerates sharply — for entering elements */
   --ease-out-expo:    cubic-bezier(0.16, 1, 0.3, 1);
+  /* Softer ease-out: for scale/opacity reveals */
   --ease-out-quart:   cubic-bezier(0.25, 1, 0.5, 1);
-  --ease-in-out:      cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-spring:      cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Strong ease-in-out: for on-screen movement */
+  --ease-in-out:      cubic-bezier(0.77, 0, 0.175, 1);
+  /* Spring: slight overshoot — for modal entrance, confirmation row */
+  --ease-spring:      cubic-bezier(0.34, 1.36, 0.64, 1);
+  /* Decelerate (Material): for backdrop */
   --ease-decelerate:  cubic-bezier(0, 0, 0.2, 1);
+  /* Drawer curve (iOS-like): for panel slide-ins */
+  --ease-drawer:      cubic-bezier(0.32, 0.72, 0, 1);
 }

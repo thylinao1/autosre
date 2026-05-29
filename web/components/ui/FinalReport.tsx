@@ -1,6 +1,5 @@
 "use client";
 
-import clsx from "clsx";
 import type { FinalEvent } from "@/lib/types";
 
 interface FinalReportProps {
@@ -14,67 +13,100 @@ export function FinalReport({ event }: FinalReportProps) {
   const isDeclined = outcome === "declined";
   const isClear = outcome === "all_clear";
 
+  const borderColor = isSuccess
+    ? "rgba(32,204,128,0.3)"
+    : isDeclined
+    ? "rgba(242,168,50,0.25)"
+    : isClear
+    ? "rgba(0,204,232,0.25)"
+    : "var(--color-border)";
+
+  const bgColor = isSuccess
+    ? "rgba(32,204,128,0.05)"
+    : isDeclined
+    ? "rgba(242,168,50,0.05)"
+    : isClear
+    ? "rgba(0,204,232,0.05)"
+    : "var(--color-surface-1)";
+
+  const iconColor = isSuccess
+    ? "var(--color-green)"
+    : isDeclined
+    ? "var(--color-amber)"
+    : "var(--color-accent)";
+
+  const labelColor = iconColor;
+
+  const label = isSuccess
+    ? "Incident Resolved"
+    : isDeclined
+    ? "Remediation Declined"
+    : isClear
+    ? "All Systems Clear"
+    : "Run Complete";
+
   return (
     <div
-      className={clsx(
-        "rounded-lg border p-4 animate-slide-in-up",
-        isSuccess
-          ? "border-[var(--color-green)] border-opacity-40 bg-[var(--color-green-dim)]"
-          : isDeclined
-          ? "border-[var(--color-amber)] border-opacity-30 bg-[var(--color-amber-dim)]"
-          : isClear
-          ? "border-[var(--color-accent)] border-opacity-30 bg-[var(--color-accent-dim)]"
-          : "border-[var(--color-border)] bg-[var(--color-surface-1)]"
-      )}
+      className="animate-slide-in-up"
+      style={{
+        borderRadius: "8px",
+        border: `1px solid ${borderColor}`,
+        backgroundColor: bgColor,
+        padding: "12px 14px",
+      }}
     >
-      <div className="flex items-start gap-3">
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
+        {/* Icon */}
         <div
-          className={clsx(
-            "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center",
-            isSuccess
-              ? "bg-[var(--color-green-dim)] text-[var(--color-green)]"
-              : isDeclined
-              ? "text-[var(--color-amber)]"
-              : "text-[var(--color-accent)]"
-          )}
+          style={{
+            flexShrink: 0,
+            width: "30px",
+            height: "30px",
+            borderRadius: "8px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: isSuccess ? "var(--color-green-dim)" : "transparent",
+            color: iconColor,
+          }}
         >
           {isSuccess ? (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
               <polyline points="22 4 12 14.01 9 11.01"/>
             </svg>
           ) : isDeclined ? (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10"/>
               <line x1="8" y1="12" x2="16" y2="12"/>
             </svg>
           ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10"/>
               <polyline points="12 8 12 12 14 14"/>
             </svg>
           )}
         </div>
-        <div className="flex-1 min-w-0">
-          <p
-            className={clsx(
-              "text-[10px] font-mono uppercase tracking-widest mb-1",
-              isSuccess
-                ? "text-[var(--color-green)]"
-                : isDeclined
-                ? "text-[var(--color-amber)]"
-                : "text-[var(--color-accent)]"
-            )}
-          >
-            {isSuccess
-              ? "Incident Resolved"
-              : isDeclined
-              ? "Remediation Declined"
-              : isClear
-              ? "All Systems Clear"
-              : "Run Complete"}
+
+        {/* Text */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{
+            fontSize: "9.5px",
+            fontFamily: "var(--font-mono)",
+            textTransform: "uppercase",
+            letterSpacing: "0.14em",
+            color: labelColor,
+            marginBottom: "4px",
+            fontWeight: 500,
+          }}>
+            {label}
           </p>
-          <p className="text-xs font-mono text-[var(--color-text-secondary)] leading-relaxed">
+          <p style={{
+            fontSize: "11px",
+            fontFamily: "var(--font-mono)",
+            color: "var(--color-text-secondary)",
+            lineHeight: 1.65,
+          }}>
             {report}
           </p>
         </div>
