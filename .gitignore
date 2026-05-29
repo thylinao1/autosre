@@ -30,6 +30,8 @@ node_modules/
 verify-*.png
 prod-*.png
 web/screenshots/
+web/test-results/
+web/playwright-report/
 
 # Build / deploy
 *.log
