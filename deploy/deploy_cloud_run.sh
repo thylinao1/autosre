@@ -52,10 +52,16 @@ set -euo pipefail
 : "${PROJECT_ID:?ERROR: set PROJECT_ID before running}"
 : "${REGION:=us-central1}"
 : "${DYNATRACE_MCP_MODE:=mock}"
-# Reasoning model. Default pro (best for the submission demo); override with
-# AUTOSRE_MODEL=gemini-3-flash-preview for a cheaper run. On Vertex there is no
-# free-tier rate cap, so either works without backoff.
-: "${AUTOSRE_MODEL:=gemini-3-pro-preview}"
+# Reasoning model. gemini-3-flash-preview is the Gemini 3 model verified available
+# on this project's Vertex (served from the `global` location — see VERTEX_LOCATION).
+# gemini-3-pro-preview was NOT available on Vertex for this project at deploy time;
+# override AUTOSRE_MODEL once pro is allowlisted. On Vertex there is no free-tier
+# rate cap, so the loop runs without backoff.
+: "${AUTOSRE_MODEL:=gemini-3-flash-preview}"
+# Vertex AI location for the MODEL (independent of the Cloud Run REGION above).
+# Gemini 3 preview models are served from the `global` endpoint — regional
+# (e.g. us-central1) returns 404 NOT_FOUND for them.
+: "${VERTEX_LOCATION:=global}"
 
 IMAGE_TS="$(date +%Y%m%d%H%M%S)"
 UI_IMAGE="gcr.io/${PROJECT_ID}/autosre-ui:${IMAGE_TS}"
@@ -99,11 +105,13 @@ gcloud run deploy autosre \
   --region "${REGION}" \
   --project "${PROJECT_ID}" \
   --allow-unauthenticated \
+  --no-cpu-throttling \
+  --timeout=600 \
   --quiet \
   --set-env-vars "\
 GOOGLE_GENAI_USE_VERTEXAI=TRUE,\
 GOOGLE_CLOUD_PROJECT=${PROJECT_ID},\
-GOOGLE_CLOUD_LOCATION=${REGION},\
+GOOGLE_CLOUD_LOCATION=${VERTEX_LOCATION},\
 AUTOSRE_MODEL=${AUTOSRE_MODEL},\
 DYNATRACE_MCP_MODE=${DYNATRACE_MCP_MODE},\
 TARGET_SERVICE_URL=${TARGET_URL},\
