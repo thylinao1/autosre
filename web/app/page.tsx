@@ -297,8 +297,8 @@ function LeftSidebar({
         borderRight: "1px solid var(--color-border-subtle)",
         display: "flex",
         flexDirection: "column",
-        gap: "12px",
-        padding: "14px",
+        gap: "18px",
+        padding: "20px 18px",
         overflowY: "auto",
       }}
     >

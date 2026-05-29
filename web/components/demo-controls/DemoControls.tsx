@@ -200,17 +200,31 @@ export function DemoControls({ status, onStart, onReset }: DemoControlsProps) {
             </div>
           )}
 
-          {/* Action row */}
-          <div style={{ display: "flex", gap: "7px", marginTop: isActive ? "10px" : "2px" }}>
-            {!isActive || isTerminal ? (
+          {/* Action area: stack full-width buttons so labels always fit */}
+          {isTerminal ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "2px" }}>
+              <RunButton
+                label={`Run ${selectedOpt.label} Again`}
+                onClick={() => onStart(selectedFault)}
+                variant="primary"
+              />
+              <RunButton
+                label="Reset to Standby"
+                onClick={() => onReset()}
+                variant="secondary"
+              />
+            </div>
+          ) : !isActive ? (
+            <div style={{ marginTop: "2px" }}>
               <RunButton
                 label={runLabel}
-                onClick={() => isTerminal ? onReset() : onStart(selectedFault)}
-                variant={isTerminal ? "secondary" : "primary"}
+                onClick={() => onStart(selectedFault)}
+                variant="primary"
               />
-            ) : (
+            </div>
+          ) : (
+            <div style={{ marginTop: "10px" }}>
               <div style={{
-                flex: 1,
                 height: "36px",
                 borderRadius: "7px",
                 border: "1px solid var(--color-border)",
@@ -228,17 +242,8 @@ export function DemoControls({ status, onStart, onReset }: DemoControlsProps) {
                   {status === "awaiting_approval" ? "Awaiting approval" : "Agent running…"}
                 </span>
               </div>
-            )}
-
-            {isTerminal && (
-              <RunButton
-                label="New Run"
-                onClick={() => onStart(selectedFault)}
-                variant="primary"
-                compact
-              />
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -249,12 +254,10 @@ function RunButton({
   label,
   onClick,
   variant,
-  compact = false,
 }: {
   label: string;
   onClick: () => void;
   variant: "primary" | "secondary";
-  compact?: boolean;
 }) {
   const isPrimary = variant === "primary";
 
@@ -262,14 +265,14 @@ function RunButton({
     <button
       onClick={onClick}
       className={clsx(
-        "font-mono font-semibold rounded-[7px]",
+        "font-mono font-semibold rounded-[7px] w-full",
         "focus-visible:outline-2 focus-visible:outline-offset-2",
-        compact ? "px-3" : "flex-1",
         isPrimary
           ? "focus-visible:outline-[var(--color-accent)]"
           : "focus-visible:outline-[var(--color-border-strong)]"
       )}
       style={{
+        width: "100%",
         height: "36px",
         fontSize: "12px",
         cursor: "pointer",
