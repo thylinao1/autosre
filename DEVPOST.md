@@ -99,7 +99,7 @@ The agent runs a **6-step loop**:
 | **Project Name** | AutoSRE: The Autonomous On-Call Engineer |
 | **Tagline** | The on-call engineer that diagnoses and fixes production incidents from Dynatrace, but never acts without your approval. |
 | **Demo video** | [YouTube URL] (≤3:00, shows full DETECT→DIAGNOSE→APPROVE→ACT→VERIFY loop) |
-| **Try it** | **https://autosre-ui-vrf7h4n4ra-uc.a.run.app/demo** — works from incognito. The hosted Mission Control streams the full DETECT→DIAGNOSE→APPROVE→ACT→VERIFY loop and the approved remediation runs for real against checkout-api. The agent's live, model-driven run against a **real Dynatrace tenant** (real DQL returning the incident) is shown in the demo video and is reproducible locally (`DYNATRACE_MCP_MODE=stdio`). |
+| **Try it** | **https://autosre-ui-vrf7h4n4ra-uc.a.run.app/demo** — works from incognito. The hosted Mission Control runs the **real Gemini agent live** end to end (deterministic mock telemetry for a reliable click-through), streaming DETECT→DIAGNOSE→APPROVE→ACT→VERIFY, with the approved remediation executing for real against checkout-api. The same agent's run against a **real Dynatrace tenant** (real DQL returning the incident over the official Dynatrace MCP server) is shown in the demo video and is reproducible locally (`DYNATRACE_MCP_MODE=stdio`). |
 | **Code** | https://github.com/thylinao1/autosre (open-source MIT). License visible in About box. |
 | **Inspiration** | IT downtime costs thousands per minute (Gartner's 2014 figure: $5,600/min; EMA Research 2024: ~$14,056/min); MTTR is dominated by the identify phase (30+ min). AutoSRE collapses triage to seconds. |
 | **What it does** | (See section above) |

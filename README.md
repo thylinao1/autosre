@@ -231,7 +231,7 @@ Runs 30 tests: 28 offline-deterministic, plus 2 gated on live Gemini credentials
 - **Machinery tests (deterministic):** Mock Dynatrace server over MCP stdio protocol; verify the approval gate, remediation execution, and incident outcome for both fault types.
 - **Integration tests:** Live SSE streaming from the backend; approval round-trip; full agent loop with real Gemini (skipped unless Gemini credentials present).
 - **MCP envelope parsing:** Regression tests for real ADK tool response unwrapping (fixed a critical bug).
-- **Demo mode (`test_demo_mode.py`):** a deterministic replay exercises the full detect→verify loop and applies the **real** remediation HTTP call, so the hosted demo stays reliable even if the model API is briefly unavailable. The model-driven loop itself is covered by the live agent test and proven in the demo video (real Gemini + real DQL against the tenant).
+- **Demo mode (`test_demo_mode.py`):** a deterministic replay exercises the full detect→verify loop and applies the **real** remediation HTTP call. The hosted demo runs the **live Gemini agent by default** (mock Dynatrace telemetry for a reliable click-through); this replay stays available as an instant fallback (`AUTOSRE_DEMO_MODE=1`) if the model API is ever unavailable during judging. The real-tenant, real-DQL run is in the demo video.
 
 The 28 deterministic tests pass offline (mock Dynatrace). The 2 live tests run against Gemini if credentials are present.
 
