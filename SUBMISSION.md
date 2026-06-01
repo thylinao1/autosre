@@ -1,16 +1,16 @@
 # Devpost Submission Checklist — AutoSRE (Dynatrace track)
 
 ## Required deliverables
-- [x] **Hosted project URL** — **https://autosre-ui-w6llqyu5fq-uc.a.run.app** — live
+- [x] **Hosted project URL** — **https://autosre-ui-vrf7h4n4ra-uc.a.run.app** — live
       Mission-Control web UI on Cloud Run; streams the full incident loop and the operator
       approval gate. Agent (Gemini 3 via Vertex AI) + checkout-api also on Cloud Run.
       Verified end-to-end from incognito (detect → diagnose → approve → resolved/green).
-- [ ] **Public open-source repo** — push this repo to a **public** GitHub repo.
-- [ ] **OSS license detectable in About** — `LICENSE` (MIT) is at repo root;
-      GitHub auto-detects it and shows "MIT" in the About sidebar. ✔ already in place.
-- [ ] **~3 minute demo video** — follow [VIDEO-SCRIPT.md](VIDEO-SCRIPT.md) (criterion-tagged beats).
-- [ ] **Track selected** — **Dynatrace**.
-- [ ] **Devpost form** completed — draft fields in [DEVPOST.md](DEVPOST.md).
+- [x] **Public open-source repo** — **https://github.com/thylinao1/autosre** (public).
+- [x] **OSS license detectable in About** — `LICENSE` (MIT) at repo root; GitHub's
+      license endpoint detects it as MIT, so the About sidebar shows "MIT".
+- [ ] **~3 minute demo video** — follow [VIDEO-SCRIPT.md](VIDEO-SCRIPT.md) (criterion-tagged beats). _(record + link)_
+- [x] **Track selected** — **Dynatrace**.
+- [ ] **Devpost form** completed — draft fields in [DEVPOST.md](DEVPOST.md). _(submit)_
 
 ## How we satisfy each judging requirement
 - **Beyond chat / uses tools** → agent calls Dynatrace MCP tools (detect/diagnose) and
@@ -22,10 +22,14 @@
   tools; Python-enforced approval gate that blocks tool execution.
   Tested in `tests/test_remediation_gate.py`.
 - **Meaningful MCP partner integration** → Dynatrace MCP is the **only** sensory system.
-  Detection + diagnosis run entirely on `query-problems`, `execute-dql`, `get-events-for-kubernetes-cluster`.
+  Detection + diagnosis run on the Dynatrace MCP read tools: `execute_dql` (the live path
+  detects on a real `timeseries avg(checkout.failure_rate)` query against the tenant),
+  `list_problems`/`query_problems`, and `get_kubernetes_events`. Tool names are snake_case
+  (valid Gemini function-call identifiers) and verified against `@dynatrace-oss/dynatrace-mcp-server` v1.8.6.
   Toolset built in `autosre/agent/dynatrace.py`; mode-agnostic (mock/stdio/remote).
-- **Gemini 3 + Google Cloud Agent Builder** → ADK `LlmAgent` on `gemini-3-pro-preview`,
-  reasoning on **Vertex AI**, deployable to **Vertex AI Agent Engine** (Agent Platform) + Cloud Run.
+- **Gemini 3 + Google Cloud Agent Builder** → ADK `LlmAgent` on **Gemini 3**
+  (`gemini-3-flash-preview` on Vertex AI for the deploy; `gemini-3-pro-preview` is the code
+  default where allowlisted), reasoning on **Vertex AI**, deployed on **Cloud Run**.
   Explicit in README + video narration.
 - **Design (25%)** → Mission-Control web UI (Next.js 16, dark ops aesthetic, streaming timeline,
   hero approval modal, responsive). Built in `web/`; SSE backend in `autosre/server/`.
@@ -35,7 +39,7 @@
   chatbots (read-only) and reckless auto-fix (human gate is framework-enforced, not prompt).
 
 ## Pre-submission verification
-- [ ] `pytest` passes (24 deterministic + integration tests).
+- [ ] `pytest` passes (28 deterministic offline + 2 live-gated = 30 tests).
 - [ ] With a Gemini key set, `tests/test_agent_live.py` passes (full 6-step loop).
 - [ ] `python -m autosre.run_agent` (CLI) resolves both `payment_errors` and `latency_spike`.
 - [ ] `python -m autosre.server` (SSE backend) + `cd web && npm run dev` (UI) runs full loop.

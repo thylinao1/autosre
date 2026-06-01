@@ -16,7 +16,7 @@ Production incidents don't wait. When a checkout service crashes at scale, **eve
 
 | Problem | Traditional Response | AutoSRE |
 |---|---|---|
-| **Time to identify root cause** | 30+ minutes (human triage) | ~10 seconds (automated DQL analysis) |
+| **Time to identify root cause** | 30+ minutes (human triage) | seconds — live DQL + Gemini diagnosis (timed on-screen in the demo) |
 | **Human fatigue** | 3am wake-ups, hundreds of manual queries | On-call engineer just approves the fix |
 | **Safety** | Inconsistent process; remediation errors | Python-enforced approval gate; model cannot bypass |
 | **Visibility** | Black-box response | Streaming timeline; operator sees every step live |
@@ -221,7 +221,7 @@ Runs 30 tests: 28 offline-deterministic, plus 2 gated on live Gemini credentials
 - **Machinery tests (deterministic):** Mock Dynatrace server over MCP stdio protocol; verify the approval gate, remediation execution, and incident outcome for both fault types.
 - **Integration tests:** Live SSE streaming from the backend; approval round-trip; full agent loop with real Gemini (skipped unless Gemini credentials present).
 - **MCP envelope parsing:** Regression tests for real ADK tool response unwrapping (fixed a critical bug).
-- **Demo mode:** The deterministic, model-free replay drives the full detect-to-verify loop and applies the real remediation, so the hosted demo URL recovers without a single model call.
+- **Demo mode (`test_demo_mode.py`):** a deterministic replay exercises the full detect→verify loop and applies the **real** remediation HTTP call, so the hosted demo stays reliable even if the model API is briefly unavailable. The model-driven loop itself is covered by the live agent test and proven in the demo video (real Gemini + real DQL against the tenant).
 
 The 28 deterministic tests pass offline (mock Dynatrace). The 2 live tests run against Gemini if credentials are present.
 
@@ -232,63 +232,65 @@ The 28 deterministic tests pass offline (mock Dynatrace). The 2 live tests run a
 ```
 autosre/
 ├── agent/
-│   ├── agent.py              # ADK LlmAgent, system prompt, 6-step loop
+│   ├── agent.py              # ADK LlmAgent + mode-aware prompt (detect→diagnose→act→verify)
 │   ├── dynatrace.py          # Dynatrace MCP toolset builder (mock/stdio/remote)
-│   └── remediation.py        # Remediation tools + human-approval gate
+│   └── remediation.py        # Remediation tools (scale/rollback/flag) the gate wraps
 ├── server/
 │   ├── app.py                # FastAPI HTTP + SSE service
-│   ├── loop.py               # ADK loop primitives (shared with run_agent.py)
+│   ├── loop.py               # ADK loop primitives (shared by run_agent.py + server)
 │   ├── events.py             # Event adapter (ADK → CONTRACT.md SSE schema)
-│   ├── runs.py               # Per-run session management + pause/resume
-│   └── proxy.py              # Demo control proxy to checkout-api
+│   ├── runs.py               # Per-run session management + pause/resume bridge
+│   └── demo.py               # Deterministic replay backing the hosted demo (reliability)
 ├── mock_dynatrace/
-│   └── server.py             # Offline Dynatrace MCP server (same tool names as real)
+│   └── server.py             # Offline Dynatrace MCP server (snake_case tool names)
 ├── target_service/
-│   └── main.py               # checkout-api: the demo target (injectable faults)
-├── run_agent.py              # Interactive CLI runner (primary offline demo entry)
-├── __init__.py
-└── py.typed
+│   ├── main.py               # checkout-api: the demo target (injectable faults)
+│   └── otel.py               # Optional real OpenTelemetry export to Dynatrace
+└── run_agent.py              # Interactive CLI runner (offline demo entry)
 web/
-├── app/                      # Next.js 16 App Router
-│   ├── page.tsx              # Mission Control UI
+├── app/
+│   ├── page.tsx              # Landing page
+│   ├── demo/page.tsx         # Mission Control (the live demo)
 │   ├── api/
-│   │   ├── incidents/        # SSE stream mock (in dev mode)
-│   │   └── demo/             # Demo control (in dev mode)
+│   │   ├── incident/         # start · [runId]/stream · [runId]/approval (→ agent)
+│   │   └── demo/             # inject · health · reset
+│   ├── globals.css           # Tailwind v4 + design tokens
 │   └── layout.tsx
 ├── components/
-│   ├── ProblemCard.tsx       # Dynatrace problem display
-│   ├── AgentTimeline.tsx     # Phase-progress streaming timeline
-│   ├── DQLEvidencePanel.tsx  # Tool results panel
-│   ├── ApprovalModal.tsx     # APPROVE / REJECT blocking modal
-│   └── ...
-├── lib/
-│   ├── contract.ts           # TypeScript types for CONTRACT.md events
-│   └── sse.ts                # SSE stream handler
-├── styles/
-│   └── globals.css           # Tailwind v4 + design tokens
-├── screenshots/              # Responsive screenshots (1440/768/375)
-└── package.json
+│   ├── approval-modal/ApprovalModal.tsx   # APPROVE / REJECT blocking modal
+│   ├── timeline/Timeline.tsx              # Phase-progress streaming timeline
+│   ├── dql-panel/DqlPanel.tsx             # DQL evidence panel
+│   ├── problem-card/ProblemCard.tsx       # Dynatrace problem display
+│   ├── demo-controls/DemoControls.tsx     # Fault-injection controls
+│   ├── landing/              # CountUp · FlowDiagram · NavLinks · ScrollProgress · ScrollReveal
+│   └── ui/                   # Badge · FinalReport · Panel
+├── hooks/useIncidentStream.ts             # SSE client hook
+├── lib/                      # api.ts · types.ts
+├── Dockerfile                # Next.js standalone image
+└── cloudbuild.yaml           # UI image build (Cloud Build)
 deploy/
-├── Dockerfile.agent          # Builds the agent container (adk api_server)
+├── Dockerfile.agent          # Builds the agent (SSE backend, Vertex AI)
 ├── Dockerfile.target         # Builds checkout-api
-├── Dockerfile.ui             # Builds the Next.js web UI
+├── cloudbuild.svc.yaml       # Generic Cloud Build (-f path) for the Python services
 └── deploy_cloud_run.sh       # Orchestrates the three deployments
 tests/
-├── test_agent.py             # Deterministic agent loop
-├── test_remediation_gate.py  # Approval gate enforcement
-├── test_dynatrace_tools.py   # Dynatrace MCP tool shapes
-├── test_server_sse.py        # Full-loop SSE streaming
-├── test_mcp_envelope_parsing.py  # Real ADK result unwrapping
-└── test_agent_live.py        # End-to-end with real Gemini (optional)
+├── conftest.py                     # Boots checkout-api for the suite
+├── test_remediation_gate.py        # Approval gate enforcement
+├── test_mock_dynatrace.py          # Mock Dynatrace MCP tool shapes
+├── test_server_sse.py              # Full-loop SSE streaming + contract
+├── test_demo_mode.py               # Deterministic demo replay
+├── test_mcp_envelope_parsing.py    # Real ADK result unwrapping
+└── test_agent_live.py              # End-to-end with real Gemini (live-gated)
 .env.example                  # Environment variable template
 .env                          # (gitignored) Runtime secrets
 README.md                     # This file
-ARCHITECTURE.md               # Deploy topology (locked)
-CONTRACT.md                   # Agent ↔ UI streaming interface (locked)
-DEMO.md                       # 3-minute demo runbook
-VIDEO-SCRIPT.md              # Video script (≤3:00, criterion-tagged)
+ARCHITECTURE.md               # Deploy topology
+CONTRACT.md                   # Agent ↔ UI streaming interface
+DEMO.md                       # Demo runbook
+VIDEO-SCRIPT.md               # Video script (≤3:00, criterion-tagged)
 SUBMISSION.md                 # Devpost requirement → evidence checklist
-DECISION-LOG.md              # Build decision log
+DECISION-LOG.md               # Build decision log
+DEVPOST.md                    # Devpost form draft
 LICENSE                       # MIT
 ```
 
@@ -331,7 +333,7 @@ A: You're hitting Gemini's free-tier quota (~5 req/min). Get a free API key from
 A: Make sure the SSE backend is running (`python -m autosre.server`) and listening on the port the UI expects. By default, the UI looks for `localhost:8080`; set `NEXT_PUBLIC_AGENT_BASE_URL=http://127.0.0.1:8080` in `.env.local` in the `web/` directory if the backend is on a different port.
 
 **Q: I want to test against a real Dynatrace tenant but don't see any problems.**
-A: The mock `checkout-api` service must be running and injected with a fault first. Dynatrace's `query-problems` only returns anomalies it has detected; if the service is healthy, there's nothing to report. Inject a fault (`curl -X POST localhost:8081/_admin/inject -H 'content-type: application/json' -d '{"fault":"payment_errors"}'`) and wait 1-2 minutes for Dynatrace to detect and alert.
+A: The `checkout-api` service must be running and injected with a fault first — the agent only reports a problem when one exists. In **mock** mode the bundled Dynatrace MCP surfaces the incident as soon as you inject a fault; against a **real** tenant the live path detects on a `timeseries avg(checkout.failure_rate)` DQL, so allow ~1-2 minutes for OpenTelemetry ingestion before the spike shows. Inject with: `curl -X POST localhost:8081/_admin/inject -H 'content-type: application/json' -d '{"fault":"payment_errors"}'`.
 
 **Q: The approval modal never appears.**
 A: The agent may not be reaching the remediation step. Check the timeline in the UI. If it stops at DIAGNOSE, the agent may not have reasoned its way to a fix (wrong model, bad DQL results, or timeout). Check the agent logs for errors. If a remediation tool was called, ensure the `FunctionTool(require_confirmation=True)` is in place in `autosre/agent/remediation.py` (it should be; don't remove it for testing).
