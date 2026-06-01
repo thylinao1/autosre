@@ -19,6 +19,7 @@ Most "autonomous SRE" demos do one of two things: they read telemetry and stop s
 - **The approval gate is enforced by the framework, not the prompt.** The three remediation tools are wrapped in ADK's `FunctionTool(..., require_confirmation=True)`, so the model cannot push a production change without an explicit human decision. It is a code-level guarantee a reviewer can verify in `autosre/agent/agent.py`, not an instruction the model could choose to ignore.
 - **It runs against a real Dynatrace tenant, not only a mock.** checkout-api streams real OpenTelemetry into Dynatrace, and the agent detects the incident from a live DQL query (`timeseries avg(checkout.failure_rate)`) that returns the real failure-rate spike. The demo video shows that query running against the live tenant over the official Dynatrace MCP server.
 - **Autonomous diagnosis, human authority.** The agent does the slow 3 AM detective work in seconds, but a person still owns every change that reaches production, and every approval is on the record. That is the line we care about: autonomous, but accountable.
+- **Every approval is auditable, in Dynatrace itself.** AutoSRE keeps an append-only ledger of who approved what, and writes each decision back into the Dynatrace tenant as a log, so the approval lands on the very timeline that detected the incident. Autonomous remediation becomes a compliance-grade record (who, what, when, outcome), not a black box.
 
 ---
 
@@ -231,7 +232,7 @@ Runs 30 tests: 28 offline-deterministic, plus 2 gated on live Gemini credentials
 - **Machinery tests (deterministic):** Mock Dynatrace server over MCP stdio protocol; verify the approval gate, remediation execution, and incident outcome for both fault types.
 - **Integration tests:** Live SSE streaming from the backend; approval round-trip; full agent loop with real Gemini (skipped unless Gemini credentials present).
 - **MCP envelope parsing:** Regression tests for real ADK tool response unwrapping (fixed a critical bug).
-- **Demo mode (`test_demo_mode.py`):** a deterministic replay exercises the full detect→verify loop and applies the **real** remediation HTTP call, so the hosted demo stays reliable even if the model API is briefly unavailable. The model-driven loop itself is covered by the live agent test and proven in the demo video (real Gemini + real DQL against the tenant).
+- **Demo mode (`test_demo_mode.py`):** a deterministic replay exercises the full detect→verify loop and applies the **real** remediation HTTP call. The hosted demo runs the **live Gemini agent by default** (mock Dynatrace telemetry for a reliable click-through); this replay stays available as an instant fallback (`AUTOSRE_DEMO_MODE=1`) if the model API is ever unavailable during judging. The real-tenant, real-DQL detection run is in the demo video.
 
 The 28 deterministic tests pass offline (mock Dynatrace). The 2 live tests run against Gemini if credentials are present.
 

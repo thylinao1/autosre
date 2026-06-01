@@ -60,3 +60,26 @@ export async function getHealth(): Promise<ServiceHealth> {
   if (!res.ok) throw new Error(`health failed: ${res.status}`);
   return res.json() as Promise<ServiceHealth>;
 }
+
+export interface LedgerEntry {
+  ts: number;
+  operator: string;
+  run_id: string;
+  incident: string | null;
+  action: { tool: string; args: Record<string, unknown> } | null;
+  decision: "approved" | "rejected" | "none";
+  outcome: string;
+  service_healthy?: boolean;
+  incident_resolved?: boolean;
+}
+
+export interface LedgerResponse {
+  entries: LedgerEntry[];
+  dynatrace_writeback: boolean;
+}
+
+export async function getLedger(limit = 25): Promise<LedgerResponse> {
+  const res = await fetch(`${baseUrl()}/api/ledger?limit=${limit}`);
+  if (!res.ok) throw new Error(`ledger failed: ${res.status}`);
+  return res.json() as Promise<LedgerResponse>;
+}

@@ -8,6 +8,7 @@ import { Timeline } from "@/components/timeline/Timeline";
 import { DqlPanel } from "@/components/dql-panel/DqlPanel";
 import { ApprovalModal } from "@/components/approval-modal/ApprovalModal";
 import { DemoControls } from "@/components/demo-controls/DemoControls";
+import { AuditTrail } from "@/components/audit-trail/AuditTrail";
 import { FinalReport } from "@/components/ui/FinalReport";
 import type { FaultType, ServiceHealth } from "@/lib/types";
 import { getHealth } from "@/lib/api";
@@ -252,6 +253,7 @@ export default function DemoPage() {
           <PanelBlock title="DQL evidence">
             <DqlPanel query={state.dqlQuery} records={state.dqlRecords} reasoning={state.agentReasoning} />
           </PanelBlock>
+          <AuditTrail refreshKey={state.status} />
         </div>
       </main>
 
@@ -364,6 +366,7 @@ function LeftSidebar({
       />
       {state.finalEvent && <FinalReport event={state.finalEvent} />}
       <DemoControls status={state.status} onStart={onStart} onReset={onReset} />
+      <AuditTrail refreshKey={state.status} />
     </aside>
   );
 }
