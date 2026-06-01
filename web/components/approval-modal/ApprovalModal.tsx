@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import type { ApprovalRequestEvent } from "@/lib/types";
 
@@ -104,6 +104,57 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
     setSubmitting(false);
   }
 
+  // Latest values for the mounted-once keydown handler (avoids stale closure).
+  const cardRef = useRef<HTMLDivElement>(null);
+  const stateRef = useRef({ decided, submitting });
+  stateRef.current = { decided, submitting };
+  const decideRef = useRef(handleDecide);
+  decideRef.current = handleDecide;
+
+  // Dialog a11y: focus the modal on open, trap Tab inside it, Escape = reject
+  // (dismiss == stand down), and restore focus to the trigger when it closes.
+  useEffect(() => {
+    const prevFocus = document.activeElement as HTMLElement | null;
+    const getFocusable = () =>
+      Array.from(
+        cardRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+        ) ?? []
+      );
+    getFocusable()[0]?.focus();
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        if (stateRef.current.decided === null && !stateRef.current.submitting) {
+          e.preventDefault();
+          decideRef.current(false);
+        }
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const items = getFocusable();
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      if (!cardRef.current?.contains(active as Node)) {
+        e.preventDefault();
+        first.focus();
+      } else if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      prevFocus?.focus?.();
+    };
+  }, []);
+
   const isApproved = decided === true;
   const isRejected = decided === false;
 
@@ -126,6 +177,7 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
 
       {/* Modal card — layered depth */}
       <div
+        ref={cardRef}
         className={clsx(
           "relative w-full max-w-[420px] rounded-xl border",
           decided === null ? "animate-modal-pending" : "animate-modal-in"
