@@ -53,6 +53,21 @@ def _fr(name: str, payload: dict) -> types.Part:
     )
 
 
+def _operator_confirmed(message) -> bool:
+    """Read the operator's decision out of the ADK confirmation FunctionResponse.
+
+    Turn 2 is resumed with `confirmation_response(id, approved)` (see server/loop.py),
+    a FunctionResponse named `adk_request_confirmation` carrying {"confirmed": bool}.
+    Default to False — the replay must never apply a remediation it cannot confirm a
+    human approved, exactly like the live gate.
+    """
+    for part in getattr(message, "parts", None) or []:
+        fr = getattr(part, "function_response", None)
+        if fr is not None and getattr(fr, "name", "") == CONFIRM:
+            return bool((fr.response or {}).get("confirmed"))
+    return False
+
+
 def _problem_from_state(st: dict) -> dict:
     """Mirror the mock server's Davis-problem shape so the UI renders identically."""
     d = st.get("active_fault_detail", {}) or {}
@@ -107,8 +122,23 @@ class DemoRunner:
             async for ev in self._detect_diagnose_act():
                 yield ev
             return
+        # Turn 2: resumed after the human decision. Honor a rejection — the gate is
+        # real in the replay too: stand down and apply nothing.
+        if not _operator_confirmed(new_message):
+            async for ev in self._stand_down():
+                yield ev
+            return
         async for ev in self._act_result_verify():
             yield ev
+
+    # ── turn 2 (rejected): stand down, change nothing ────────────────────────
+    async def _stand_down(self):
+        action = "scale checkout-api" if self._fault == "latency_spike" else (
+            "disable the 'new_payment_gateway' feature flag")
+        yield _ev([types.Part(text=(
+            f"Operator rejected the proposal to {action}. Standing down — no change was "
+            "made to checkout-api, and the incident remains open for manual handling. "
+            "The framework-enforced gate held: the agent cannot act without approval."))])
 
     # ── turn 1: detect → diagnose → propose (pause) ──────────────────────────
     async def _detect_diagnose_act(self):
