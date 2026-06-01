@@ -19,6 +19,8 @@ from dataclasses import asdict, dataclass, field
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
+from . import otel
+
 app = FastAPI(title="checkout-api", version="2.3.1")
 
 # A fault encodes what's wrong AND what the single correct remediation is, so the
@@ -217,6 +219,11 @@ class FlagRequest(BaseModel):
 def toggle_feature_flag(req: FlagRequest):
     STATE.feature_flags[req.name] = req.enabled
     return _apply("toggle_feature_flag", {"name": req.name, "enabled": req.enabled})
+
+
+# Stream real OpenTelemetry (traces + metrics) to Dynatrace when the OTLP env is
+# configured. No-op otherwise, so mock/demo mode is completely unaffected.
+otel.setup(app, current_metrics)
 
 
 if __name__ == "__main__":

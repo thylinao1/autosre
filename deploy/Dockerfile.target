@@ -2,7 +2,8 @@
 FROM python:3.13-slim
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install --no-cache-dir fastapi "uvicorn[standard]" httpx pydantic
+RUN pip install --no-cache-dir fastapi "uvicorn[standard]" httpx pydantic \
+    opentelemetry-sdk opentelemetry-exporter-otlp-proto-http opentelemetry-instrumentation-fastapi
 COPY autosre ./autosre
 ENV PYTHONUNBUFFERED=1
 CMD exec uvicorn autosre.target_service.main:app --host 0.0.0.0 --port ${PORT:-8080}
