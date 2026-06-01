@@ -161,12 +161,20 @@ function processEvent(prev: IncidentState, event: SSEEvent): IncidentState {
           ? "declined"
           : "error";
 
+      const finalLabel =
+        f.outcome === "resolved"
+          ? "Service restored, incident resolved"
+          : f.outcome === "declined"
+          ? "Agent stood down — nothing changed"
+          : f.outcome === "all_clear"
+          ? "All clear — no action needed"
+          : "Run complete";
       return {
         ...prev,
         finalEvent: f,
         status,
         timeline: addEntry(
-          f.service_healthy ? "Service restored, incident resolved" : "Run complete",
+          finalLabel,
           f.report.slice(0, 100) + (f.report.length > 100 ? "…" : "")
         ),
       };

@@ -69,18 +69,45 @@ class Observation:
     payload: dict[str, Any] = field(default_factory=dict)
 
 
+def _operator_hint(tool: str, args: dict[str, Any], raw_hint: str) -> str:
+    """A short, operator-facing description of the proposed action.
+
+    On the live model path ADK populates `toolConfirmation.hint` with its internal
+    protocol text ("respond with a FunctionResponse with an expected
+    ToolConfirmation payload"), which is meaningless to a human deciding whether to
+    approve. Synthesize a clear hint for the remediation tools we own so the hero
+    approval modal reads like an operator note, not framework plumbing.
+    """
+    if tool == "toggle_feature_flag":
+        flag = args.get("name", "the feature flag")
+        verb = "Disable" if args.get("enabled") is False else "Enable"
+        return f"{verb} the '{flag}' feature flag on checkout-api to clear the incident."
+    if tool == "scale_service":
+        return f"Scale checkout-api to {args.get('replicas', 'more')} replicas to relieve the saturation."
+    if tool == "rollback_deployment":
+        return f"Roll checkout-api back to version {args.get('version', 'the last good deploy')}."
+    # Unknown tool: keep a human-written hint, but never the ADK protocol boilerplate.
+    if raw_hint and "FunctionResponse" not in raw_hint and "ToolConfirmation" not in raw_hint:
+        return raw_hint
+    return "Review and approve this remediation before it runs on checkout-api."
+
+
 def _extract_pending(fc: Any) -> dict[str, Any]:
     """Lift the wrapped remediation call out of an adk_request_confirmation fc.
 
-    Identical to run_agent.py:50-55 — the join key `id` is the ADK fc id.
+    Identical to run_agent.py:50-55 — the join key `id` is the ADK fc id. The hint
+    is normalized to an operator-facing string (see `_operator_hint`).
     """
     args = fc.args or {}
     orig = args.get("originalFunctionCall", {}) or {}
+    tool = orig.get("name", "unknown")
+    tool_args = orig.get("args", {}) or {}
+    raw_hint = (args.get("toolConfirmation", {}) or {}).get("hint", "")
     return {
         "id": fc.id,
-        "tool": orig.get("name", "unknown"),
-        "args": orig.get("args", {}) or {},
-        "hint": (args.get("toolConfirmation", {}) or {}).get("hint", ""),
+        "tool": tool,
+        "args": tool_args,
+        "hint": _operator_hint(tool, tool_args, raw_hint),
     }
 
 
