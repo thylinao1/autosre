@@ -120,9 +120,24 @@ I approve it."
 
 From problem detection to root cause to fix approval to execution and verification, all in under a minute. What used to take 30+ minutes of manual work happens in real time, with the human in control the whole time."
 
+**On-screen timer (do this — it turns asserted impact into measured impact):** start a small running clock the moment DETECT fires and freeze it when the incident card flips green. Read the number out loud ("detected, diagnosed, fixed, and verified in N seconds"). One real timestamped number beats the borrowed Gartner math; it is the Impact evidence.
+
 **Criterion note:**
 - **Tech:** "Dynatrace," "flag toggle," "health verification," SSE streaming, all real and visible.
-- **Impact:** The speed (detected, diagnosed, fixed in ~1 minute vs. 30+ minutes) and the outcome (incident resolved, service healthy) are both visible metrics.
+- **Impact:** The speed (a real on-screen timer, seconds vs. 30+ minutes) and the outcome (incident resolved, service healthy) are both visible, measured.
+
+---
+
+## [Optional bonus beat — the deny run] Prove the gate is real, not theater (Idea)
+
+Everyone in this track will demo *approve*. Almost no one demos *reject*. Spend ~12 seconds proving the gate actually holds:
+
+**Visual:** Run the incident. When the approval card appears, click **REJECT**. The agent stands down: the timeline shows it acknowledging the rejection, the incident card stays red, and `get_service_health` confirms the flag is still enabled and **nothing reached production**. Then run it again and **APPROVE** to resolve.
+
+**Narration:**
+"First, watch what happens if I say no. I reject the fix. The agent stands down. It does not retry, it does not work around me, and production is untouched. The gate is enforced in the code, so the model cannot route around a human. Now I will approve it, and it recovers."
+
+**Criterion note — Idea + Tech:** the reject path is the proof that "autonomous, but accountable" is a real guarantee and not a slogan. It is the single most convincing demonstration that the human authority is genuine, and it is the beat the other entries will not have.
 
 ---
 
