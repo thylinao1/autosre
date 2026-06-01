@@ -72,10 +72,14 @@ function processEvent(prev: IncidentState, event: SSEEvent): IncidentState {
       return {
         ...prev,
         timeline: addEntry(`${tc.name}(${argStr})`, undefined),
-        // Capture the DQL string when we see execute-dql (real Dynatrace param name)
+        // Capture the DQL string on execute_dql. The mock arg is dqlQueryString;
+        // the real @dynatrace-oss MCP arg is dqlStatement. Tool names are
+        // snake_case (mock + real v1.8.6); kebab kept for any older gateway.
         dqlQuery:
-          tc.name === "execute-dql" && tc.args.dqlQueryString
-            ? (tc.args.dqlQueryString as string)
+          tc.name === "execute_dql" || tc.name === "execute-dql"
+            ? ((tc.args.dqlStatement as string) ||
+               (tc.args.dqlQueryString as string) ||
+               prev.dqlQuery)
             : prev.dqlQuery,
       };
     }
@@ -84,16 +88,24 @@ function processEvent(prev: IncidentState, event: SSEEvent): IncidentState {
       const tr = event as ToolResultEvent;
       let nextState = { ...prev };
 
-      // Extract problem from query-problems result
-      if (tr.name === "query-problems") {
+      // Extract the problem from the detection tool. Tool names are snake_case
+      // (mock: query_problems; real v1.8.6: list_problems); kebab kept for safety.
+      if (
+        tr.name === "query_problems" ||
+        tr.name === "list_problems" ||
+        tr.name === "query-problems"
+      ) {
         const problems = (tr.response?.problems as DynatraceProblem[]) ?? [];
         if (problems.length > 0) {
           nextState.problem = problems[0];
         }
       }
 
-      // Extract DQL records from execute-dql result
-      if (tr.name === "execute-dql" && tr.response?.records) {
+      // Extract DQL records from execute_dql result (snake + kebab).
+      if (
+        (tr.name === "execute_dql" || tr.name === "execute-dql") &&
+        tr.response?.records
+      ) {
         nextState.dqlRecords = tr.response.records as DqlRecord[];
       }
 
