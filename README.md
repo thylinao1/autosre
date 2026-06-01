@@ -12,6 +12,16 @@ Production incidents don't wait. When a checkout service crashes at scale, **eve
 
 ---
 
+## What Makes This Different
+
+Most "autonomous SRE" demos do one of two things: they read telemetry and stop short of acting, or they auto-remediate with no real gate. AutoSRE takes the opposite stance, and three choices make it distinct:
+
+- **The approval gate is enforced by the framework, not the prompt.** The three remediation tools are wrapped in ADK's `FunctionTool(..., require_confirmation=True)`, so the model cannot push a production change without an explicit human decision. It is a code-level guarantee a reviewer can verify in `autosre/agent/agent.py`, not an instruction the model could choose to ignore.
+- **It runs against a real Dynatrace tenant, not only a mock.** checkout-api streams real OpenTelemetry into Dynatrace, and the agent detects the incident from a live DQL query (`timeseries avg(checkout.failure_rate)`) that returns the real failure-rate spike. The demo video shows that query running against the live tenant over the official Dynatrace MCP server.
+- **Autonomous diagnosis, human authority.** The agent does the slow 3 AM detective work in seconds, but a person still owns every change that reaches production, and every approval is on the record. That is the line we care about: autonomous, but accountable.
+
+---
+
 ## Why This Matters
 
 | Problem | Traditional Response | AutoSRE |
