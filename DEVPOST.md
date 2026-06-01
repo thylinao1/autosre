@@ -99,7 +99,7 @@ The agent runs a **6-step loop**:
 | **Project Name** | AutoSRE: The Autonomous On-Call Engineer |
 | **Tagline** | The on-call engineer that diagnoses and fixes production incidents from Dynatrace, but never acts without your approval. |
 | **Demo video** | [YouTube URL] (≤3:00, shows full DETECT→DIAGNOSE→APPROVE→ACT→VERIFY loop) |
-| **Try it** | _[live Cloud Run URL, added once deployed to Google Cloud with the hackathon credit]._ Works from incognito; `AUTOSRE_DEMO_MODE=1` keeps the hosted run model-free and reliable. |
+| **Try it** | **https://autosre-ui-vrf7h4n4ra-uc.a.run.app/demo** — works from incognito. The hosted Mission Control streams the full DETECT→DIAGNOSE→APPROVE→ACT→VERIFY loop and the approved remediation runs for real against checkout-api. The agent's live, model-driven run against a **real Dynatrace tenant** (real DQL returning the incident) is shown in the demo video and is reproducible locally (`DYNATRACE_MCP_MODE=stdio`). |
 | **Code** | https://github.com/thylinao1/autosre (open-source MIT). License visible in About box. |
 | **Inspiration** | IT downtime costs thousands per minute (Gartner's 2014 figure: $5,600/min; EMA Research 2024: ~$14,056/min); MTTR is dominated by the identify phase (30+ min). AutoSRE collapses triage to seconds. |
 | **What it does** | (See section above) |
@@ -134,7 +134,7 @@ The agent runs a **6-step loop**:
 | **Incident types handled** | 2 (payment-flag, latency-scale) | DEMO.md; test suite (30 tests, both fault paths covered) |
 | **Uptime for demo** | 100% (mock mode) | `DYNATRACE_MCP_MODE=mock` is offline-deterministic |
 | **Real-tenant validation** | Supports `remote` mode (production Dynatrace tenant) | ARCHITECTURE.md; tested during dev |
-| **Framework-enforced safety** | ADK `require_confirmation=True` | `autosre/agent/remediation.py:71-72`; tested in `test_remediation_gate.py` |
+| **Framework-enforced safety** | ADK `require_confirmation=True` | `autosre/agent/agent.py` (the three remediation tools are wrapped `FunctionTool(..., require_confirmation=True)`); tested in `test_remediation_gate.py` |
 | **Deployment path** | Vertex AI Agent Engine + Cloud Run | `deploy/deploy_cloud_run.sh`; one-liner `make deploy` (pending final Workstream C) |
 
 ---
