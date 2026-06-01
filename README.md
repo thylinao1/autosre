@@ -14,12 +14,14 @@ Production incidents don't wait. When a checkout service crashes at scale, **eve
 
 ## What Makes This Different
 
-Most "autonomous SRE" demos do one of two things: they read telemetry and stop short of acting, or they auto-remediate with no real gate. AutoSRE takes the opposite stance, and three choices make it distinct:
+The track is full of agents that read Dynatrace and remediate. The part almost nobody builds is the moment the agent is told **no**, obeys, and leaves a record of it. That refusal is the product.
 
-- **The approval gate is enforced by the framework, not the prompt.** The three remediation tools are wrapped in ADK's `FunctionTool(..., require_confirmation=True)`, so the model cannot push a production change without an explicit human decision. It is a code-level guarantee a reviewer can verify in `autosre/agent/agent.py`, not an instruction the model could choose to ignore.
-- **It runs against a real Dynatrace tenant, not only a mock.** checkout-api streams real OpenTelemetry into Dynatrace, and the agent detects the incident from a live DQL query (`timeseries avg(checkout.failure_rate)`) that returns the real failure-rate spike. The demo video shows that query running against the live tenant over the official Dynatrace MCP server.
-- **Autonomous diagnosis, human authority.** The agent does the slow 3 AM detective work in seconds, but a person still owns every change that reaches production, and every approval is on the record. That is the line we care about: autonomous, but accountable.
-- **Every approval is auditable, in Dynatrace itself.** AutoSRE keeps an append-only ledger of who approved what, and writes each decision back into the Dynatrace tenant as a log, so the approval lands on the very timeline that detected the incident. Autonomous remediation becomes a compliance-grade record (who, what, when, outcome), not a black box.
+- **The agent asks permission, and the gate is real.** The three remediation tools are wrapped in ADK's `FunctionTool(..., require_confirmation=True)`, so the model physically cannot push a change to production without an explicit human decision. It is a code-level guarantee you can read in `autosre/agent/agent.py`, not a sentence in a prompt the model might talk itself out of. Reject the fix and the agent stands down: nothing reaches production, and it does not retry or route around you.
+- **Two governed outcomes, both on Dynatrace's own timeline.** Every sweep ends in an append-only audit entry that records who decided, what they decided, and what happened. Approve and you get `approved / resolved`. Reject and you get `rejected / declined`, with production left untouched. Each decision is written back into the Dynatrace tenant as a log, so the same platform that detected the incident also holds the proof of who authorized, or refused, the fix. That turns autonomous remediation into a compliance-grade record (who, what, when, outcome) instead of a black box.
+- **It reads a real Dynatrace tenant, not only a mock.** checkout-api streams real OpenTelemetry into Dynatrace, and the agent detects the incident from a live DQL query (`timeseries avg(checkout.failure_rate)`) that returns the real failure-rate spike. The demo video shows that query running against the live tenant over the official Dynatrace MCP server.
+- **Autonomous diagnosis, human authority.** The agent does the slow 3 AM detective work in seconds. A person still owns every change that reaches production, and every decision is on the record. That is the line we care about: autonomous, but accountable.
+
+> **An honest note on the write-back.** Our trial Dynatrace tenant is OpenTelemetry-only, so the richer Davis problem and Smartscape topology write APIs are not available to us. We put each approval on the tenant's timeline through the Log Monitoring API because it is the reproducible way to do it on the tenant we actually have. The point is the auditable governance record on the platform that saw the incident, not the specific ingest API. The detection path, by contrast, is full live DQL against real telemetry.
 
 ---
 
@@ -329,9 +331,9 @@ LICENSE                       # MIT
 - Dynatrace integration is built in (no manual setup of separate observability).
 
 **Quality of the Idea (25%)**
-- Sharp, differentiated framing: **"Autonomous, but on your authority."** Not a chatbot (chat is read-only). Not reckless auto-remediation (humans decide). Not a cargo-cult AI addition (the MCP is central).
-- Solves a real SRE problem: incident response at scale, with accountability.
-- Generalizable: the same loop applies to any incident type; the demo shows two (flag, latency).
+- The differentiator is the refusal. An autonomous agent that reads Dynatrace and fixes things is the easy half. The hard, ownable half is an agent whose restraint is provable: it asks permission, obeys a no, and records both the approval and the refusal on Dynatrace's own timeline. That reframes the question from "did it act fast" to "should it have acted, and who said so."
+- Solves a real SRE problem: incident response at scale, with accountability a compliance team can audit after the fact.
+- Generalizable: the same loop applies to any incident type; the demo shows two (a feature-flag rollback and a replica scale-up).
 
 ---
 
