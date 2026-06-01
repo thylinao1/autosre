@@ -118,7 +118,7 @@ class DemoRunner:
         yield _ev([_fc("query_problems", {})])
         if not self._fault:
             yield _ev([_fr("query_problems", {"problems": [], "total": 0})])
-            yield _ev([types.Part(text="All clear — Dynatrace reports no open problems on checkout-api.")])
+            yield _ev([types.Part(text="All clear. Dynatrace reports no open problems on checkout-api.")])
             return
 
         problem = _problem_from_state(st)
@@ -153,7 +153,7 @@ class DemoRunner:
             "version": st.get("version"), "feature_flags": st.get("feature_flags", {})}]})])
         yield _ev([types.Part(text=(
             "Root cause: deploy v2.3.1 enabled the 'new_payment_gateway' feature flag, which fails on "
-            "AMEX card processing — driving ~22% of checkouts to error. Fix: disable that flag."))])
+            "AMEX card processing, driving ~22% of checkouts to error. Fix: disable that flag."))])
         yield _ev(
             [_fc("adk_request_confirmation", {
                 "originalFunctionCall": {"name": "toggle_feature_flag",
@@ -183,7 +183,7 @@ class DemoRunner:
         yield _ev([types.Part(text=(
             "Remediation applied (operator-approved). Dynatrace confirms the open problem has cleared and "
             "checkout-api is healthy again." if cleared else
-            "Remediation applied, but Dynatrace still reports the problem — escalating."))])
+            "Remediation applied, but Dynatrace still reports the problem, so this needs escalation."))])
 
     def _apply(self, path: str, payload: dict) -> dict:
         try:
