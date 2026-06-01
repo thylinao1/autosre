@@ -248,7 +248,7 @@ export default function DemoPage() {
           {state.finalEvent && <FinalReport event={state.finalEvent} />}
           <DemoControls status={state.status} onStart={handleStart} onReset={handleReset} />
           <PanelBlock title="Agent timeline">
-            <Timeline entries={state.timeline} currentPhase={state.currentPhase} />
+            <Timeline entries={state.timeline} currentPhase={state.currentPhase} isBusy={isBusy} />
           </PanelBlock>
           <PanelBlock title="DQL evidence">
             <DqlPanel query={state.dqlQuery} records={state.dqlRecords} reasoning={state.agentReasoning} />
@@ -514,7 +514,7 @@ function CenterTimeline({
 
       {/* Timeline feed */}
       <div style={{ flex: 1, overflowY: "auto" }}>
-        <Timeline entries={state.timeline} currentPhase={state.currentPhase} />
+        <Timeline entries={state.timeline} currentPhase={state.currentPhase} isBusy={isBusy} />
       </div>
 
       {/* Phase progress bar */}

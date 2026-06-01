@@ -7,6 +7,9 @@ import type { TimelineEntry, Phase } from "@/lib/types";
 interface TimelineProps {
   entries: TimelineEntry[];
   currentPhase: Phase | null;
+  // True while a run is in flight. Lets the empty state read as "agent waking"
+  // instead of the idle prompt during the model's first-token / cold-start gap.
+  isBusy?: boolean;
 }
 
 const PHASE_ORDER: Phase[] = ["detect", "diagnose", "act", "verify"];
@@ -291,7 +294,7 @@ function EntryRow({ entry, isLast, isNewest, staggerIndex }: EntryRowProps) {
   );
 }
 
-export function Timeline({ entries, currentPhase }: TimelineProps) {
+export function Timeline({ entries, currentPhase, isBusy = false }: TimelineProps) {
   const prevCountRef = useRef(0);
   const renderedCount = entries.filter((e) => e.kind !== "step").length;
 
@@ -332,21 +335,23 @@ export function Timeline({ entries, currentPhase }: TimelineProps) {
           gap: "14px",
         }}
       >
-        {/* Icon — breathes gently */}
+        {/* Icon — breathes gently when idle, pulses an accent ring when working */}
         <div
-          className="animate-idle-breathe"
+          className={isBusy ? "animate-pulse-glow" : "animate-idle-breathe"}
           style={{
             width: "44px",
             height: "44px",
             borderRadius: "12px",
-            border: "1px solid var(--color-border)",
+            border: `1px solid ${isBusy ? "var(--color-accent)" : "var(--color-border)"}`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            backgroundColor: "var(--color-surface-0)",
+            backgroundColor: isBusy ? "var(--color-accent-dim)" : "var(--color-surface-0)",
+            boxShadow: isBusy ? "0 0 16px var(--color-accent-glow)" : "none",
+            transition: "border-color 0.4s ease, background-color 0.4s ease",
           }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={isBusy ? "var(--color-accent)" : "var(--color-text-muted)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
           </svg>
         </div>
@@ -354,11 +359,12 @@ export function Timeline({ entries, currentPhase }: TimelineProps) {
           <p style={{
             fontSize: "13px",
             fontFamily: "var(--font-sans)",
-            color: "var(--color-text-secondary)",
+            color: isBusy ? "var(--color-accent)" : "var(--color-text-secondary)",
             lineHeight: 1.6,
             letterSpacing: "-0.005em",
+            fontWeight: isBusy ? 600 : 400,
           }}>
-            Run an incident to watch the agent work.
+            {isBusy ? "Agent waking — querying Dynatrace…" : "Run an incident to watch the agent work."}
           </p>
           <p style={{
             fontSize: "12.5px",
@@ -366,7 +372,9 @@ export function Timeline({ entries, currentPhase }: TimelineProps) {
             color: "var(--color-text-muted)",
             letterSpacing: "-0.005em",
           }}>
-            Its reasoning shows up here, step by step.
+            {isBusy
+              ? "Detecting open problems, then reasoning to root cause. Steps stream in here."
+              : "Its reasoning shows up here, step by step."}
           </p>
         </div>
       </div>
