@@ -132,7 +132,7 @@ function processEvent(prev: IncidentState, event: SSEEvent): IncidentState {
         pendingApproval: null,
         status: "running",
         timeline: addEntry(
-          resolved.approved ? "Approved — executing remediation" : "Rejected — standing down",
+          resolved.approved ? "Approved, executing remediation" : "Rejected, standing down",
           undefined
         ),
       };
