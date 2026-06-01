@@ -27,6 +27,7 @@ from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from pydantic import BaseModel  # noqa: E402
 from sse_starlette.sse import EventSourceResponse  # noqa: E402
 
+from . import ledger  # noqa: E402
 from .demo import DemoRunner, demo_mode_enabled  # noqa: E402
 from .runs import RunRegistry, _target_url  # noqa: E402
 
@@ -147,6 +148,20 @@ async def demo_reset():
 @app.get("/api/demo/health")
 async def demo_health():
     return await _target_get("/_internal/state")
+
+
+# ── 5. approval ledger (the audit trail) ─────────────────────────────────────
+@app.get("/api/ledger")
+async def get_ledger(limit: int = 25):
+    """Append-only audit record of every sweep: incident, action, decision, outcome.
+
+    `dynatrace_writeback` reflects whether each approval is also written back to
+    the Dynatrace tenant as an OTLP log (true only when OTLP creds are configured).
+    """
+    return {
+        "entries": ledger.recent(limit),
+        "dynatrace_writeback": ledger.export_enabled(),
+    }
 
 
 @app.get("/healthz")

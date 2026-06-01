@@ -25,6 +25,7 @@ from google.adk.runners import InMemoryRunner
 from autosre.agent.agent import root_agent
 
 from . import events as E
+from . import ledger
 from . import loop as L
 
 # Sentinel pushed onto the queue after the terminal frame to close the SSE stream.
@@ -66,6 +67,9 @@ class IncidentRun:
         self._declined = False  # operator rejected an approval
         self._acted = False  # an approved remediation tool actually returned
         self._problem_found = False  # DETECT surfaced at least one open problem
+        # Captured for the approval ledger (audit record on terminal).
+        self._incident_title: str | None = None
+        self._approved_action: dict[str, Any] | None = None
 
     # ── frame plumbing ──────────────────────────────────────────────────────
     def _emit(self, frame: dict[str, Any]) -> None:
@@ -142,7 +146,12 @@ class IncidentRun:
 
                 # Pause: block until POST /approval resolves the decision.
                 approved = await self._wait_for_approval()
-                if not approved:
+                if approved:
+                    self._approved_action = {
+                        "tool": self._pending["tool"],
+                        "args": self._pending["args"],
+                    }
+                else:
                     self._declined = True
                 self._emit(E.approval_resolved_frame(self._pending["id"], approved))
                 message = L.confirmation_response(self._pending["id"], approved)
@@ -162,8 +171,11 @@ class IncidentRun:
             response = E.parse_tool_response(obs.payload["response"])
             if name in E._REMEDIATION_TOOLS:
                 self._acted = True
-            if "problems" in response and (response.get("problems") or []):
+            problems = response.get("problems") or []
+            if problems:
                 self._problem_found = True
+                if self._incident_title is None:
+                    self._incident_title = problems[0].get("title")
             summary = E.summarize_tool_result(name, response)
             self._emit(E.tool_result_frame(name, response, summary))
         elif obs.kind == "approval_request":
@@ -204,6 +216,25 @@ class IncidentRun:
             outcome = "declined"
         else:
             outcome = "unresolved"
+
+        # Audit ledger: one immutable record per sweep, then a best-effort
+        # write-back to Dynatrace (no-op unless OTLP creds are configured).
+        entry = ledger.record(
+            {
+                "run_id": self.run_id,
+                "incident": self._incident_title
+                or ("checkout-api incident" if self._problem_found else None),
+                "action": self._approved_action,
+                "decision": "approved"
+                if self._acted
+                else ("rejected" if self._declined else "none"),
+                "outcome": outcome,
+                "service_healthy": service_healthy,
+                "incident_resolved": incident_resolved,
+            }
+        )
+        if ledger.export_enabled():
+            asyncio.create_task(ledger.export_async(entry))
 
         self._emit(
             E.final_frame(
