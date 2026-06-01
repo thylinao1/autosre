@@ -82,6 +82,47 @@ async def test_demo_payment_errors_resolves_green(target_service):
 
 
 @pytest.mark.asyncio
+async def test_demo_reject_stands_down_without_applying(target_service):
+    """DEMO_MODE must honor a rejection: stand down, apply nothing, audit declined.
+
+    The replay drives the video's deny beat. If the DemoRunner ignored the
+    operator's decision it would toggle the flag anyway — silently overriding the
+    human, which is the exact opposite of the product's claim.
+    """
+    from autosre.server import ledger
+
+    httpx.post(f"{target_service}/_admin/inject", json={"fault": "payment_errors"})
+    ledger.clear()
+    run = IncidentRun("demo-reject", None, runner_factory=lambda: DemoRunner(target_service))
+    await run.start()
+
+    terminal: dict | None = None
+
+    async def consume():
+        nonlocal terminal
+        async for frame in run.stream():
+            if frame["type"] == "approval_request":
+                assert run.submit_approval(frame["id"], False) is True  # REJECT
+            if frame["type"] in ("final", "error"):
+                terminal = frame
+                return
+
+    await asyncio.wait_for(consume(), timeout=20)
+
+    assert terminal["type"] == "final"
+    assert terminal["outcome"] == "declined"
+    assert terminal["incident_resolved"] is False
+    # The flag was NOT toggled — production untouched, fault still present.
+    state = httpx.get(f"{target_service}/_internal/state").json()
+    assert state["healthy"] is False
+    assert state["feature_flags"]["new_payment_gateway"] is True  # never disabled
+    entry = ledger.recent(1)[0]
+    assert entry["decision"] == "rejected"
+    assert entry["action"] is None
+    ledger.clear()
+
+
+@pytest.mark.asyncio
 async def test_demo_latency_spike_scales_and_recovers(target_service):
     seen, frames, terminal = await _drive_demo(target_service, "latency_spike")
 

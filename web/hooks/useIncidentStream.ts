@@ -291,7 +291,34 @@ export function useIncidentStream(): UseIncidentStreamReturn {
         return;
       }
 
-      if (!approved) return;
+      if (!approved) {
+        // Reject path: the agent stands down. On Cloud Run the SSE stream can stall
+        // across the approval pause (the same failure mode the approve branch guards
+        // below), so the post-rejection frames (approval_resolved → declined final)
+        // may never reach the browser — leaving the modal hung on "Approval". There
+        // is nothing to poll for here (the incident stays open by design), so give
+        // the real stream a brief grace period, then synthesize the declined terminal
+        // state. Guarded so a real `final` frame wins the race.
+        const REJECT_TERMINAL: RunStatus[] = ["resolved", "declined", "all_clear", "error"];
+        for (let i = 0; i < 4; i++) {
+          await new Promise((r) => setTimeout(r, 1000));
+          if (REJECT_TERMINAL.includes(stateRef.current.status)) return; // SSE won the race
+        }
+        if (REJECT_TERMINAL.includes(stateRef.current.status)) return;
+        esRef.current?.close(); // stop late duplicate frames once we synthesize
+        const rejectedResolved: ApprovalResolvedEvent = {
+          type: "approval_resolved", run_id: runId, seq: 9_998,
+          id: approvalId, approved: false,
+        };
+        const declinedFinal: FinalEvent = {
+          type: "final", run_id: runId, seq: 9_999,
+          report:
+            "You rejected the proposed remediation, so the agent stood down. Nothing was changed on checkout-api; the incident stays open for manual handling.",
+          service_healthy: false, incident_resolved: false, outcome: "declined",
+        };
+        updateState((prev) => processEvent(processEvent(prev, rejectedResolved), declinedFinal));
+        return;
+      }
 
       // Fallback reconciliation: on Cloud Run the SSE stream can go stale during
       // the human-approval pause, so the post-approval frames (approval_resolved →

@@ -65,7 +65,7 @@ class IncidentRun:
         # Per-run state used to classify the terminal `outcome` (CONTRACT §2.7) —
         # derived from THIS run, not the target's cumulative remediation log.
         self._declined = False  # operator rejected an approval
-        self._acted = False  # an approved remediation tool actually returned
+        self._acted = False  # set True only when the operator APPROVES the action
         self._problem_found = False  # DETECT surfaced at least one open problem
         # Captured for the approval ledger (audit record on terminal).
         self._incident_title: str | None = None
@@ -151,6 +151,12 @@ class IncidentRun:
                         "tool": self._pending["tool"],
                         "args": self._pending["args"],
                     }
+                    # The operator authorized it, so ADK now executes the tool.
+                    # Mark "acted" HERE, on the human decision — never on observing a
+                    # remediation tool_result, because ADK emits a confirmation stub
+                    # for the gated tool BEFORE this point. Deriving it from the stub
+                    # would mislabel a rejection as an approval (the deny-path bug).
+                    self._acted = True
                 else:
                     self._declined = True
                 self._emit(E.approval_resolved_frame(self._pending["id"], approved))
@@ -169,8 +175,9 @@ class IncidentRun:
         elif obs.kind == "tool_result":
             name = obs.payload["name"]
             response = E.parse_tool_response(obs.payload["response"])
-            if name in E._REMEDIATION_TOOLS:
-                self._acted = True
+            # NB: a remediation tool_result is NOT what marks the run as "acted" —
+            # ADK emits a confirmation stub for the gated tool before the operator
+            # decides, so `_acted` is set on approval (see _drive), not here.
             problems = response.get("problems") or []
             if problems:
                 self._problem_found = True
@@ -226,7 +233,7 @@ class IncidentRun:
                 or ("checkout-api incident" if self._problem_found else None),
                 "action": self._approved_action,
                 "decision": "approved"
-                if self._acted
+                if self._approved_action is not None
                 else ("rejected" if self._declined else "none"),
                 "outcome": outcome,
                 "service_healthy": service_healthy,

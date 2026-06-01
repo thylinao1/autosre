@@ -268,6 +268,111 @@ async def test_full_loop_emits_all_documented_frames_with_fake_runner(target_ser
     assert any(e["resolved"] for e in state["remediation_log"])
 
 
+class _RejectScriptedRunner:
+    """Reproduces the REAL ADK confirmation flow for a remediation the operator REJECTS.
+
+    The detail the happy-path runner omits — and that hides the bug — is that ADK
+    emits a function_response for the *gated* tool (the "requires confirmation"
+    stub) in the same turn as the approval request, i.e. BEFORE the human decides.
+    Verified live: the deployed agent rendered "result: toggle_feature_flag
+    returned." while the approval modal was still open. A classifier that treats
+    that stub as "the action ran" mislabels a rejection as an approval.
+    """
+
+    def __init__(self, target_url: str) -> None:
+        self.session_service = _ScriptedSessionService()
+        self._target = target_url
+        self._turn = 0
+
+    async def run_async(self, *, user_id, session_id, new_message):
+        self._turn += 1
+        if self._turn == 1:
+            yield _ev([types.Part(function_call=types.FunctionCall(name="query-problems", args={}))])
+            yield _ev([types.Part(function_response=types.FunctionResponse(
+                name="query-problems",
+                response={"result": json.dumps({"problems": [{
+                    "problemId": "P-2026-0042",
+                    "title": "Checkout failure rate spiked to 22% after deploy v2.3.1",
+                    "severity": "AVAILABILITY", "impacted_metric": "failure_rate",
+                    "observed_value": 22.0}], "total": 1})}))])
+            yield _ev([types.Part(text="Root cause: 'new_payment_gateway' on v2.3.1 fails on AMEX.")])
+            # The ADK confirmation STUB for the gated tool, emitted before the human
+            # decides. This is the frame that must NOT be counted as "the action ran".
+            yield _ev([types.Part(function_response=types.FunctionResponse(
+                name="toggle_feature_flag",
+                response={"result": json.dumps(
+                    {"error": "This tool call requires confirmation, please approve or reject."})}))])
+            yield _ev(
+                [types.Part(function_call=types.FunctionCall(
+                    id="adk-fc-reject-1", name="adk_request_confirmation",
+                    args={"originalFunctionCall": {"name": "toggle_feature_flag",
+                                                   "args": {"name": "new_payment_gateway", "enabled": False}},
+                          "toolConfirmation": {"hint": "Disable the offending feature flag."}}))],
+                final=True, long_running=["adk-fc-reject-1"],
+            )
+            return
+        # Turn 2: resumed after REJECTION — the agent stands down, no remediation runs.
+        yield _ev([types.Part(text=(
+            "Operator rejected the fix. Standing down — no changes made to checkout-api."))], final=True)
+
+
+@pytest.mark.asyncio
+async def test_rejected_run_is_audited_as_declined_not_approved(target_service):
+    """A REJECTED remediation must be audited as decision:rejected / outcome:declined.
+
+    Guards the marquee deny beat AND the "auditable autonomy" claim. The ADK
+    confirmation stub for the gated tool arrives before the human decides, so the
+    terminal classifier must derive the decision from the operator's choice, not
+    from having observed a remediation tool_result. Without the fix this run is
+    mislabeled approved/unresolved — verified live on the deployed agent's ledger.
+    """
+    from autosre.server import ledger
+    from autosre.server.runs import IncidentRun
+
+    httpx.post(f"{target_service}/_admin/inject", json={"fault": "payment_errors"})
+    ledger.clear()
+
+    run = IncidentRun(
+        "reject-run-1", None, runner_factory=lambda: _RejectScriptedRunner(target_service)
+    )
+    await run.start()
+
+    terminal: dict | None = None
+    resolved_frame: dict | None = None
+
+    async def consume():
+        nonlocal terminal, resolved_frame
+        async for frame in run.stream():
+            if frame["type"] == "approval_request":
+                assert run.submit_approval(frame["id"], False) is True  # REJECT
+            if frame["type"] == "approval_resolved":
+                resolved_frame = frame
+            if frame["type"] in ("final", "error"):
+                terminal = frame
+                return
+
+    await asyncio.wait_for(consume(), timeout=20)
+
+    # The approval_resolved frame carries the rejection.
+    assert resolved_frame is not None and resolved_frame["approved"] is False
+    # The terminal frame reflects a stand-down, not a (non-)resolution.
+    assert terminal["type"] == "final"
+    assert terminal["outcome"] == "declined"
+    assert terminal["incident_resolved"] is False
+
+    # The audit ledger tells the truth: the operator REJECTED; nothing acted.
+    entry = ledger.recent(1)[0]
+    assert entry["run_id"] == "reject-run-1"
+    assert entry["decision"] == "rejected"
+    assert entry["outcome"] == "declined"
+    assert entry["action"] is None
+
+    # Production was untouched: the fault is still present.
+    state = httpx.get(f"{target_service}/_internal/state").json()
+    assert state["healthy"] is False
+    ledger.clear()
+
+
 class _AllClearRunner:
     """A run that finds no problems — exercises the no-approval terminal path."""
 
