@@ -77,13 +77,16 @@ function SiteNav() {
         </span>
       </div>
 
-      {/* Center nav links — Client Component (uses Link + CSS hover) */}
+      {/* Center nav links — Client Component (uses Link + CSS hover).
+          Display is controlled by the `hidden md:flex` utilities (hidden under
+          768px so the links can't collide with the wordmark/GitHub pill on
+          mobile); an inline `display` here would override `.hidden` and force
+          them visible, so it is intentionally omitted. */}
       <div
         style={{
           position: "absolute",
           left: "50%",
           transform: "translateX(-50%)",
-          display: "flex",
         }}
         className="hidden md:flex"
       >
