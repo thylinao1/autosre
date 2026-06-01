@@ -36,6 +36,8 @@ prod-*.png
 deploy-verify-*.png
 autosre-*.png
 landing-*.png
+# Any ad-hoc PNG saved at the repo root during a live-verification pass.
+/*.png
 
 # Superseded zero-cost Render/Railway deploy note (we deploy to Google Cloud now)
 DEPLOY-DEMO.md

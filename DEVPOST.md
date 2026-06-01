@@ -29,9 +29,12 @@ The agent runs a **6-step loop**:
 **The web UI:** A dark ops "Mission Control" dashboard streams the loop live over SSE. The operator watches the agent pull the Dynatrace problem, run evidence queries, propose the fix, and then taps **APPROVE** to execute. The incident card flips green on recovery.
 
 **Key differentiators:**
-- **Dynatrace MCP is load-bearing:** the agent's only sensory system for detect and diagnose. Not ornamental.
-- **Human-in-the-loop is framework-enforced:** ADK `require_confirmation=True` is built into the remediation tool definition. The model cannot bypass it.
+- **The refusal is the product.** The remediation tools are wrapped in ADK `require_confirmation=True`, so the model physically cannot touch production without a human decision. Approve and it fixes the incident. Reject and it stands down, changes nothing, and does not route around you. The gate lives in the code (`autosre/agent/agent.py`), not the prompt.
+- **Two governed outcomes, both on Dynatrace's own timeline.** An append-only ledger records every decision (who, what, outcome) and writes each one back into the real Dynatrace tenant as a log. Approve gives `approved / resolved`; reject gives `rejected / declined` with production untouched. The platform that detected the incident also holds the proof of who authorized or refused the fix.
+- **Dynatrace MCP is load-bearing:** the agent's only sensory system for detect and diagnose. Detection runs on a live DQL query against real OpenTelemetry, not a canned reply.
 - **Mode-agnostic guarantee:** The agent code is identical across `DYNATRACE_MCP_MODE=mock | stdio | remote`. Offline (mock), local (official MCP server), or against a real tenant, the UI and events are byte-identical.
+
+> **Honest note on the write-back:** our trial Dynatrace tenant is OpenTelemetry-only, so the richer Davis problem and Smartscape write APIs are not available to us. We put each approval on the tenant's timeline through the Log Monitoring API because it is the reproducible way to do it on the tenant we actually have. The value is the auditable governance record on the platform that saw the incident, not the specific ingest API. Detection, by contrast, is full live DQL against real telemetry.
 
 ---
 
@@ -99,7 +102,7 @@ The agent runs a **6-step loop**:
 | **Project Name** | AutoSRE: The Autonomous On-Call Engineer |
 | **Tagline** | The on-call engineer that diagnoses and fixes production incidents from Dynatrace, but never acts without your approval. |
 | **Demo video** | [YouTube URL] (≤3:00, shows full DETECT→DIAGNOSE→APPROVE→ACT→VERIFY loop) |
-| **Try it** | **https://autosre-ui-vrf7h4n4ra-uc.a.run.app/demo** — works from incognito. The hosted Mission Control runs the **real Gemini agent live** end to end (deterministic mock telemetry for a reliable click-through), streaming DETECT→DIAGNOSE→APPROVE→ACT→VERIFY, with the approved remediation executing for real against checkout-api and **written back to our real Dynatrace tenant as an audit log** (visible in the Audit trail panel). The same agent's run against the real Dynatrace tenant for *detection* (real DQL returning the incident over the official MCP server) is shown in the demo video and reproducible locally (`DYNATRACE_MCP_MODE=stdio`). |
+| **Try it** | **https://autosre-ui-vrf7h4n4ra-uc.a.run.app/demo** (works from incognito). The hosted Mission Control runs the **real Gemini agent live** end to end, streaming DETECT, DIAGNOSE, the approval gate, ACT, and VERIFY. Approve and the remediation executes for real against checkout-api and is written back to our real Dynatrace tenant as an audit log. **Try rejecting it too:** the agent stands down, production stays untouched, and the Audit trail records the refusal right next to the approval. The same agent's detection run against the real Dynatrace tenant (live DQL over the official MCP server) is in the demo video and reproducible locally with `DYNATRACE_MCP_MODE=stdio`. |
 | **Code** | https://github.com/thylinao1/autosre (open-source MIT). License visible in About box. |
 | **Inspiration** | IT downtime costs thousands per minute (Gartner's 2014 figure: $5,600/min; EMA Research 2024: ~$14,056/min); MTTR is dominated by the identify phase (30+ min). AutoSRE collapses triage to seconds. |
 | **What it does** | (See section above) |
@@ -160,10 +163,10 @@ The agent runs a **6-step loop**:
 - ✅ Generalizable loop: works for any incident type with appropriate observability + remediation tools.
 
 **Quality of the Idea (25%)**
-- ✅ Sharp, differentiated framing: "Autonomous, but on your authority."
-- ✅ Solves a real SRE problem: incident response at scale, with accountability.
-- ✅ Human-gated autonomy is the differentiator (vs. chatbots or reckless auto-fix).
-- ✅ Memorable one-liner: *"the on-call engineer that never touches prod without your approval."*
+- ✅ The refusal is the differentiator. An autonomous SRE that reads Dynatrace and remediates is the track-default; an agent whose restraint is provable (it asks permission, obeys a no, and logs both outcomes on Dynatrace's timeline) is not.
+- ✅ Reframes the question from "did it act fast" to "should it have acted, and who said so," which is the question an enterprise actually has to answer before trusting autonomy.
+- ✅ Solves a real SRE problem: incident response at scale, with a compliance-grade record of every decision.
+- ✅ Memorable one-liner: *"the on-call engineer that never touches prod without your approval, and writes down who said yes."*
 
 ---
 
