@@ -282,6 +282,50 @@ function IncidentState({
               </span>
             </div>
           )}
+
+          {!isResolved && problem.blast_radius?.summary && (
+            <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "3px" }}>
+              <span style={{
+                fontSize: "10.5px",
+                fontFamily: "var(--font-sans)",
+                letterSpacing: "-0.005em",
+                color: "var(--color-text-muted)",
+                fontWeight: 500,
+              }}>
+                Blast radius
+              </span>
+              <span style={{
+                fontSize: "11.5px",
+                fontFamily: "var(--font-sans)",
+                color: "var(--color-text-secondary)",
+                lineHeight: 1.4,
+                letterSpacing: "-0.005em",
+              }}>
+                {problem.blast_radius.summary}
+              </span>
+            </div>
+          )}
+
+          {!isResolved && problem.affected_entities && problem.affected_entities.length > 0 && (
+            <div style={{ marginTop: "10px", display: "flex", flexWrap: "wrap", gap: "5px", alignItems: "center" }}>
+              {problem.affected_entities.map((e) => (
+                <span
+                  key={e}
+                  style={{
+                    fontSize: "9.5px",
+                    fontFamily: "var(--font-mono)",
+                    padding: "1.5px 6px",
+                    borderRadius: "4px",
+                    color: "var(--color-text-secondary)",
+                    backgroundColor: "var(--color-surface-1)",
+                    border: "1px solid var(--color-border)",
+                  }}
+                >
+                  {e}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

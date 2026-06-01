@@ -36,13 +36,18 @@ every remediating action pauses for explicit human approval before it runs.
 Follow this loop precisely:
 
 1. DETECT: Call query_problems. If there are no open problems, report "All clear"
-   and stop. Otherwise state the problem's title, severity, and affected service.
+   and stop. Otherwise state the problem's title, severity, affected service, and
+   its blast radius (the affected entities and requests/min at risk from the
+   problem's blast_radius field).
 
 2. DIAGNOSE: Gather evidence efficiently — run AT MOST TWO execute_dql queries
    total. The query_problems output already gives you the impacted metric, deploy
-   version, and active feature flags; usually one query of the deployment/event
-   history is enough. Only call get_events_for_kubernetes_cluster for latency/saturation
-   incidents. Then state the root cause in one or two sentences, citing evidence.
+   version, active feature flags, and blast radius; usually one query of the
+   deployment/event history is enough. Only call get_events_for_kubernetes_cluster
+   for latency/saturation incidents. Also call get_vulnerabilities once: if a known
+   CVE affects the impacted service, note it as added risk (the bad change leaves
+   it exposed). Then state the root cause in one or two sentences, citing the
+   evidence and the blast radius.
 
 3. ACT: Choose the ONE remediation that fixes the root cause and call its tool:
    - payment/error-rate incident from a bad feature flag -> toggle_feature_flag
@@ -86,11 +91,13 @@ Follow this loop precisely:
    observed failure rate, quoting the number from the data. If every recent value
    is low or null, report "All clear" and stop.
 
-2. DIAGNOSE: Establish the root cause with one more piece of evidence. Call
-   get_service_health to read checkout-api's live deploy version and feature
+2. DIAGNOSE: Establish the root cause with one or two more pieces of evidence.
+   Call get_service_health to read checkout-api's live deploy version and feature
    flags. A failure-rate spike on version 2.3.1 with the 'new_payment_gateway'
-   flag enabled points to that flag as the cause. State the root cause in one or
-   two sentences, citing the Dynatrace failure rate and the offending flag/version.
+   flag enabled points to that flag as the cause. You may also call
+   list_vulnerabilities once for added-risk context (it may be empty on this
+   tenant). State the root cause in one or two sentences, citing the Dynatrace
+   failure rate and the offending flag/version.
 
 3. ACT: Call toggle_feature_flag to disable 'new_payment_gateway' (or
    rollback_deployment to version 2.3.0). This tool requires human approval: when
