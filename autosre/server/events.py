@@ -19,14 +19,19 @@ import json
 from typing import Any
 
 # Tool-name → phase the call belongs to (CONTRACT §2.1). The boundary that fires
-# the `step` is the *first* tool that signals a new phase.
-# Dynatrace MCP tool names. The bundled mock uses underscore names (Gemini-safe);
-# the real gateway uses kebab-case. Accept both so phase mapping works in either
-# mode. The verify tool (`get_service_health`) and remediation tools are LOCAL
-# functions, not Dynatrace.
-_DETECT_TOOLS = {"query_problems", "get_problem_by_id", "query-problems", "get-problem-by-id"}
+# the `step` is the *first* tool that signals a new phase. Both the bundled mock
+# and the real @dynatrace-oss/dynatrace-mcp-server v1.8.6 expose snake_case names;
+# the two surfaces differ (mock: query_problems; real: list_problems / DQL-first).
+# The kebab-case variants are kept so synthetic contract fixtures and any older
+# gateway naming still map. The verify tool (`get_service_health`) and the
+# remediation tools are LOCAL functions, not Dynatrace.
+_DETECT_TOOLS = {
+    "query_problems", "get_problem_by_id", "list_problems",
+    "query-problems", "get-problem-by-id",
+}
 _DIAGNOSE_TOOLS = {
     "execute_dql", "get_events_for_kubernetes_cluster", "get_vulnerabilities",
+    "get_kubernetes_events", "list_vulnerabilities",
     "execute-dql", "get-events-for-kubernetes-cluster", "get-vulnerabilities",
 }
 _VERIFY_TOOLS = {"get_service_health"}

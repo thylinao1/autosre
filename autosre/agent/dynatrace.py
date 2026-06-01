@@ -6,9 +6,14 @@ One switch (DYNATRACE_MCP_MODE) selects where observability data comes from:
   stdio  -> official npx @dynatrace-oss/dynatrace-mcp-server, run locally
   remote -> your Dynatrace tenant's hosted remote MCP gateway (HTTP + Bearer)
 
-The agent code above this layer never changes — the tool names are identical
-across all three modes (query-problems, execute-dql, get-events-for-kubernetes-cluster,
-...), matching the real Dynatrace MCP gateway's tool surface exactly.
+Both the bundled mock and the official server (verified against
+@dynatrace-oss/dynatrace-mcp-server v1.8.6) expose snake_case tool names, which
+are valid Gemini function-call identifiers, so no name normalization is needed.
+The two surfaces are NOT identical, though: the mock mirrors a Davis-problem
+workflow (query_problems / get_problem_by_id), while the real server is
+DQL-first (list_problems / execute_dql / get_kubernetes_events). The agent
+instruction is mode-aware (see agent.py) so each path drives the tools it has.
+Only read-only tools are exposed in every mode; the filter is the guardrail.
 """
 
 from __future__ import annotations
@@ -23,15 +28,16 @@ from google.adk.tools.mcp_tool.mcp_session_manager import (
 )
 from mcp import StdioServerParameters
 
-# Read-only Dynatrace tools the agent is allowed to use. The bundled mock server
-# registers Gemini-safe underscore names: hyphens are not valid Gemini
-# function-call identifiers, so a hyphenated MCP tool name round-trips through the
-# model as an underscore and then fails ADK dispatch ("Tool 'query_problems' not
-# found"). The real Dynatrace gateway exposes kebab-case names, so remote/stdio
-# against the real gateway needs a name-normalization layer before it works with
-# Gemini (tracked separately; the offline mock path is what the demo uses).
-# Keeping the filter explicit means a misconfigured tenant can't expose write
-# tools to the agent.
+# Read-only Dynatrace tools the agent is allowed to use. The filter is an explicit
+# allow-list so a misconfigured tenant can never expose write tools (send_email,
+# send_slack_message, create_workflow_*, send_event, reset_grail_budget, ...) to
+# the agent — only observability reads pass through.
+#
+# Mock names mirror a Davis-problem workflow. Real names are the actual surface of
+# @dynatrace-oss/dynatrace-mcp-server v1.8.6 (verified by listing tools over MCP):
+# it has no get_problem_by_id, calls the events tool get_kubernetes_events, and
+# names the vulnerability tool list_vulnerabilities. All are snake_case already,
+# so they pass straight through to Gemini with no normalization.
 _MOCK_TOOL_FILTER = [
     "query_problems",
     "get_problem_by_id",
@@ -40,11 +46,10 @@ _MOCK_TOOL_FILTER = [
     "get_vulnerabilities",
 ]
 _REAL_TOOL_FILTER = [
-    "query-problems",
-    "get-problem-by-id",
-    "execute-dql",
-    "get-events-for-kubernetes-cluster",
-    "get-vulnerabilities",
+    "list_problems",
+    "execute_dql",
+    "get_kubernetes_events",
+    "list_vulnerabilities",
 ]
 
 
