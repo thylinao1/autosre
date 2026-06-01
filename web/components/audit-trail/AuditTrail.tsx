@@ -34,18 +34,25 @@ export function AuditTrail({ refreshKey }: { refreshKey?: string | number }) {
 
   useEffect(() => {
     let cancelled = false;
-    getLedger(8)
-      .then((r) => {
-        if (cancelled) return;
-        setEntries(r.entries);
-        setWriteback(r.dynatrace_writeback);
-        setLoaded(true);
-      })
-      .catch(() => {
-        if (!cancelled) setLoaded(true);
-      });
+    const load = () => {
+      getLedger(8)
+        .then((r) => {
+          if (cancelled) return;
+          setEntries(r.entries);
+          setWriteback(r.dynatrace_writeback);
+          setLoaded(true);
+        })
+        .catch(() => {
+          if (!cancelled) setLoaded(true);
+        });
+    };
+    load();
+    // Poll: the agent records the entry on real completion, which lags the UI's
+    // optimistic "resolved" by the model's ACT+VERIFY time. Polling catches it.
+    const id = setInterval(load, 5000);
     return () => {
       cancelled = true;
+      clearInterval(id);
     };
   }, [refreshKey]);
 
