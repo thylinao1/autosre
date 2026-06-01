@@ -80,6 +80,13 @@ export type SSEEvent =
 
 // ── Domain models ────────────────────────────────────────────────────
 
+export interface BlastRadius {
+  requests_per_min?: number;
+  failing_per_min?: number;
+  downstream_services?: number;
+  summary?: string;
+}
+
 export interface DynatraceProblem {
   problemId: string;
   title: string;
@@ -90,6 +97,10 @@ export interface DynatraceProblem {
   observed_value: number;
   deploy_version?: string;
   active_feature_flags?: Record<string, boolean>;
+  // Davis-shaped enrichment (root cause + blast radius), surfaced in the UI.
+  root_cause_entity?: string;
+  affected_entities?: string[];
+  blast_radius?: BlastRadius;
 }
 
 export interface DqlRecord {

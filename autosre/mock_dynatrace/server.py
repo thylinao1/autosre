@@ -37,16 +37,39 @@ def _problems_payload() -> dict:
     if not st.get("healthy", True):
         d = st["active_fault_detail"]
         m = st["metrics"]
+        metric = d["metric"]
+        rpm = m.get("requests_per_min", 0)
+        # Blast radius derived from live telemetry, so the human approves on
+        # evidence (entities affected + requests/min at risk), not vibes.
+        if metric == "failure_rate":
+            failing = round(rpm * (m.get("failure_rate", 0) / 100.0))
+            blast_radius = {
+                "requests_per_min": rpm,
+                "failing_per_min": failing,
+                "downstream_services": 2,
+                "summary": f"~{failing} of {rpm} checkouts/min failing; payment + order paths impacted",
+            }
+            root_cause_entity = f"SERVICE checkout-api · deploy v{st['version']} · flag new_payment_gateway"
+        else:
+            blast_radius = {
+                "requests_per_min": rpm,
+                "downstream_services": 2,
+                "summary": f"all {rpm} checkouts/min degraded; cart + order paths impacted",
+            }
+            root_cause_entity = f"SERVICE checkout-api · {st.get('replicas', 3)} replicas saturated"
         problems.append({
             "problemId": "P-2026-0042",
             "title": d["summary"],
-            "severity": "AVAILABILITY" if d["metric"] == "failure_rate" else "PERFORMANCE",
+            "severity": "AVAILABILITY" if metric == "failure_rate" else "PERFORMANCE",
             "status": "OPEN",
             "affected_entity": "checkout-api",
-            "impacted_metric": d["metric"],
-            "observed_value": m.get(d["metric"]),
+            "root_cause_entity": root_cause_entity,
+            "affected_entities": ["checkout-api", "payment-gateway", "order-service"],
+            "impacted_metric": metric,
+            "observed_value": m.get(metric),
             "deploy_version": st["version"],
             "active_feature_flags": st["feature_flags"],
+            "blast_radius": blast_radius,
         })
     return {"problems": problems, "total": len(problems)}
 

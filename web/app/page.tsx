@@ -219,8 +219,8 @@ function HeroSection() {
             ["--hero-i" as string]: 1,
           } as React.CSSProperties}
         >
-          Your autonomous on-call engineer, and you stay{" "}
-          <span className="text-gradient">in control of production.</span>
+          It detects the outage and fixes the root cause,{" "}
+          <span className="text-gradient">but never without your approval.</span>
         </h1>
 
         {/* Subhead */}
