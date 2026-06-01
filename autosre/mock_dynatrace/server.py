@@ -51,13 +51,13 @@ def _problems_payload() -> dict:
     return {"problems": problems, "total": len(problems)}
 
 
-@mcp.tool(name="query-problems")
+@mcp.tool(name="query_problems")
 def query_problems(status: str = "OPEN") -> str:
     """Query active Davis problems (open incidents) detected in the environment."""
     return json.dumps(_problems_payload(), indent=2)
 
 
-@mcp.tool(name="get-problem-by-id")
+@mcp.tool(name="get_problem_by_id")
 def get_problem_by_id(problemId: str) -> str:
     """Read details of a single Davis problem by its display id."""
     for p in _problems_payload().get("problems", []):
@@ -66,7 +66,7 @@ def get_problem_by_id(problemId: str) -> str:
     return json.dumps({"error": f"problem {problemId} not found"})
 
 
-@mcp.tool(name="execute-dql")
+@mcp.tool(name="execute_dql")
 def execute_dql(dqlQueryString: str) -> str:
     """Execute a Dynatrace Query Language (DQL) statement and return result rows.
 
@@ -94,7 +94,7 @@ def execute_dql(dqlQueryString: str) -> str:
     return json.dumps({"query": dqlQueryString, "records": records}, indent=2)
 
 
-@mcp.tool(name="get-events-for-kubernetes-cluster")
+@mcp.tool(name="get_events_for_kubernetes_cluster")
 def get_events_for_kubernetes_cluster(clusterId: str = "") -> str:
     """Return recent Kubernetes events for the monitored cluster(s)."""
     st = _state()
@@ -106,7 +106,7 @@ def get_events_for_kubernetes_cluster(clusterId: str = "") -> str:
     return json.dumps({"events": events}, indent=2)
 
 
-@mcp.tool(name="get-vulnerabilities")
+@mcp.tool(name="get_vulnerabilities")
 def get_vulnerabilities(riskLevel: str = "") -> str:
     """List active security vulnerabilities detected by Dynatrace."""
     return json.dumps({"vulnerabilities": [

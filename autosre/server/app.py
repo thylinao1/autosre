@@ -27,6 +27,7 @@ from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from pydantic import BaseModel  # noqa: E402
 from sse_starlette.sse import EventSourceResponse  # noqa: E402
 
+from .demo import DemoRunner, demo_mode_enabled  # noqa: E402
 from .runs import RunRegistry, _target_url  # noqa: E402
 
 HEARTBEAT_S = 15  # SSE keep-alive comment cadence (Cloud Run idle-close guard).
@@ -87,7 +88,11 @@ async def incident_start(body: StartRequest):
     if body.inject:
         # Inject a real fault before the agent runs, so it detects a real problem.
         await _target_post("/_admin/inject", {"fault": body.inject})
-    run = await registry.create(body.prompt)
+    # DEMO_MODE: drive the run with the deterministic, model-free DemoRunner so the
+    # hosted URL never stalls on a free-tier model blip. The remediation still runs
+    # for real, so recovery (and the green card) is genuine. Same frames either way.
+    factory = (lambda: DemoRunner(_target_url())) if demo_mode_enabled() else None
+    run = await registry.create(body.prompt, runner_factory=factory)
     return {"run_id": run.run_id, "status": "started"}
 
 

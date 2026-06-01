@@ -4,7 +4,9 @@
 
 ## The Real-World Problem
 
-Production incidents don't wait. When a checkout service crashes at scale, **every minute of downtime costs money, a lot of it.** According to Gartner, IT downtime averages **$5,600 per minute** for businesses; large enterprises face $14,000+ per minute. Yet diagnosing the root cause typically takes **30+ minutes** of manual triage by an on-call engineer: opening dashboards, running queries, correlating events, narrowing the blast radius. That's $168,000 to $420,000 in lost revenue *before* the fix even starts.
+Production incidents don't wait. When a checkout service crashes at scale, **every minute of downtime costs money, a lot of it.** Estimates land in the thousands of dollars per minute: Gartner's widely cited figure is **$5,600 per minute** (from a 2014 study), and EMA Research's 2024 analysis puts unplanned downtime at roughly **$14,056 per minute** across organizations. Yet diagnosing the root cause typically takes **30+ minutes** of manual triage by an on-call engineer: opening dashboards, running queries, correlating events, narrowing the blast radius. At those rates, that is six figures of lost revenue *before* the fix even starts.
+
+> Sources: the $5,600/minute figure traces to a 2014 Gartner study, still the most-cited downtime benchmark ([Atlassian](https://www.atlassian.com/incident-management/kpis/cost-of-downtime)); the $14,056/minute figure is from EMA Research's 2024 analysis ([The Network Installers, 2026 roundup](https://thenetworkinstallers.com/blog/cost-of-it-downtime-statistics/)).
 
 **AutoSRE collapses the triage phase to seconds.** It's the autonomous on-call engineer that detects an incident from Dynatrace, diagnoses the root cause from live telemetry, proposes exactly one fix, waits for your one-tap approval, executes it, and verifies recovery. **But it never touches production without your authority.**
 
@@ -33,7 +35,7 @@ The agent runs a **6-step loop**, driven by **Gemini 3 reasoning on Google Cloud
 3. **PROPOSE**: Reason about the root cause and name exactly one remediation (disable flag, rollback, scale service).
 4. **PAUSE**: Stream the proposed action to the web UI and block until a human approves.
 5. **ACT**: Execute the approved remediation.
-6. **VERIFY**: Re-check service health via Dynatrace and the target service API.
+6. **VERIFY**: Re-query Dynatrace to confirm the open problem has cleared, then re-check the target service's health. Dynatrace both opens the incident and confirms recovery, so it bookends the loop.
 
 The web "Mission Control" UI streams this loop live. The operator watches the agent pull the problem card, run evidence queries, propose the fix, and then **taps Approve** to execute. The incident card flips green when recovery is verified.
 
@@ -54,7 +56,7 @@ graph LR
     end
     
     subgraph dt["Dynatrace<br/>(Partner MCP)"]
-        MCP["Dynatrace MCP<br/>query-problems · execute-dql<br/>get-events-for-kubernetes-cluster<br/>(Read-Only Observability)"]
+        MCP["Dynatrace MCP<br/>query_problems · execute_dql<br/>get_events_for_kubernetes_cluster<br/>(Read-Only Observability)"]
     end
     
     UI -->|SSE Stream| AGENT
@@ -73,7 +75,7 @@ graph LR
 **Key architectural points:**
 
 - **Agent:** An ADK `LlmAgent` on `gemini-3-pro-preview` via **Vertex AI**, registered on **Vertex AI Agent Engine** (Google Cloud's managed Agent Platform runtime). Runs the 6-step loop.
-- **Dynatrace MCP (the agent's senses):** The agent's **only** observability source. Detection and diagnosis run entirely on Dynatrace tools (`query-problems`, `execute-dql`, `get-events-for-kubernetes-cluster`). The Dynatrace MCP is **load-bearing**: the agent cannot reason without it.
+- **Dynatrace MCP (the agent's senses):** The agent's **only** observability source. Detection, diagnosis, and recovery confirmation run on Dynatrace tools (`query_problems`, `execute_dql`, `get_events_for_kubernetes_cluster`). Tool names use underscores because Gemini's function-calling requires them; the toolset also accepts a real gateway's hyphenated names. The Dynatrace MCP is **load-bearing**: the agent cannot reason without it.
 - **Human-in-the-loop:** ADK-native `FunctionTool(require_confirmation=True)` enforces the approval gate in Python. The model cannot bypass it.
 - **Web Mission Control UI:** A Next.js dashboard that streams the loop over SSE and renders the **APPROVE / REJECT** moment as a blocking modal. This is the "web" platform requirement.
 - **Three swappable Dynatrace backends** (agent code unchanged):
@@ -156,7 +158,7 @@ bash scripts/start_demo.sh
 
 This boots the target service, the SSE backend, and the web UI all at once.
 
-> **Rate-limiting note:** `gemini-3-flash-preview` (default free tier) allows ~5 requests/minute. A full incident loop makes several model calls, so the runner backs off and resumes on rate-limit (takes longer but still works). For a smooth demo, use a free API key from Google AI Studio (no billing needed yet) or enable billing and switch to `AUTOSRE_MODEL=gemini-3-pro-preview` for stronger reasoning and no backoff.
+> **Reliability note:** On the free AI Studio tier, `gemini-3-flash-preview` allows ~5 requests/minute, so a full local loop backs off and resumes on rate limits (slower, but it completes). The deployed submission runs Gemini 3 on **Vertex AI**, which does not have that constraint. For a hosted demo URL that can never stall on a model blip, set `AUTOSRE_DEMO_MODE=1`: the loop replays deterministically with no model call while still applying the real fix, so recovery stays genuine.
 
 ---
 
@@ -215,12 +217,13 @@ The final URL is your submission to judges (Devpost requirement: must work from 
 pytest
 ```
 
-Runs 24 deterministic tests:
+Runs 30 tests: 28 offline-deterministic, plus 2 gated on live Gemini credentials.
 - **Machinery tests (deterministic):** Mock Dynatrace server over MCP stdio protocol; verify the approval gate, remediation execution, and incident outcome for both fault types.
 - **Integration tests:** Live SSE streaming from the backend; approval round-trip; full agent loop with real Gemini (skipped unless Gemini credentials present).
 - **MCP envelope parsing:** Regression tests for real ADK tool response unwrapping (fixed a critical bug).
+- **Demo mode:** The deterministic, model-free replay drives the full detect-to-verify loop and applies the real remediation, so the hosted demo URL recovers without a single model call.
 
-All tests pass offline (mock Dynatrace). The live test optionally runs against Gemini if credentials are present.
+The 28 deterministic tests pass offline (mock Dynatrace). The 2 live tests run against Gemini if credentials are present.
 
 ---
 

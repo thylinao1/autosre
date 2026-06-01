@@ -26,20 +26,20 @@ function makeEvents(runId: string, inject: string): object[] {
       phase: "detect",
       status: "Pulling open problems from Dynatrace…",
     },
-    // 1 — tool call: query-problems
+    // 1 — tool call: query_problems
     {
       type: "tool_call",
       run_id: runId,
       seq: 1,
-      name: "query-problems",
+      name: "query_problems",
       args: { entity: "checkout-api" },
     },
-    // 2 — tool result: query-problems
+    // 2 — tool result: query_problems
     {
       type: "tool_result",
       run_id: runId,
       seq: 2,
-      name: "query-problems",
+      name: "query_problems",
       summary: `1 open problem: ${problemTitle}`,
       response: {
         problems: [
@@ -68,27 +68,27 @@ function makeEvents(runId: string, inject: string): object[] {
       phase: "diagnose",
       status: "Running DQL evidence queries…",
     },
-    // 4 — tool call: execute-dql
+    // 4 — tool call: execute_dql
     {
       type: "tool_call",
       run_id: runId,
       seq: 4,
-      name: "execute-dql",
+      name: "execute_dql",
       args: {
         dqlQueryString: isLatency
           ? 'fetch metrics | filter entity.name == "checkout-api" and metric.key == "response_time" | sort timestamp desc | limit 20'
           : 'fetch events | filter event.kind == "DEPLOYMENT_EVENT" and entity.name == "checkout-api" | sort timestamp desc | limit 1',
       },
     },
-    // 5 — tool result: execute-dql
+    // 5 — tool result: execute_dql
     {
       type: "tool_result",
       run_id: runId,
       seq: 5,
-      name: "execute-dql",
+      name: "execute_dql",
       summary: isLatency
         ? "P99 latency climbed from 210ms baseline to 4,200ms after replica count dropped to 3."
-        : "Deploy v2.3.1 at 14:32 UTC enabled feature flag 'new_payment_gateway' — correlated with failure spike.",
+        : "Deploy v2.3.1 at 14:32 UTC enabled feature flag 'new_payment_gateway', correlated with the failure spike.",
       response: {
         records: isLatency
           ? [
@@ -107,8 +107,8 @@ function makeEvents(runId: string, inject: string): object[] {
       run_id: runId,
       seq: 6,
       text: isLatency
-        ? "Root cause identified: checkout-api is under-provisioned. Replica count fell from 8 to 3 at 14:28 UTC — P99 latency jumped 20x to 4,200ms. Scaling to 8 replicas should restore normal latency."
-        : "Root cause identified: deploy v2.3.1 (14:32 UTC) enabled feature flag 'new_payment_gateway'. This gateway throws an unhandled exception on AMEX cards — driving a 22% failure rate. Disabling the flag will immediately restore service.",
+        ? "Root cause identified: checkout-api is under-provisioned. Replica count fell from 8 to 3 at 14:28 UTC, and P99 latency jumped 20x to 4,200ms. Scaling to 8 replicas should restore normal latency."
+        : "Root cause identified: deploy v2.3.1 (14:32 UTC) enabled feature flag 'new_payment_gateway'. This gateway throws an unhandled exception on AMEX cards, driving a 22% failure rate. Disabling the flag will immediately restore service.",
       done: true,
     },
     // 7 — act phase marker
@@ -117,7 +117,7 @@ function makeEvents(runId: string, inject: string): object[] {
       run_id: runId,
       seq: 7,
       phase: "act",
-      status: "Proposing remediation — awaiting operator approval…",
+      status: "Proposing a remediation, awaiting your approval…",
     },
     // 8 — approval_request (PAUSE HERE — client will send approval POST)
     {

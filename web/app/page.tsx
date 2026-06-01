@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { FlowDiagram } from "@/components/landing/FlowDiagram";
 import { NavLinks } from "@/components/landing/NavLinks";
+import { ScrollReveal } from "@/components/landing/ScrollReveal";
+import { ScrollProgress } from "@/components/landing/ScrollProgress";
+import { CountUp } from "@/components/landing/CountUp";
 
 /* ── Landing page — AutoSRE
    Server Component — no event handlers here.
@@ -10,6 +13,8 @@ import { NavLinks } from "@/components/landing/NavLinks";
 export default function LandingPage() {
   return (
     <>
+      <ScrollProgress />
+      <ScrollReveal />
       <SiteNav />
       <main>
         <HeroSection />
@@ -157,6 +162,7 @@ function HeroSection() {
       >
         {/* Eyebrow badge */}
         <div
+          className="hero-rise"
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -166,7 +172,8 @@ function HeroSection() {
             border: "1px solid var(--color-border)",
             backgroundColor: "var(--color-surface-1)",
             marginBottom: "clamp(24px, 4vw, 40px)",
-          }}
+            ["--hero-i" as string]: 0,
+          } as React.CSSProperties}
         >
           <span
             aria-hidden="true"
@@ -183,62 +190,69 @@ function HeroSection() {
           />
           <span
             style={{
-              fontSize: "11px",
-              fontFamily: "var(--font-mono)",
-              color: "var(--color-text-muted)",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
+              fontSize: "12px",
+              fontFamily: "var(--font-sans)",
+              color: "var(--color-text-secondary)",
+              letterSpacing: "-0.005em",
             }}
           >
-            Google Cloud Hackathon · ADK + Dynatrace MCP
+            Google Cloud Rapid Agent Hackathon · Dynatrace track
           </span>
         </div>
 
         {/* Headline */}
         <h1
           id="hero-heading"
+          className="hero-rise"
           style={{
             fontSize: "var(--text-hero)",
             fontFamily: "var(--font-display)",
             fontWeight: 800,
-            lineHeight: 1.05,
+            lineHeight: 1.04,
             letterSpacing: "-0.04em",
             color: "var(--color-text-primary)",
             marginBottom: "clamp(20px, 3vw, 32px)",
-          }}
+            textWrap: "balance",
+            ["--hero-i" as string]: 1,
+          } as React.CSSProperties}
         >
-          Your on-call agent that{" "}
-          <span className="text-gradient">never touches production</span>
-          {" "}without your say-so.
+          Your autonomous on-call engineer, and you stay{" "}
+          <span className="text-gradient">in control of production.</span>
         </h1>
 
         {/* Subhead */}
         <p
+          className="hero-rise"
           style={{
             fontSize: "clamp(1rem, 1.8vw, 1.2rem)",
             fontFamily: "var(--font-sans)",
             color: "var(--color-text-secondary)",
             lineHeight: 1.7,
-            maxWidth: "60ch",
+            maxWidth: "58ch",
             margin: "0 auto clamp(36px, 5vw, 56px)",
             fontWeight: 400,
-          }}
+            textWrap: "pretty",
+            ["--hero-i" as string]: 2,
+          } as React.CSSProperties}
         >
-          AutoSRE is an autonomous incident-response agent. It detects anomalies
-          from Dynatrace, runs DQL queries to diagnose root cause, proposes a
-          precise remediation — then waits for your approval before acting.
-          MTTR collapses from 30+ minutes to seconds.
+          AutoSRE detects incidents through Dynatrace, runs the queries to find
+          root cause, and proposes a precise fix for checkout-api. It pauses
+          there and waits for your approval before anything reaches production.
+          You get faster recovery, from thirty-plus minutes of manual triage
+          down to seconds, with a person accountable for every change.
         </p>
 
         {/* CTA row */}
         <div
+          className="hero-rise"
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             gap: "16px",
             flexWrap: "wrap",
-          }}
+            ["--hero-i" as string]: 3,
+          } as React.CSSProperties}
         >
           <Link href="/demo" className="pill-btn-primary">
             <svg
@@ -291,6 +305,7 @@ function HeroSection() {
 function DiagramSection() {
   return (
     <section
+      data-reveal
       style={{
         padding:
           "0 clamp(20px, 5vw, 64px) clamp(60px, 10vw, 100px)",
@@ -325,7 +340,7 @@ function ProblemSection() {
       unit: "",
       label: "Incidents with known fix patterns",
       detail:
-        "Feature flag rollback, replica scale-up, deployment rollback — AutoSRE already knows these playbooks.",
+        "Feature flag rollback, replica scale-up, deployment rollback. AutoSRE already knows these playbooks.",
     },
   ];
 
@@ -340,6 +355,7 @@ function ProblemSection() {
     >
       <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
         <div
+          data-reveal
           style={{
             marginBottom: "clamp(40px, 6vw, 64px)",
             maxWidth: "560px",
@@ -349,7 +365,7 @@ function ProblemSection() {
             className="section-eyebrow"
             style={{ marginBottom: "16px" }}
           >
-            The Problem
+            The problem
           </p>
           <h2
             style={{
@@ -373,7 +389,7 @@ function ProblemSection() {
             }}
           >
             Every minute of downtime costs revenue and trust. But triaging
-            an alert from scratch is slow, manual work — even for experienced
+            an alert from scratch is slow, manual work, even for experienced
             engineers.
           </p>
         </div>
@@ -385,8 +401,8 @@ function ProblemSection() {
             gap: "20px",
           }}
         >
-          {problems.map((p) => (
-            <StatCard key={p.label} {...p} />
+          {problems.map((p, i) => (
+            <StatCard key={p.label} index={i} {...p} />
           ))}
         </div>
       </div>
@@ -399,14 +415,18 @@ function StatCard({
   unit,
   label,
   detail,
+  index = 0,
 }: {
   stat: string;
   unit: string;
   label: string;
   detail: string;
+  index?: number;
 }) {
   return (
     <div
+      data-reveal
+      className="card-lift"
       style={{
         borderRadius: "12px",
         border: "1px solid var(--color-border-subtle)",
@@ -414,7 +434,10 @@ function StatCard({
         padding: "clamp(20px, 3vw, 28px)",
         position: "relative",
         overflow: "hidden",
-      }}
+        ["--reveal-i" as string]: index + 1,
+        ["--card-glow" as string]: "rgba(0,212,240,0.08)",
+        ["--card-border-hover" as string]: "rgba(0,212,240,0.3)",
+      } as React.CSSProperties}
     >
       <div
         aria-hidden="true"
@@ -449,7 +472,7 @@ function StatCard({
               color: "var(--color-text-primary)",
             }}
           >
-            {stat}
+            <CountUp value={stat} />
           </span>
           {unit && (
             <span
@@ -503,8 +526,8 @@ function HowItWorksSection() {
       phaseBorder: "rgba(0,212,240,0.25)",
       phaseBg: "rgba(0,212,240,0.06)",
       title: "Detect",
-      body: "The agent calls the Dynatrace MCP server's query-problems tool. It fetches active AVAILABILITY and PERFORMANCE incidents affecting checkout-api in real time.",
-      badge: "query-problems",
+      body: "The agent calls the Dynatrace MCP server's query_problems tool. It fetches active AVAILABILITY and PERFORMANCE incidents affecting checkout-api in real time.",
+      badge: "query_problems",
     },
     {
       phase: "02",
@@ -512,8 +535,8 @@ function HowItWorksSection() {
       phaseBorder: "rgba(139,92,246,0.25)",
       phaseBg: "rgba(139,92,246,0.06)",
       title: "Diagnose",
-      body: "AutoSRE formulates a DQL query and calls execute-dql to pull exact error-rate metrics, latency histograms, and log samples that led to the incident.",
-      badge: "execute-dql",
+      body: "AutoSRE formulates a DQL query and calls execute_dql to pull exact error-rate metrics, latency histograms, and log samples that led to the incident.",
+      badge: "execute_dql",
     },
     {
       phase: "03",
@@ -521,7 +544,7 @@ function HowItWorksSection() {
       phaseBorder: "rgba(242,168,50,0.3)",
       phaseBg: "rgba(242,168,50,0.06)",
       title: "Wait for your approval",
-      body: "The agent surfaces its proposed remediation — feature flag toggle, replica scale, or rollback — in an approval modal. Nothing moves until you decide.",
+      body: "The agent surfaces its proposed remediation (a feature flag toggle, replica scale, or rollback) in an approval modal. Nothing moves until you decide.",
       badge: "require_confirmation",
     },
     {
@@ -546,6 +569,7 @@ function HowItWorksSection() {
     >
       <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
         <div
+          data-reveal
           style={{ marginBottom: "clamp(40px, 6vw, 64px)", maxWidth: "520px" }}
         >
           <p
@@ -575,8 +599,8 @@ function HowItWorksSection() {
             gap: "20px",
           }}
         >
-          {steps.map((s) => (
-            <StepCard key={s.phase} {...s} />
+          {steps.map((s, i) => (
+            <StepCard key={s.phase} index={i} {...s} />
           ))}
         </div>
       </div>
@@ -592,6 +616,7 @@ function StepCard({
   title,
   body,
   badge,
+  index = 0,
 }: {
   phase: string;
   phaseColor: string;
@@ -600,9 +625,12 @@ function StepCard({
   title: string;
   body: string;
   badge: string;
+  index?: number;
 }) {
   return (
     <article
+      data-reveal
+      className="card-lift"
       style={{
         borderRadius: "12px",
         border: `1px solid ${phaseBorder}`,
@@ -611,7 +639,11 @@ function StepCard({
         display: "flex",
         flexDirection: "column",
         gap: "12px",
-      }}
+        ["--reveal-i" as string]: index + 1,
+        ["--card-glow" as string]: phaseBg,
+        ["--card-ring" as string]: phaseBorder,
+        ["--card-border-hover" as string]: phaseColor,
+      } as React.CSSProperties}
     >
       <div
         style={{
@@ -707,7 +739,7 @@ function ArchitectureSection() {
     {
       label: "Observability",
       value: "Dynatrace MCP Server",
-      note: "query-problems + execute-dql",
+      note: "query_problems + execute_dql",
     },
     {
       label: "Human Gate",
@@ -737,6 +769,7 @@ function ArchitectureSection() {
     >
       <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
         <div
+          data-reveal
           style={{
             marginBottom: "clamp(40px, 5vw, 56px)",
             maxWidth: "480px",
@@ -763,6 +796,7 @@ function ArchitectureSection() {
         </div>
 
         <div
+          data-reveal
           style={{
             borderRadius: "12px",
             border: "1px solid var(--color-border-subtle)",
@@ -776,6 +810,7 @@ function ArchitectureSection() {
           {stack.map((row, i) => (
             <div
               key={row.label}
+              className="arch-row"
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr 1.5fr 1fr",
@@ -791,11 +826,10 @@ function ArchitectureSection() {
             >
               <span
                 style={{
-                  fontSize: "11px",
-                  fontFamily: "var(--font-mono)",
-                  color: "var(--color-text-dim)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.1em",
+                  fontSize: "12px",
+                  fontFamily: "var(--font-sans)",
+                  color: "var(--color-text-secondary)",
+                  letterSpacing: "-0.005em",
                   fontWeight: 500,
                 }}
               >
@@ -860,7 +894,7 @@ function FooterCTA() {
         }}
       />
 
-      <div style={{ position: "relative", zIndex: 1 }}>
+      <div data-reveal style={{ position: "relative", zIndex: 1 }}>
         <h2
           style={{
             fontSize: "clamp(1.8rem, 4vw, 3.5rem)",
@@ -871,6 +905,7 @@ function FooterCTA() {
             color: "var(--color-text-primary)",
             maxWidth: "700px",
             margin: "0 auto 18px",
+            textWrap: "balance",
           }}
         >
           See an incident resolved{" "}
@@ -963,7 +998,7 @@ function SiteFooter() {
             color: "var(--color-text-dim)",
           }}
         >
-          · Google Cloud Rapid Agent Hackathon 2025
+          · Google Cloud Rapid Agent Hackathon 2026
         </span>
       </div>
 

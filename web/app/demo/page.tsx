@@ -119,15 +119,45 @@ export default function DemoPage() {
             </span>
             <span
               style={{
-                fontSize: "9px",
-                fontFamily: "var(--font-mono)",
-                textTransform: "uppercase",
-                letterSpacing: "0.18em",
-                color: "var(--color-text-dim)",
-                fontWeight: 400,
+                fontSize: "11px",
+                fontFamily: "var(--font-sans)",
+                letterSpacing: "-0.005em",
+                color: "var(--color-text-muted)",
+                fontWeight: 500,
               }}
             >
-              mission control
+              Mission Control
+            </span>
+            <span
+              className="hidden sm:inline-flex"
+              title="Demo sandbox. Incidents are injected so the loop is repeatable. The agent reasoning, the approval gate, and the Dynatrace integration are real code; the target service runs in simulation."
+              style={{
+                alignItems: "center",
+                gap: "5px",
+                marginLeft: "4px",
+                padding: "2px 9px",
+                borderRadius: "9999px",
+                border: "1px dashed var(--color-border-strong)",
+                fontSize: "10px",
+                fontFamily: "var(--font-sans)",
+                fontWeight: 500,
+                letterSpacing: "-0.005em",
+                color: "var(--color-text-muted)",
+                cursor: "default",
+                flexShrink: 0,
+              }}
+            >
+              <span
+                aria-hidden="true"
+                style={{
+                  width: "5px",
+                  height: "5px",
+                  borderRadius: "50%",
+                  backgroundColor: "var(--color-amber)",
+                  flexShrink: 0,
+                }}
+              />
+              Simulation
             </span>
           </div>
         </div>
@@ -136,14 +166,14 @@ export default function DemoPage() {
         <div style={{ display: "flex", alignItems: "center", gap: "16px", flexShrink: 0 }}>
           <StatusPill
             label={
-              state.status === "idle" ? "STANDBY" :
-              state.status === "starting" ? "STARTING" :
-              state.status === "running" ? "RUNNING" :
-              state.status === "awaiting_approval" ? "APPROVAL" :
-              state.status === "resolved" ? "RESOLVED" :
-              state.status === "declined" ? "DECLINED" :
-              state.status === "all_clear" ? "CLEAR" :
-              "ERROR"
+              state.status === "idle" ? "Standby" :
+              state.status === "starting" ? "Starting" :
+              state.status === "running" ? "Running" :
+              state.status === "awaiting_approval" ? "Approval" :
+              state.status === "resolved" ? "Resolved" :
+              state.status === "declined" ? "Declined" :
+              state.status === "all_clear" ? "Clear" :
+              "Error"
             }
             color={
               state.status === "resolved" || state.status === "all_clear" ? "var(--color-green)" :
@@ -163,10 +193,11 @@ export default function DemoPage() {
           <StatusPill label="Dynatrace MCP" color="var(--color-accent)" glow="none" blink={false} />
           <div className="hidden md:flex" style={{
             alignItems: "center",
-            gap: "5px",
-            fontSize: "9.5px",
-            fontFamily: "var(--font-mono)",
-            color: "var(--color-text-muted)",
+            gap: "6px",
+            fontSize: "11px",
+            fontFamily: "var(--font-sans)",
+            letterSpacing: "-0.005em",
+            color: "var(--color-text-secondary)",
             whiteSpace: "nowrap",
           }}>
             <span style={{ width: "5px", height: "5px", borderRadius: "50%", backgroundColor: "var(--color-text-dim)", flexShrink: 0 }} />
@@ -189,9 +220,9 @@ export default function DemoPage() {
         <div
           className="layout-desktop"
           style={{
-            gridTemplateColumns: "clamp(272px, 21vw, 336px) 1fr clamp(236px, 19vw, 296px)",
+            gridTemplateColumns: "clamp(280px, 22vw, 340px) 1fr clamp(248px, 20vw, 308px)",
             minHeight: 0,
-            height: "calc(100vh - 52px)",
+            height: "calc(100vh - 52px - 40px)",
           }}
         >
           <LeftSidebar
@@ -204,6 +235,9 @@ export default function DemoPage() {
           <RightPanel state={state} />
         </div>
 
+        {/* Telemetry footer (desktop) */}
+        <FooterTelemetry />
+
         {/* Mobile stacked layout */}
         <div className="layout-mobile" style={{ flexDirection: "column", overflowY: "auto", padding: "14px", gap: "14px" }}>
           {state.status === "error" && state.errorMessage && (
@@ -212,10 +246,10 @@ export default function DemoPage() {
           <ProblemCard problem={state.problem} status={state.status} health={serviceHealth} currentPhase={state.currentPhase} />
           {state.finalEvent && <FinalReport event={state.finalEvent} />}
           <DemoControls status={state.status} onStart={handleStart} onReset={handleReset} />
-          <PanelBlock title="Agent Timeline">
+          <PanelBlock title="Agent timeline">
             <Timeline entries={state.timeline} currentPhase={state.currentPhase} />
           </PanelBlock>
-          <PanelBlock title="DQL Evidence">
+          <PanelBlock title="DQL evidence">
             <DqlPanel query={state.dqlQuery} records={state.dqlRecords} reasoning={state.agentReasoning} />
           </PanelBlock>
         </div>
@@ -246,10 +280,11 @@ function StatusPill({
     <div style={{
       display: "flex",
       alignItems: "center",
-      gap: "5px",
-      fontSize: "9.5px",
-      fontFamily: "var(--font-mono)",
-      color: "var(--color-text-muted)",
+      gap: "6px",
+      fontSize: "11px",
+      fontFamily: "var(--font-sans)",
+      letterSpacing: "-0.005em",
+      color: "var(--color-text-secondary)",
       whiteSpace: "nowrap",
     }}>
       <span
@@ -280,8 +315,8 @@ function ErrorBanner({ message }: { message: string }) {
       }}
       className="animate-slide-in-up"
     >
-      <p style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--color-red-text)", marginBottom: "3px" }}>Error</p>
-      <p style={{ fontSize: "12px", fontFamily: "var(--font-mono)", color: "var(--color-text-secondary)" }}>{message}</p>
+      <p style={{ fontSize: "11px", fontFamily: "var(--font-sans)", fontWeight: 600, letterSpacing: "-0.005em", color: "var(--color-red-text)", marginBottom: "3px" }}>Something went wrong</p>
+      <p style={{ fontSize: "12.5px", fontFamily: "var(--font-sans)", letterSpacing: "-0.005em", color: "var(--color-text-secondary)" }}>{message}</p>
     </div>
   );
 }
@@ -312,9 +347,10 @@ function LeftSidebar({
         borderRight: "1px solid var(--color-border-subtle)",
         display: "flex",
         flexDirection: "column",
-        gap: "18px",
+        gap: "16px",
         padding: "20px 18px",
         overflowY: "auto",
+        minHeight: 0,
       }}
     >
       {state.status === "error" && state.errorMessage && (
@@ -327,53 +363,59 @@ function LeftSidebar({
         currentPhase={state.currentPhase}
       />
       {state.finalEvent && <FinalReport event={state.finalEvent} />}
-      <div style={{ height: "1px", backgroundColor: "var(--color-border-subtle)", flexShrink: 0 }} />
       <DemoControls status={state.status} onStart={onStart} onReset={onReset} />
-      <AgentStackCard />
     </aside>
   );
 }
 
-function AgentStackCard() {
-  const rows = [
-    ["Agent",   "ADK · Gemini 3"],
-    ["Runtime", "Vertex AI Agent Engine"],
-    ["Senses",  "Dynatrace MCP"],
-    ["Gate",    "require_confirmation"],
-    ["Target",  "checkout-api"],
-  ] as const;
-
+/* Slim full-width telemetry strip under the columns. Holds the agent stack so
+   it stays visible for judges without crowding the sidebar. Desktop only. */
+function FooterTelemetry() {
+  const chips: { label: string; value: string }[] = [
+    { label: "Model", value: "Gemini 3" },
+    { label: "Framework", value: "Google ADK" },
+    { label: "Runtime", value: "Vertex AI Agent Engine" },
+    { label: "Senses", value: "Dynatrace MCP" },
+    { label: "Human gate", value: "require_confirmation" },
+    { label: "Target", value: "checkout-api" },
+  ];
   return (
     <div
+      className="hidden lg:flex"
       style={{
-        borderRadius: "8px",
-        border: "1px solid var(--color-border-subtle)",
-        backgroundColor: "var(--color-surface-0)",
-        padding: "10px 12px",
-        marginTop: "auto",
-        backgroundImage: "linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px)",
-        backgroundSize: "100% 3px",
+        flexShrink: 0,
+        height: "40px",
+        alignItems: "center",
+        gap: "22px",
+        padding: "0 22px 0 58px",
+        borderTop: "1px solid var(--color-border-subtle)",
+        backgroundColor: "var(--color-surface-nav)",
+        overflow: "hidden",
+        whiteSpace: "nowrap",
       }}
     >
-      <p style={{
-        fontSize: "9.5px",
-        fontFamily: "var(--font-mono)",
-        textTransform: "uppercase",
-        letterSpacing: "0.14em",
-        color: "var(--color-text-dim)",
-        marginBottom: "8px",
-        fontWeight: 500,
-      }}>
-        Agent Stack
-      </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-        {rows.map(([label, value]) => (
-          <div key={label} style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
-            <span style={{ fontSize: "10px", fontFamily: "var(--font-mono)", color: "var(--color-text-dim)" }}>{label}</span>
-            <span style={{ fontSize: "10px", fontFamily: "var(--font-mono)", color: "var(--color-text-muted)", textAlign: "right" }}>{value}</span>
-          </div>
-        ))}
-      </div>
+      <span
+        style={{
+          fontSize: "10px",
+          fontFamily: "var(--font-sans)",
+          fontWeight: 600,
+          letterSpacing: "0.02em",
+          color: "var(--color-text-dim)",
+          flexShrink: 0,
+        }}
+      >
+        Stack
+      </span>
+      {chips.map((c) => (
+        <div key={c.label} style={{ display: "flex", alignItems: "center", gap: "7px", flexShrink: 0 }}>
+          <span style={{ fontSize: "10.5px", fontFamily: "var(--font-sans)", color: "var(--color-text-dim)" }}>
+            {c.label}
+          </span>
+          <span style={{ fontSize: "10.5px", fontFamily: "var(--font-mono)", color: "var(--color-text-secondary)" }}>
+            {c.value}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -388,7 +430,7 @@ function CenterTimeline({
   isTerminal: boolean;
 }) {
   const phases = ["detect", "diagnose", "act", "verify"] as const;
-  const phaseLabels = ["DETECT", "DIAGNOSE", "ACT", "VERIFY"] as const;
+  const phaseLabels = ["Detect", "Diagnose", "Act", "Verify"] as const;
   const activeColors: Record<string, string> = {
     detect:   "var(--color-detect)",
     diagnose: "var(--color-diagnose)",
@@ -430,17 +472,16 @@ function CenterTimeline({
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
           </svg>
           <span style={{
-            fontSize: "9.5px",
-            fontFamily: "var(--font-mono)",
+            fontSize: "11.5px",
+            fontFamily: "var(--font-sans)",
             fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: "0.12em",
-            color: "var(--color-text-muted)",
+            letterSpacing: "-0.005em",
+            color: "var(--color-text-secondary)",
           }}>
-            Agent Timeline
+            Agent timeline
           </span>
           {isBusy && (
-            <span style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", color: "var(--color-accent)", opacity: 0.9 }}>
+            <span style={{ fontSize: "11px", fontFamily: "var(--font-sans)", color: "var(--color-accent)", opacity: 0.9 }}>
               · live
             </span>
           )}
@@ -530,12 +571,12 @@ function CenterTimeline({
                 <span
                   key={phase}
                   style={{
-                    fontSize: "9px",
-                    fontFamily: "var(--font-mono)",
+                    fontSize: "10px",
+                    fontFamily: "var(--font-sans)",
                     transition: "color 0.35s ease",
                     color: isActive ? activeColors[phase] : isDone ? "var(--color-text-muted)" : "var(--color-text-dim)",
-                    fontWeight: isActive ? 600 : 400,
-                    letterSpacing: "0.06em",
+                    fontWeight: isActive ? 600 : 500,
+                    letterSpacing: "-0.005em",
                   }}
                 >
                   {phaseLabels[i]}
@@ -567,8 +608,8 @@ function RightPanel({ state }: { state: ReturnType<typeof useIncidentStream>["st
           <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
           <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
         </svg>
-        <span style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--color-text-muted)" }}>
-          DQL Evidence
+        <span style={{ fontSize: "11.5px", fontFamily: "var(--font-sans)", fontWeight: 600, letterSpacing: "-0.005em", color: "var(--color-text-secondary)" }}>
+          DQL evidence
         </span>
         {state.dqlRecords.length > 0 && (
           <span style={{

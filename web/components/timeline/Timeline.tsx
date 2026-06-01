@@ -13,28 +13,28 @@ const PHASE_ORDER: Phase[] = ["detect", "diagnose", "act", "verify"];
 
 const phaseConfig: Record<Phase, { label: string; color: string; bg: string; glow: string; dotColor: string }> = {
   detect: {
-    label: "DETECT",
+    label: "Detect",
     color: "var(--color-detect)",
     bg: "var(--color-accent-dim)",
     glow: "0 0 8px rgba(0,204,232,0.45)",
     dotColor: "var(--color-detect)",
   },
   diagnose: {
-    label: "DIAGNOSE",
+    label: "Diagnose",
     color: "var(--color-diagnose)",
     bg: "rgba(120,85,240,0.12)",
     glow: "0 0 8px rgba(120,85,240,0.45)",
     dotColor: "var(--color-diagnose)",
   },
   act: {
-    label: "ACT",
+    label: "Act",
     color: "var(--color-act)",
     bg: "var(--color-amber-dim)",
     glow: "0 0 8px rgba(242,168,50,0.45)",
     dotColor: "var(--color-act)",
   },
   verify: {
-    label: "VERIFY",
+    label: "Verify",
     color: "var(--color-verify)",
     bg: "var(--color-green-dim)",
     glow: "0 0 8px rgba(32,204,128,0.45)",
@@ -128,13 +128,12 @@ function PhaseHeader({ phase, isActive, isDone }: { phase: Phase; isActive: bool
       style={{
         display: "flex",
         alignItems: "center",
-        gap: "6px",
-        padding: "4px 0 3px",
-        fontSize: "9.5px",
-        fontFamily: "var(--font-mono)",
+        gap: "8px",
+        padding: "2px 0 9px",
+        fontSize: "11.5px",
+        fontFamily: "var(--font-sans)",
         fontWeight: 600,
-        textTransform: "uppercase",
-        letterSpacing: "0.14em",
+        letterSpacing: "-0.005em",
         transition: "color 0.3s ease",
         color: isDone ? "var(--color-text-dim)" : isActive ? cfg.color : "var(--color-text-dim)",
       }}
@@ -210,8 +209,8 @@ function EntryRow({ entry, isLast, isNewest, staggerIndex }: EntryRowProps) {
       className="animate-timeline-in"
       style={{
         display: "flex",
-        gap: "10px",
-        paddingLeft: "18px",
+        gap: "13px",
+        paddingLeft: "20px",
         animationDelay: `${staggerDelay}ms`,
         ...(isNewest
           ? {
@@ -249,14 +248,14 @@ function EntryRow({ entry, isLast, isNewest, staggerIndex }: EntryRowProps) {
         style={{
           flex: 1,
           minWidth: 0,
-          paddingBottom: "10px",
+          paddingBottom: "17px",
         }}
       >
         <p
           style={{
-            fontSize: "11.5px",
+            fontSize: "12px",
             fontFamily: "var(--font-mono)",
-            lineHeight: 1.45,
+            lineHeight: 1.55,
             color: isAgentMsg
               ? "var(--color-text-secondary)"
               : isApproval
@@ -273,11 +272,11 @@ function EntryRow({ entry, isLast, isNewest, staggerIndex }: EntryRowProps) {
         {entry.detail && (
           <p
             style={{
-              fontSize: "10.5px",
+              fontSize: "11px",
               fontFamily: "var(--font-mono)",
               color: "var(--color-text-muted)",
-              marginTop: "2px",
-              lineHeight: 1.4,
+              marginTop: "3px",
+              lineHeight: 1.5,
               display: "-webkit-box",
               WebkitLineClamp: 2,
               WebkitBoxOrient: "vertical",
@@ -327,6 +326,7 @@ export function Timeline({ entries, currentPhase }: TimelineProps) {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
+          minHeight: "100%",
           padding: "56px 24px",
           textAlign: "center",
           gap: "14px",
@@ -352,19 +352,21 @@ export function Timeline({ entries, currentPhase }: TimelineProps) {
         </div>
         <div>
           <p style={{
-            fontSize: "11.5px",
-            fontFamily: "var(--font-mono)",
-            color: "var(--color-text-muted)",
+            fontSize: "13px",
+            fontFamily: "var(--font-sans)",
+            color: "var(--color-text-secondary)",
             lineHeight: 1.6,
+            letterSpacing: "-0.005em",
           }}>
-            Start an incident sweep to see
+            Run an incident to watch the agent work.
           </p>
           <p style={{
-            fontSize: "11.5px",
-            fontFamily: "var(--font-mono)",
-            color: "var(--color-text-dim)",
+            fontSize: "12.5px",
+            fontFamily: "var(--font-sans)",
+            color: "var(--color-text-muted)",
+            letterSpacing: "-0.005em",
           }}>
-            the agent&apos;s live reasoning
+            Its reasoning shows up here, step by step.
           </p>
         </div>
       </div>
@@ -372,7 +374,7 @@ export function Timeline({ entries, currentPhase }: TimelineProps) {
   }
 
   return (
-    <div style={{ padding: "10px 14px", overflowY: "auto", maxHeight: "100%" }}>
+    <div style={{ padding: "16px 20px", overflowY: "auto", maxHeight: "100%" }}>
       {PHASE_ORDER.map((phase, i) => {
         const phaseItemEntries = phaseEntries[phase];
         const isActive = currentPhase === phase;
@@ -384,7 +386,7 @@ export function Timeline({ entries, currentPhase }: TimelineProps) {
         const visibleEntries = phaseItemEntries.filter((e) => e.kind !== "step");
 
         return (
-          <div key={phase} style={{ marginBottom: "2px" }}>
+          <div key={phase} style={{ marginBottom: "10px" }}>
             {(hasItems || isActive) && (
               <PhaseHeader phase={phase} isActive={isActive} isDone={isDone} />
             )}

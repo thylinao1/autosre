@@ -127,8 +127,8 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
       {/* Modal card — layered depth */}
       <div
         className={clsx(
-          "relative w-full max-w-[420px] rounded-xl border animate-modal-in",
-          decided === null ? "animate-approval-ring" : ""
+          "relative w-full max-w-[420px] rounded-xl border",
+          decided === null ? "animate-modal-pending" : "animate-modal-in"
         )}
         style={{
           backgroundColor: "var(--color-surface-0)",
@@ -218,23 +218,22 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
             <div style={{ flex: 1, minWidth: 0 }}>
               <p
                 style={{
-                  fontSize: "9.5px",
-                  fontFamily: "var(--font-mono)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.14em",
+                  fontSize: "11px",
+                  fontFamily: "var(--font-sans)",
+                  letterSpacing: "-0.005em",
                   marginBottom: "3px",
                   transition: "color 0.45s var(--ease-out-expo)",
                   color: decided !== null
                     ? isApproved ? "var(--color-green)" : "var(--color-red-text)"
                     : "var(--color-amber)",
-                  fontWeight: 500,
+                  fontWeight: 600,
                 }}
               >
                 {decided !== null
                   ? isApproved
-                    ? "Approved — executing remediation"
-                    : "Rejected — standing down"
-                  : "Approval Required"}
+                    ? "Approved, executing the fix"
+                    : "Rejected, standing down"
+                  : "Approval required"}
               </p>
               <h2
                 id="approval-modal-title"
@@ -252,14 +251,15 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
           </div>
 
           <p style={{
-            fontSize: "11.5px",
-            fontFamily: "var(--font-mono)",
-            color: "var(--color-text-muted)",
-            lineHeight: 1.65,
+            fontSize: "12.5px",
+            fontFamily: "var(--font-sans)",
+            color: "var(--color-text-secondary)",
+            lineHeight: 1.6,
+            letterSpacing: "-0.005em",
           }}>
             {toolCfg.description}{" "}
-            <span style={{ color: "var(--color-text-dim)" }}>
-              Nothing has touched production. This action is blocked until you decide.
+            <span style={{ color: "var(--color-text-muted)" }}>
+              Nothing has reached production yet. This stays blocked until you decide.
             </span>
           </p>
         </div>
@@ -267,15 +267,14 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
         {/* Args */}
         <div style={{ padding: "14px 22px" }}>
           <p style={{
-            fontSize: "9.5px",
-            fontFamily: "var(--font-mono)",
-            textTransform: "uppercase",
-            letterSpacing: "0.14em",
-            color: "var(--color-text-dim)",
+            fontSize: "11px",
+            fontFamily: "var(--font-sans)",
+            letterSpacing: "-0.005em",
+            color: "var(--color-text-muted)",
             marginBottom: "8px",
-            fontWeight: 500,
+            fontWeight: 600,
           }}>
-            Proposed Arguments
+            Proposed arguments
           </p>
           <div style={{
             borderRadius: "8px",
@@ -299,21 +298,21 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
               padding: "10px 12px",
             }}>
               <p style={{
-                fontSize: "9.5px",
-                fontFamily: "var(--font-mono)",
-                textTransform: "uppercase",
-                letterSpacing: "0.14em",
-                color: "#7855f0",
+                fontSize: "11px",
+                fontFamily: "var(--font-sans)",
+                letterSpacing: "-0.005em",
+                color: "#9b7cf6",
                 marginBottom: "4px",
-                fontWeight: 500,
+                fontWeight: 600,
               }}>
                 Agent note
               </p>
               <p style={{
-                fontSize: "11.5px",
-                fontFamily: "var(--font-mono)",
+                fontSize: "12.5px",
+                fontFamily: "var(--font-sans)",
                 color: "var(--color-text-secondary)",
                 lineHeight: 1.6,
+                letterSpacing: "-0.005em",
               }}>
                 {event.hint}
               </p>
@@ -343,7 +342,7 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
                 onClick={() => handleDecide(false)}
                 disabled={submitting}
                 className={clsx(
-                  "h-11 rounded-lg border text-sm font-semibold font-mono",
+                  "h-11 rounded-lg border text-sm font-semibold font-sans",
                   "transition-all",
                   "focus-visible:outline-2 focus-visible:outline-[var(--color-red)]",
                   "disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
@@ -380,7 +379,7 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
                 onClick={() => handleDecide(true)}
                 disabled={submitting}
                 className={clsx(
-                  "h-11 rounded-lg text-sm font-semibold font-mono",
+                  "h-11 rounded-lg text-sm font-semibold font-sans",
                   "transition-all",
                   "focus-visible:outline-2 focus-visible:outline-[var(--color-amber)]",
                   "disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
@@ -432,7 +431,7 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12"/>
                   </svg>
-                  Approved — executing…
+                  Approved, executing…
                 </>
               ) : (
                 <>
@@ -440,7 +439,7 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
                     <line x1="18" y1="6" x2="6" y2="18"/>
                     <line x1="6" y1="6" x2="18" y2="18"/>
                   </svg>
-                  Rejected — standing down
+                  Rejected, standing down
                 </>
               )}
             </div>

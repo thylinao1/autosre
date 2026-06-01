@@ -121,7 +121,13 @@ class IncidentRun:
                     self._session_id,
                     message,
                     result,
-                    on_backoff=lambda d: None,  # silent; surfaced only on exhaustion
+                    # Surface transient free-tier backoff as a live note so the UI
+                    # shows the agent waiting rather than appearing frozen.
+                    on_backoff=lambda d: self._emit(
+                        E.agent_message_frame(
+                            f"Model briefly busy (free tier), retrying in {d}s…", True
+                        )
+                    ),
                 ):
                     self._handle_observation(obs, narration)
 

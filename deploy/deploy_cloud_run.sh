@@ -62,6 +62,9 @@ set -euo pipefail
 # Gemini 3 preview models are served from the `global` endpoint — regional
 # (e.g. us-central1) returns 404 NOT_FOUND for them.
 : "${VERTEX_LOCATION:=global}"
+# Demo mode: when 1, the agent serves the deterministic, model-free replay so the
+# hosted URL never stalls on a model blip (the real fix still runs). Empty = live agent.
+: "${AUTOSRE_DEMO_MODE:=}"
 
 IMAGE_TS="$(date +%Y%m%d%H%M%S)"
 UI_IMAGE="gcr.io/${PROJECT_ID}/autosre-ui:${IMAGE_TS}"
@@ -115,6 +118,7 @@ GOOGLE_CLOUD_LOCATION=${VERTEX_LOCATION},\
 AUTOSRE_MODEL=${AUTOSRE_MODEL},\
 DYNATRACE_MCP_MODE=${DYNATRACE_MCP_MODE},\
 TARGET_SERVICE_URL=${TARGET_URL},\
+AUTOSRE_DEMO_MODE=${AUTOSRE_DEMO_MODE},\
 ALLOWED_ORIGIN=*"
 # ^ ALLOWED_ORIGIN starts permissive; step 4 tightens it to UI_URL.
 # ^ For remote mode add: --set-secrets "DT_ENVIRONMENT=dt-environment:latest,DT_PLATFORM_TOKEN=dt-platform-token:latest"

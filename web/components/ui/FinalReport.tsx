@@ -38,12 +38,12 @@ export function FinalReport({ event }: FinalReportProps) {
   const labelColor = iconColor;
 
   const label = isSuccess
-    ? "Incident Resolved"
+    ? "Incident resolved"
     : isDeclined
-    ? "Remediation Declined"
+    ? "Remediation declined"
     : isClear
-    ? "All Systems Clear"
-    : "Run Complete";
+    ? "All systems clear"
+    : "Run complete";
 
   return (
     <div
@@ -91,21 +91,21 @@ export function FinalReport({ event }: FinalReportProps) {
         {/* Text */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{
-            fontSize: "9.5px",
-            fontFamily: "var(--font-mono)",
-            textTransform: "uppercase",
-            letterSpacing: "0.14em",
+            fontSize: "11px",
+            fontFamily: "var(--font-sans)",
+            letterSpacing: "-0.005em",
             color: labelColor,
             marginBottom: "4px",
-            fontWeight: 500,
+            fontWeight: 600,
           }}>
             {label}
           </p>
           <p style={{
-            fontSize: "11px",
-            fontFamily: "var(--font-mono)",
+            fontSize: "12.5px",
+            fontFamily: "var(--font-sans)",
             color: "var(--color-text-secondary)",
-            lineHeight: 1.65,
+            lineHeight: 1.6,
+            letterSpacing: "-0.005em",
           }}>
             {report}
           </p>

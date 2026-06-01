@@ -22,7 +22,7 @@ export function Badge({ label, variant, pulse = false }: BadgeProps) {
   return (
     <span
       className={clsx(
-        "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono font-medium uppercase tracking-widest",
+        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] leading-none font-sans font-semibold whitespace-nowrap shrink-0",
         styles[variant]
       )}
     >
