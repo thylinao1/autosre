@@ -38,10 +38,13 @@ DEFAULT_PROMPT = (
     "root cause with evidence, and remediate the issue."
 )
 
-# Retry policy for free-tier rate limits.
-DEFAULT_MAX_RETRIES = 6
+# Retry policy for free-tier rate limits. Tuned so a brief free-tier capacity
+# spike (gemini-3-flash-preview 503/UNAVAILABLE) is ridden out rather than
+# aborting the sweep: 10 transient retries x 5s ~= 50s of patience, which covers
+# the typical "high demand" blip without any paid tier or model swap.
+DEFAULT_MAX_RETRIES = 10
 DEFAULT_RETRY_DELAY_S = 20
-TRANSIENT_RETRY_DELAY_S = 4  # short backoff for 503/UNAVAILABLE (not a quota cap)
+TRANSIENT_RETRY_DELAY_S = 5  # short backoff for 503/UNAVAILABLE (not a quota cap)
 
 
 @dataclass

@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.shots
+.shots2
+.shots3
+.dx
+.bx
+.council
+npm-debug.log*
+*.log
+.DS_Store
+.env*
+README.md

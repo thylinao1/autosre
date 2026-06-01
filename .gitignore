@@ -16,8 +16,12 @@ service-account*.json
 # Local dev-loop MCP config (points at a specific Dynatrace tenant)
 .mcp.json
 
-# Strategy doc (kept local, not for the public repo)
+# Strategy / internal session docs (kept local, NOT for the public repo)
 HACKATHON-BATTLEPLAN.md
+HANDOFF-NEXT-SESSION.md
+tone-lock.md
+SETUP-MY-STEPS.md
+.claude/
 
 # Node
 node_modules/
@@ -29,6 +33,10 @@ node_modules/
 .playwright-mcp/
 verify-*.png
 prod-*.png
+deploy-verify-*.png
+
+# Superseded zero-cost Render/Railway deploy note (we deploy to Google Cloud now)
+DEPLOY-DEMO.md
 web/screenshots/
 web/test-results/
 web/playwright-report/
@@ -36,3 +44,4 @@ web/playwright-report/
 # Build / deploy
 *.log
 .gcloud/
+.council/

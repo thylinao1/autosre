@@ -33,13 +33,12 @@ function MetricCell({
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
       <span style={{
-        fontSize: "9.5px",
-        fontFamily: "var(--font-mono)",
-        textTransform: "uppercase",
-        letterSpacing: "0.12em",
+        fontSize: "10.5px",
+        fontFamily: "var(--font-sans)",
+        letterSpacing: "-0.005em",
         color: "var(--color-text-muted)",
-        marginBottom: "2px",
-        fontWeight: 400,
+        marginBottom: "3px",
+        fontWeight: 500,
       }}>
         {label}
       </span>
@@ -88,15 +87,14 @@ function HealthyState({ health }: { health: ServiceHealth | null }) {
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{
-            fontSize: "9.5px",
-            fontFamily: "var(--font-mono)",
-            textTransform: "uppercase",
-            letterSpacing: "0.14em",
+            fontSize: "11px",
+            fontFamily: "var(--font-sans)",
+            letterSpacing: "-0.005em",
             color: "var(--color-green)",
-            marginBottom: "2px",
-            fontWeight: 500,
+            marginBottom: "3px",
+            fontWeight: 600,
           }}>
-            All Systems Operational
+            All systems operational
           </p>
           <h2 style={{
             fontSize: "1rem",
@@ -109,7 +107,7 @@ function HealthyState({ health }: { health: ServiceHealth | null }) {
           </h2>
           {health && (
             <div style={{ marginTop: "12px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
-              <MetricCell label="Fail Rate" value={`${health.metrics.failure_rate}%`} ok />
+              <MetricCell label="Fail rate" value={`${health.metrics.failure_rate}%`} ok />
               <MetricCell label="P99" value={`${health.metrics.p99_latency_ms}ms`} ok />
               <MetricCell label="Replicas" value={String(health.metrics.replicas)} ok />
             </div>
@@ -133,9 +131,9 @@ function IncidentState({
   const isAvailability = severity === "AVAILABILITY";
 
   const severityVariant = isResolved ? "healthy" : isAvailability ? "availability" : "performance";
-  const severityLabel = isResolved ? "RESOLVED" : severity;
+  const severityLabel = isResolved ? "Resolved" : isAvailability ? "Availability" : "Performance";
 
-  const metricLabel = problem.impacted_metric === "failure_rate" ? "Failure Rate" : "P99 Latency";
+  const metricLabel = problem.impacted_metric === "failure_rate" ? "Failure rate" : "P99 latency";
 
   const resolvedFailureRate = health?.metrics.failure_rate ?? 0;
   const resolvedLatency = health?.metrics.p99_latency_ms ?? 0;
@@ -264,11 +262,11 @@ function IncidentState({
           {!isResolved && firstFlag && (
             <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "3px", minWidth: 0 }}>
               <span style={{
-                fontSize: "9.5px",
-                fontFamily: "var(--font-mono)",
-                textTransform: "uppercase",
-                letterSpacing: "0.12em",
+                fontSize: "10.5px",
+                fontFamily: "var(--font-sans)",
+                letterSpacing: "-0.005em",
                 color: "var(--color-text-muted)",
+                fontWeight: 500,
               }}>
                 Offending flag
               </span>
@@ -333,14 +331,13 @@ export function ProblemCard({ problem, status, health, currentPhase }: ProblemCa
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <span style={{
-            fontSize: "9.5px",
-            fontFamily: "var(--font-mono)",
+            fontSize: "11.5px",
+            fontFamily: "var(--font-sans)",
             fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: "0.12em",
-            color: "var(--color-text-dim)",
+            letterSpacing: "-0.005em",
+            color: "var(--color-text-secondary)",
           }}>
-            Dynatrace Problem
+            Dynatrace problem
           </span>
           {isRunning && !problem && (
             <span style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", color: "var(--color-accent)" }}>
@@ -374,7 +371,7 @@ export function ProblemCard({ problem, status, health, currentPhase }: ProblemCa
                               currentPhase === "verify" ? "rgba(32,204,128,0.25)" : "transparent",
               }}
             >
-              {currentPhase.toUpperCase()}
+              {currentPhase.charAt(0).toUpperCase() + currentPhase.slice(1)}
             </span>
           )}
 
@@ -392,7 +389,7 @@ export function ProblemCard({ problem, status, health, currentPhase }: ProblemCa
                 style={{ width: "5px", height: "5px", borderRadius: "50%", backgroundColor: "var(--color-accent)" }}
                 className="animate-status-blink"
               />
-              LIVE
+              Live
             </span>
           )}
 
@@ -410,7 +407,7 @@ export function ProblemCard({ problem, status, health, currentPhase }: ProblemCa
               }}
             >
               <span style={{ width: "5px", height: "5px", borderRadius: "50%", backgroundColor: "var(--color-green)" }} />
-              RESTORED
+              Restored
             </span>
           )}
         </div>

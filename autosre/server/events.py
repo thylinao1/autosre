@@ -20,10 +20,15 @@ from typing import Any
 
 # Tool-name → phase the call belongs to (CONTRACT §2.1). The boundary that fires
 # the `step` is the *first* tool that signals a new phase.
-# Dynatrace MCP tool names match the real gateway exactly (kebab-case). The verify
-# tool (`get_service_health`) and remediation tools are LOCAL functions, not Dynatrace.
-_DETECT_TOOLS = {"query-problems", "get-problem-by-id"}
-_DIAGNOSE_TOOLS = {"execute-dql", "get-events-for-kubernetes-cluster", "get-vulnerabilities"}
+# Dynatrace MCP tool names. The bundled mock uses underscore names (Gemini-safe);
+# the real gateway uses kebab-case. Accept both so phase mapping works in either
+# mode. The verify tool (`get_service_health`) and remediation tools are LOCAL
+# functions, not Dynatrace.
+_DETECT_TOOLS = {"query_problems", "get_problem_by_id", "query-problems", "get-problem-by-id"}
+_DIAGNOSE_TOOLS = {
+    "execute_dql", "get_events_for_kubernetes_cluster", "get_vulnerabilities",
+    "execute-dql", "get-events-for-kubernetes-cluster", "get-vulnerabilities",
+}
 _VERIFY_TOOLS = {"get_service_health"}
 _REMEDIATION_TOOLS = {"scale_service", "rollback_deployment", "toggle_feature_flag"}
 
@@ -155,8 +160,17 @@ class PhaseTracker:
         self._current: str | None = None
 
     def advance_for_tool(self, name: str) -> dict[str, str] | None:
-        """Given a tool name, return a step payload if a new phase started."""
-        return self._advance(phase_for_tool(name))
+        """Given a tool name, return a step payload if a new phase started.
+
+        A re-query of Dynatrace problems *after* remediation is a verify-phase
+        confirmation ("did the open problem clear?"), not a second detect. This
+        is what makes Dynatrace bookend the loop: the same tool opens the
+        incident and confirms recovery.
+        """
+        phase = phase_for_tool(name)
+        if phase == "detect" and self._current in ("act", "verify"):
+            phase = "verify"
+        return self._advance(phase)
 
     def advance_for_approval(self) -> dict[str, str] | None:
         """An approval_request always means we are in (or entering) `act`."""

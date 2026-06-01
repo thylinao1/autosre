@@ -15,7 +15,7 @@ const faultOptions: { value: FaultType; label: string; description: string; badg
     value: "payment_errors",
     label: "Payment Errors",
     description: "22% checkout failure rate after deploy v2.3.1 enables bad feature flag",
-    badge: "AVAILABILITY",
+    badge: "Availability",
     color: "var(--color-red)",
     dim: "var(--color-red-dim)",
     textColor: "var(--color-red-text)",
@@ -23,8 +23,8 @@ const faultOptions: { value: FaultType; label: string; description: string; badg
   {
     value: "latency_spike",
     label: "Latency Spike",
-    description: "P99 4,200ms — checkout-api under-provisioned, needs scaling",
-    badge: "PERFORMANCE",
+    description: "P99 4,200ms, checkout-api under-provisioned and needs scaling",
+    badge: "Performance",
     color: "var(--color-orange)",
     dim: "var(--color-orange-dim)",
     textColor: "var(--color-orange-text)",
@@ -75,14 +75,13 @@ export function DemoControls({ status, onStart, onReset }: DemoControlsProps) {
             <polygon points="10 8 16 12 10 16 10 8"/>
           </svg>
           <span style={{
-            fontSize: "9.5px",
-            fontFamily: "var(--font-mono)",
+            fontSize: "11.5px",
+            fontFamily: "var(--font-sans)",
             fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: "0.12em",
-            color: "var(--color-text-muted)",
+            letterSpacing: "-0.005em",
+            color: "var(--color-text-secondary)",
           }}>
-            Demo Controls
+            Demo controls
           </span>
         </div>
         <svg
@@ -114,15 +113,14 @@ export function DemoControls({ status, onStart, onReset }: DemoControlsProps) {
           {!isActive && (
             <div style={{ marginBottom: "10px" }}>
               <p style={{
-                fontSize: "9px",
-                fontFamily: "var(--font-mono)",
-                textTransform: "uppercase",
-                letterSpacing: "0.14em",
-                color: "var(--color-text-dim)",
-                padding: "9px 0 6px",
-                fontWeight: 500,
+                fontSize: "11px",
+                fontFamily: "var(--font-sans)",
+                letterSpacing: "-0.005em",
+                color: "var(--color-text-muted)",
+                padding: "9px 0 7px",
+                fontWeight: 600,
               }}>
-                Inject Fault
+                Inject fault
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 {faultOptions.map((opt) => {
@@ -161,13 +159,12 @@ export function DemoControls({ status, onStart, onReset }: DemoControlsProps) {
                       <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "3px" }}>
                         <span
                           style={{
-                            fontSize: "8.5px",
-                            fontFamily: "var(--font-mono)",
-                            fontWeight: 700,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.1em",
-                            padding: "1px 5px",
-                            borderRadius: "3px",
+                            fontSize: "10px",
+                            fontFamily: "var(--font-sans)",
+                            fontWeight: 600,
+                            letterSpacing: "-0.005em",
+                            padding: "1.5px 7px",
+                            borderRadius: "4px",
                             color: opt.textColor,
                             backgroundColor: opt.dim,
                             border: `1px solid ${opt.color}40`,
@@ -185,9 +182,9 @@ export function DemoControls({ status, onStart, onReset }: DemoControlsProps) {
                         </span>
                       </div>
                       <p style={{
-                        fontSize: "10px",
-                        fontFamily: "var(--font-mono)",
-                        color: isSelected ? "var(--color-text-muted)" : "var(--color-text-dim)",
+                        fontSize: "11px",
+                        fontFamily: "var(--font-sans)",
+                        color: isSelected ? "var(--color-text-secondary)" : "var(--color-text-muted)",
                         lineHeight: 1.5,
                         transition: "color var(--duration-fast) ease",
                       }}>
@@ -238,8 +235,8 @@ export function DemoControls({ status, onStart, onReset }: DemoControlsProps) {
                   style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "var(--color-accent)" }}
                   className="animate-status-blink"
                 />
-                <span style={{ fontSize: "11px", fontFamily: "var(--font-mono)", color: "var(--color-accent)" }}>
-                  {status === "awaiting_approval" ? "Awaiting approval" : "Agent running…"}
+                <span style={{ fontSize: "12px", fontFamily: "var(--font-sans)", color: "var(--color-accent)" }}>
+                  {status === "awaiting_approval" ? "Awaiting your approval" : "Agent running…"}
                 </span>
               </div>
             </div>
@@ -265,7 +262,7 @@ function RunButton({
     <button
       onClick={onClick}
       className={clsx(
-        "font-mono font-semibold rounded-[7px] w-full",
+        "font-sans font-semibold rounded-[7px] w-full",
         "focus-visible:outline-2 focus-visible:outline-offset-2",
         isPrimary
           ? "focus-visible:outline-[var(--color-accent)]"
@@ -273,13 +270,14 @@ function RunButton({
       )}
       style={{
         width: "100%",
-        height: "36px",
-        fontSize: "12px",
+        height: "38px",
+        fontSize: "13px",
         cursor: "pointer",
         border: isPrimary ? "none" : "1px solid var(--color-border)",
         backgroundColor: isPrimary ? "var(--color-accent)" : "var(--color-surface-2)",
         color: isPrimary ? "var(--color-bg)" : "var(--color-text-secondary)",
-        fontFamily: "var(--font-mono)",
+        fontFamily: "var(--font-sans)",
+        letterSpacing: "-0.01em",
         transition: `all var(--duration-fast) var(--ease-out-expo)`,
         boxShadow: isPrimary ? "inset 0 1px 0 rgba(255,255,255,0.12)" : "none",
       }}

@@ -39,9 +39,9 @@ The agent runs a **6-step loop**:
 
 ### Tech Stack & Architecture
 
-- **Reasoning engine:** Gemini 3 (`gemini-3-pro-preview`) via **Vertex AI**.
+- **Reasoning engine:** Gemini 3 via **Vertex AI** (`gemini-3-flash-preview` by default for cost and speed; `gemini-3-pro-preview` for maximum reasoning).
 - **Agent framework:** **Google Cloud's Agent Development Kit (ADK)**, the code-first surface of **Agent Builder / Agent Platform**. Deployed to **Vertex AI Agent Engine** (the managed Agent Platform runtime).
-- **Observability partner:** **Dynatrace MCP server** (official `@dynatrace-oss/dynatrace-mcp-server` or hosted remote gateway). Tools: `query-problems`, `execute-dql`, `get-events-for-kubernetes-cluster` (read-only for detect + diagnose): the exact names the real Dynatrace MCP gateway exposes.
+- **Observability partner:** **Dynatrace MCP server** (official `@dynatrace-oss/dynatrace-mcp-server` or hosted remote gateway). Tools: `query_problems`, `execute_dql`, `get_events_for_kubernetes_cluster` (read-only, for detect, diagnose, and recovery confirmation). Underscore names satisfy Gemini's function-calling; the toolset also accepts a real gateway's hyphenated names.
 - **Remediation tools:** Python `FunctionTool` with `require_confirmation=True` (human-gated): `toggle_feature_flag`, `scale_service`, `rollback_deployment`, `get_service_health`.
 - **Web UI:** Next.js 16 (App Router), Tailwind CSS v4, TypeScript. Streams SSE events and renders real-time timeline + approval modal.
 - **Backend:** FastAPI HTTP + SSE service. Per-run session management, pause/resume bridge for approval round-trip.
@@ -99,13 +99,13 @@ The agent runs a **6-step loop**:
 | **Project Name** | AutoSRE: The Autonomous On-Call Engineer |
 | **Tagline** | The on-call engineer that diagnoses and fixes production incidents from Dynatrace, but never acts without your approval. |
 | **Demo video** | [YouTube URL] (≤3:00, shows full DETECT→DIAGNOSE→APPROVE→ACT→VERIFY loop) |
-| **Try it** | https://autosre-ui-w6llqyu5fq-uc.a.run.app (live Cloud Run deployment). Works from incognito. |
+| **Try it** | _[live Cloud Run URL, added once deployed to Google Cloud with the hackathon credit]._ Works from incognito; `AUTOSRE_DEMO_MODE=1` keeps the hosted run model-free and reliable. |
 | **Code** | https://github.com/thylinao1/autosre (open-source MIT). License visible in About box. |
-| **Inspiration** | Gartner: IT downtime costs $5,600/minute; MTTR is dominated by the identify phase (30+ min). AutoSRE collapses triage to seconds. |
+| **Inspiration** | IT downtime costs thousands per minute (Gartner's 2014 figure: $5,600/min; EMA Research 2024: ~$14,056/min); MTTR is dominated by the identify phase (30+ min). AutoSRE collapses triage to seconds. |
 | **What it does** | (See section above) |
 | **How we built it** | (See section above) |
 | **Challenges** | (See section above) |
-| **Accomplishments** | Full 6-step loop deployed and tested. SSE streaming + approval pause proven on web UI. ADK-native HITL enforced. Mode-agnostic Dynatrace toolset (mock/stdio/remote). 24 deterministic tests passing. Deployed to Vertex AI Agent Engine + Cloud Run. |
+| **Accomplishments** | Full 6-step loop deployed and tested. SSE streaming + approval pause proven on web UI. ADK-native HITL enforced. Mode-agnostic Dynatrace toolset (mock/stdio/remote). 30 tests (28 deterministic offline, 2 live-gated). Deployed to Vertex AI Agent Engine + Cloud Run. |
 | **What we learned** | The approval pause is the product, not a bug. Framework-enforced human gates are stronger than prompt tricks. Dynatrace MCP is a powerful observability abstraction; the mock mode we built is as valuable as the remote. |
 | **Built with** | Google Cloud (Vertex AI, Agent Development Kit, Cloud Run, Secret Manager), Dynatrace MCP, Gemini 3, Next.js, FastAPI, Python, TypeScript |
 | **Track** | Dynatrace |
@@ -129,9 +129,9 @@ The agent runs a **6-step loop**:
 
 | Metric | Value | Evidence |
 |--------|-------|----------|
-| **Real-world pain quantified** | Gartner: $5,600/min IT downtime; identify phase 30+ min | README opening; video narration |
+| **Real-world pain quantified** | Gartner 2014: $5,600/min; EMA 2024: ~$14,056/min; identify phase 30+ min | README opening (sourced); video narration |
 | **MTTR improvement** | 30+ min → ~1 min (detect + diagnose) | Live video demo, timed beat |
-| **Incident types handled** | 2 (payment-flag, latency-scale) | DEMO.md; test suite (11 deterministic tests) |
+| **Incident types handled** | 2 (payment-flag, latency-scale) | DEMO.md; test suite (30 tests, both fault paths covered) |
 | **Uptime for demo** | 100% (mock mode) | `DYNATRACE_MCP_MODE=mock` is offline-deterministic |
 | **Real-tenant validation** | Supports `remote` mode (production Dynatrace tenant) | ARCHITECTURE.md; tested during dev |
 | **Framework-enforced safety** | ADK `require_confirmation=True` | `autosre/agent/remediation.py:71-72`; tested in `test_remediation_gate.py` |

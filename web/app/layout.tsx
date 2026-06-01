@@ -24,13 +24,13 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AutoSRE — AI-Powered Incident Response",
+  title: "AutoSRE: your autonomous on-call engineer",
   description:
-    "Autonomous on-call engineer that detects incidents from Dynatrace, diagnoses root cause, and proposes a fix — but never touches production without your approval.",
+    "AutoSRE detects incidents from Dynatrace, finds the root cause, and proposes a precise fix. It never touches production without your approval.",
   openGraph: {
-    title: "AutoSRE — AI-Powered Incident Response",
+    title: "AutoSRE: your autonomous on-call engineer",
     description:
-      "Never touches production without your say-so. AutoSRE detects, diagnoses, and proposes — you approve.",
+      "AutoSRE detects, diagnoses, and proposes the fix. You approve before anything reaches production.",
     type: "website",
   },
 };

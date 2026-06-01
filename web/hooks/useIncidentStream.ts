@@ -132,7 +132,7 @@ function processEvent(prev: IncidentState, event: SSEEvent): IncidentState {
         pendingApproval: null,
         status: "running",
         timeline: addEntry(
-          resolved.approved ? "Approved — executing remediation" : "Rejected — standing down",
+          resolved.approved ? "Approved, executing remediation" : "Rejected, standing down",
           undefined
         ),
       };
@@ -154,7 +154,7 @@ function processEvent(prev: IncidentState, event: SSEEvent): IncidentState {
         finalEvent: f,
         status,
         timeline: addEntry(
-          f.service_healthy ? "Service restored — incident resolved" : "Run complete",
+          f.service_healthy ? "Service restored, incident resolved" : "Run complete",
           f.report.slice(0, 100) + (f.report.length > 100 ? "…" : "")
         ),
       };
@@ -303,7 +303,7 @@ export function useIncidentStream(): UseIncidentStreamReturn {
             };
             const finalEvent: FinalEvent = {
               type: "final", run_id: runId, seq: 9_999,
-              report: "Remediation approved and applied. checkout-api health check confirms the incident is resolved — service is healthy.",
+              report: "Remediation approved and applied. checkout-api health check confirms the incident is resolved, and the service is healthy.",
               service_healthy: true, incident_resolved: true, outcome: "resolved",
             };
             updateState((prev) => processEvent(processEvent(prev, resolvedEvent), finalEvent));

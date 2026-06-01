@@ -35,6 +35,7 @@ export function DqlPanel({ query, records, reasoning }: DqlPanelProps) {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
+          minHeight: "100%",
           padding: "40px 20px",
           textAlign: "center",
           gap: "12px",
@@ -60,14 +61,15 @@ export function DqlPanel({ query, records, reasoning }: DqlPanelProps) {
           </svg>
         </div>
         <p style={{
-          fontSize: "11px",
-          fontFamily: "var(--font-mono)",
-          color: "var(--color-text-dim)",
+          fontSize: "12.5px",
+          fontFamily: "var(--font-sans)",
+          color: "var(--color-text-muted)",
           lineHeight: 1.6,
+          letterSpacing: "-0.005em",
         }}>
-          DQL evidence appears
+          The agent&apos;s DQL evidence
           <br />
-          during DIAGNOSE
+          shows up here during diagnosis.
         </p>
       </div>
     );
@@ -79,19 +81,50 @@ export function DqlPanel({ query, records, reasoning }: DqlPanelProps) {
 
   return (
     <div style={{ padding: "14px", display: "flex", flexDirection: "column", gap: "14px", overflowY: "auto", maxHeight: "100%" }}>
-      {/* DQL Query */}
+      {/* Root cause — lead with the plain-English conclusion, not the query syntax */}
+      {reasoning && (
+        <div>
+          <p style={{
+            fontSize: "11px",
+            fontFamily: "var(--font-sans)",
+            letterSpacing: "-0.005em",
+            color: "var(--color-text-muted)",
+            marginBottom: "7px",
+            fontWeight: 600,
+          }}>
+            Root cause
+          </p>
+          <div style={{
+            borderRadius: "7px",
+            border: "1px solid rgba(120,85,240,0.22)",
+            backgroundColor: "rgba(120,85,240,0.05)",
+            padding: "11px 13px",
+          }}>
+            <p style={{
+              fontSize: "12.5px",
+              fontFamily: "var(--font-sans)",
+              color: "var(--color-text-primary)",
+              lineHeight: 1.6,
+              letterSpacing: "-0.005em",
+            }}>
+              {reasoning}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* DQL query — the agent's own query, shown as the work behind the finding */}
       {query && (
         <div>
           <p style={{
-            fontSize: "9.5px",
-            fontFamily: "var(--font-mono)",
-            textTransform: "uppercase",
-            letterSpacing: "0.12em",
-            color: "var(--color-text-dim)",
+            fontSize: "11px",
+            fontFamily: "var(--font-sans)",
+            letterSpacing: "-0.005em",
+            color: "var(--color-text-muted)",
             marginBottom: "7px",
-            fontWeight: 500,
+            fontWeight: 600,
           }}>
-            DQL Query
+            Query the agent ran
           </p>
           <div style={{
             borderRadius: "7px",
@@ -121,15 +154,14 @@ export function DqlPanel({ query, records, reasoning }: DqlPanelProps) {
       {records.length > 0 && (
         <div>
           <p style={{
-            fontSize: "9.5px",
-            fontFamily: "var(--font-mono)",
-            textTransform: "uppercase",
-            letterSpacing: "0.12em",
-            color: "var(--color-text-dim)",
+            fontSize: "11px",
+            fontFamily: "var(--font-sans)",
+            letterSpacing: "-0.005em",
+            color: "var(--color-text-muted)",
             marginBottom: "7px",
-            fontWeight: 500,
+            fontWeight: 600,
           }}>
-            Evidence — {records.length} record{records.length !== 1 ? "s" : ""}
+            Evidence · {records.length} record{records.length !== 1 ? "s" : ""}
           </p>
           <div style={{
             borderRadius: "7px",
@@ -146,10 +178,9 @@ export function DqlPanel({ query, records, reasoning }: DqlPanelProps) {
                       style={{
                         padding: "7px 10px",
                         textAlign: "left",
-                        fontSize: "9px",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.1em",
-                        color: "var(--color-text-dim)",
+                        fontSize: "10px",
+                        letterSpacing: "0.01em",
+                        color: "var(--color-text-muted)",
                         fontWeight: 500,
                         whiteSpace: "nowrap",
                       }}
@@ -179,39 +210,6 @@ export function DqlPanel({ query, records, reasoning }: DqlPanelProps) {
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
-      )}
-
-      {/* Agent reasoning */}
-      {reasoning && (
-        <div>
-          <p style={{
-            fontSize: "9.5px",
-            fontFamily: "var(--font-mono)",
-            textTransform: "uppercase",
-            letterSpacing: "0.12em",
-            color: "var(--color-text-dim)",
-            marginBottom: "7px",
-            fontWeight: 500,
-          }}>
-            Agent Reasoning
-          </p>
-          <div style={{
-            borderRadius: "7px",
-            border: "1px solid rgba(120,85,240,0.22)",
-            backgroundColor: "rgba(120,85,240,0.05)",
-            padding: "10px 12px",
-          }}>
-            <p style={{
-              fontSize: "11px",
-              fontFamily: "var(--font-mono)",
-              color: "var(--color-text-secondary)",
-              lineHeight: 1.65,
-              fontStyle: "italic",
-            }}>
-              {reasoning}
-            </p>
           </div>
         </div>
       )}

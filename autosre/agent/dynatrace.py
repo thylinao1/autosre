@@ -23,11 +23,23 @@ from google.adk.tools.mcp_tool.mcp_session_manager import (
 )
 from mcp import StdioServerParameters
 
-# Read-only Dynatrace tools the agent is allowed to use. These are the EXACT
-# tool names the real Dynatrace MCP gateway exposes (kebab-case), so the same
-# filter + agent work against the hosted tenant and the bundled mock. Keeping it
-# explicit means a misconfigured real tenant can't expose write tools to the agent.
-DYNATRACE_TOOL_FILTER = [
+# Read-only Dynatrace tools the agent is allowed to use. The bundled mock server
+# registers Gemini-safe underscore names: hyphens are not valid Gemini
+# function-call identifiers, so a hyphenated MCP tool name round-trips through the
+# model as an underscore and then fails ADK dispatch ("Tool 'query_problems' not
+# found"). The real Dynatrace gateway exposes kebab-case names, so remote/stdio
+# against the real gateway needs a name-normalization layer before it works with
+# Gemini (tracked separately; the offline mock path is what the demo uses).
+# Keeping the filter explicit means a misconfigured tenant can't expose write
+# tools to the agent.
+_MOCK_TOOL_FILTER = [
+    "query_problems",
+    "get_problem_by_id",
+    "execute_dql",
+    "get_events_for_kubernetes_cluster",
+    "get_vulnerabilities",
+]
+_REAL_TOOL_FILTER = [
     "query-problems",
     "get-problem-by-id",
     "execute-dql",
@@ -38,6 +50,8 @@ DYNATRACE_TOOL_FILTER = [
 
 def build_dynatrace_toolset() -> McpToolset:
     mode = os.environ.get("DYNATRACE_MCP_MODE", "mock").lower()
+    # The bundled mock uses underscore names; the real gateway uses kebab-case.
+    filt = _MOCK_TOOL_FILTER if mode == "mock" else _REAL_TOOL_FILTER
 
     if mode == "mock":
         return McpToolset(
@@ -48,7 +62,7 @@ def build_dynatrace_toolset() -> McpToolset:
                     env=dict(os.environ),
                 ),
             ),
-            tool_filter=DYNATRACE_TOOL_FILTER,
+            tool_filter=filt,
         )
 
     if mode == "stdio":
@@ -62,7 +76,7 @@ def build_dynatrace_toolset() -> McpToolset:
                     env=env,
                 ),
             ),
-            tool_filter=DYNATRACE_TOOL_FILTER,
+            tool_filter=filt,
         )
 
     if mode == "remote":
@@ -78,7 +92,7 @@ def build_dynatrace_toolset() -> McpToolset:
                     "Content-Type": "application/json",
                 },
             ),
-            tool_filter=DYNATRACE_TOOL_FILTER,
+            tool_filter=filt,
         )
 
     raise ValueError(

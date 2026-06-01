@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 
 import httpx
 import pytest
@@ -16,7 +17,7 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 async def _call(tool: str, args: dict | None = None) -> dict:
     params = StdioServerParameters(
-        command="python", args=["-m", "autosre.mock_dynatrace.server"],
+        command=sys.executable, args=["-m", "autosre.mock_dynatrace.server"],
         env={**os.environ, "PYTHONPATH": REPO_ROOT},
     )
     async with stdio_client(params) as (read, write):
@@ -29,26 +30,26 @@ async def _call(tool: str, args: dict | None = None) -> dict:
 @pytest.mark.asyncio
 async def test_lists_tools(target_service):
     params = StdioServerParameters(
-        command="python", args=["-m", "autosre.mock_dynatrace.server"],
+        command=sys.executable, args=["-m", "autosre.mock_dynatrace.server"],
         env={**os.environ, "PYTHONPATH": REPO_ROOT},
     )
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
             names = {t.name for t in (await session.list_tools()).tools}
-    assert {"query-problems", "execute-dql", "get-events-for-kubernetes-cluster"} <= names
+    assert {"query_problems", "execute_dql", "get_events_for_kubernetes_cluster"} <= names
 
 
 @pytest.mark.asyncio
 async def test_no_problems_when_healthy(target_service):
-    out = await _call("query-problems")
+    out = await _call("query_problems")
     assert out["total"] == 0
 
 
 @pytest.mark.asyncio
 async def test_surfaces_injected_problem(target_service):
     httpx.post(f"{target_service}/_admin/inject", json={"fault": "payment_errors"})
-    out = await _call("query-problems")
+    out = await _call("query_problems")
     assert out["total"] == 1
     assert out["problems"][0]["impacted_metric"] == "failure_rate"
     assert out["problems"][0]["observed_value"] == 22.0
@@ -57,7 +58,7 @@ async def test_surfaces_injected_problem(target_service):
 @pytest.mark.asyncio
 async def test_execute_dql_returns_metric(target_service):
     httpx.post(f"{target_service}/_admin/inject", json={"fault": "latency_spike"})
-    out = await _call("execute-dql", {"dqlQueryString": "fetch p99 latency for checkout-api"})
+    out = await _call("execute_dql", {"dqlQueryString": "fetch p99 latency for checkout-api"})
     rec = out["records"][0]
     assert rec["metric"] == "p99_latency_ms"
     assert rec["value"] == 4200.0
