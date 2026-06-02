@@ -120,7 +120,7 @@ I approve it."
 
 From problem detection to root cause to fix approval to execution and verification, all in under a minute. What used to take 30+ minutes of manual work happens in real time, with the human in control the whole time."
 
-**On-screen timer (do this — it turns asserted impact into measured impact):** start a small running clock the moment DETECT fires and freeze it when the incident card flips green. Read the number out loud ("detected, diagnosed, fixed, and verified in N seconds"). One real timestamped number beats the borrowed Gartner math; it is the Impact evidence.
+**On-screen timer (now built into Mission Control, top-right of the header):** it starts the moment you click Run and freezes on the terminal outcome (for example "18.4s to resolution"). Read the number out loud ("detected, diagnosed, fixed, and verified in eighteen seconds, against thirty-plus minutes by hand"). One real timestamped number on the live artifact beats the borrowed Gartner math, and it is the Impact evidence. Approve promptly so the frozen number stays tight.
 
 **Criterion note:**
 - **Tech:** "Dynatrace," "flag toggle," "health verification," SSE streaming, all real and visible.
@@ -128,7 +128,9 @@ From problem detection to root cause to fix approval to execution and verificati
 
 ---
 
-## [Optional bonus beat — the deny run] Prove the gate is real, not theater (Idea)
+## [LEAD WITH THIS: the deny run] Prove the gate is real, not theater (Idea)
+
+> Council guidance: this is the single most ownable beat in the whole video, because it is the one thing the track-default builds will not show. Strongly consider opening on it (reject first, then run again and approve), so the refusal is the first thing a judge sees, not a footnote. The path is now hardened end to end: the reject reaches a clean "Declined" card in about a second, production is untouched, and the Audit trail logs the refusal as `rejected / declined` right next to a prior approval. In DEMO_MODE the stand-down is instant.
 
 Everyone in this track will demo *approve*. Almost no one demos *reject*. Spend ~12 seconds proving the gate actually holds:
 

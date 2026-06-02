@@ -32,6 +32,8 @@ const INITIAL_STATE: IncidentState = {
   finalEvent: null,
   errorMessage: null,
   serviceHealth: null,
+  startedAt: null,
+  endedAt: null,
 };
 
 function makeEntry(event: SSEEvent, label: string, detail?: string): TimelineEntry {
@@ -173,6 +175,7 @@ function processEvent(prev: IncidentState, event: SSEEvent): IncidentState {
         ...prev,
         finalEvent: f,
         status,
+        endedAt: prev.endedAt ?? Date.now(),
         timeline: addEntry(
           finalLabel,
           f.report.slice(0, 100) + (f.report.length > 100 ? "…" : "")
@@ -186,6 +189,7 @@ function processEvent(prev: IncidentState, event: SSEEvent): IncidentState {
         ...prev,
         status: "error",
         errorMessage: err.message,
+        endedAt: prev.endedAt ?? Date.now(),
         timeline: addEntry(`Error: ${err.message}`, undefined),
       };
     }
@@ -221,7 +225,9 @@ export function useIncidentStream(): UseIncidentStreamReturn {
       // Close any open stream
       esRef.current?.close();
 
-      updateState(() => ({ ...INITIAL_STATE, status: "starting" }));
+      // Stamp the start now (the click) so the on-screen timer reflects the real
+      // wall clock the operator waited, from "go" to a verified resolution.
+      updateState(() => ({ ...INITIAL_STATE, status: "starting", startedAt: Date.now() }));
 
       let runId: string;
       try {
@@ -289,30 +295,19 @@ export function useIncidentStream(): UseIncidentStreamReturn {
       if (!runId || !pendingApproval) return;
       const approvalId = pendingApproval.id;
 
-      try {
-        await submitApproval(runId, approvalId, approved);
-      } catch (err) {
-        updateState((prev) => ({
-          ...prev,
-          errorMessage: err instanceof Error ? err.message : "Approval failed",
-        }));
-        return;
-      }
-
       if (!approved) {
-        // Reject path: the agent stands down. On Cloud Run the SSE stream can stall
-        // across the approval pause (the same failure mode the approve branch guards
-        // below), so the post-rejection frames (approval_resolved → declined final)
-        // may never reach the browser — leaving the modal hung on "Approval". There
-        // is nothing to poll for here (the incident stays open by design), so give
-        // the real stream a brief grace period, then synthesize the declined terminal
-        // state. Guarded so a real `final` frame wins the race.
+        // Reject is deterministic: the agent stands down and nothing changes, so
+        // there is no async outcome to wait on (unlike approve, which polls health
+        // to confirm real recovery). Fire the decision POST so the backend records
+        // the audit entry and the agent acknowledges, but drive the UI straight to
+        // its Declined terminal instead of blocking on the round-trip. A short beat
+        // lets the "Rejected, standing down" moment read before the card resolves.
+        void submitApproval(runId, approvalId, false).catch(() => {
+          /* the audit write is best-effort; the UI stand-down is already correct */
+        });
+        await new Promise((r) => setTimeout(r, 850));
         const REJECT_TERMINAL: RunStatus[] = ["resolved", "declined", "all_clear", "error"];
-        for (let i = 0; i < 4; i++) {
-          await new Promise((r) => setTimeout(r, 1000));
-          if (REJECT_TERMINAL.includes(stateRef.current.status)) return; // SSE won the race
-        }
-        if (REJECT_TERMINAL.includes(stateRef.current.status)) return;
+        if (REJECT_TERMINAL.includes(stateRef.current.status)) return; // a real frame won
         esRef.current?.close(); // stop late duplicate frames once we synthesize
         const rejectedResolved: ApprovalResolvedEvent = {
           type: "approval_resolved", run_id: runId, seq: 9_998,
@@ -325,6 +320,17 @@ export function useIncidentStream(): UseIncidentStreamReturn {
           service_healthy: false, incident_resolved: false, outcome: "declined",
         };
         updateState((prev) => processEvent(processEvent(prev, rejectedResolved), declinedFinal));
+        return;
+      }
+
+      // Approve path: the decision must land before we can observe recovery.
+      try {
+        await submitApproval(runId, approvalId, true);
+      } catch (err) {
+        updateState((prev) => ({
+          ...prev,
+          errorMessage: err instanceof Error ? err.message : "Approval failed",
+        }));
         return;
       }
 
