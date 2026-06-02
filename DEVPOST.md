@@ -24,7 +24,7 @@ The agent runs a **6-step loop**:
 5. **ACT**: Execute the approved remediation.
 6. **VERIFY**: Re-check service health and confirm recovery.
 
-**The core value proposition:** Compress incident diagnosis from 30+ minutes of manual triage to ~10 seconds of automated analysis, while keeping a human as the accountable decision-maker. The agent does the 3am grunt work; the operator just approves the fix.
+**The core value proposition:** Compress incident triage from 30+ minutes of manual work to the seconds shown on the demo's live timer (detection through a verified fix), while keeping a human as the accountable decision-maker. The agent does the 3am grunt work; the operator just approves the fix.
 
 **The web UI:** A dark ops "Mission Control" dashboard streams the loop live over SSE. The operator watches the agent pull the Dynatrace problem, run evidence queries, propose the fix, and then taps **APPROVE** to execute. The incident card flips green on recovery.
 
@@ -55,11 +55,11 @@ The agent runs a **6-step loop**:
 
 1. **ADK-native HITL over prompt instruction:** The approval gate is a `FunctionTool(require_confirmation=True)` definition, not a system-prompt hack. The model cannot call the remediation tool without explicit human confirmation. This is stronger than any instruction.
 
-2. **Streaming events contract:** All comms between agent and UI are typed JSON SSE frames (9 event types: `step`, `tool_call`, `tool_result`, `approval_request`, `approval_resolved`, `agent_message`, `final`, `error`). This enables the web UI to render the agent's reasoning in real time.
+2. **Streaming events contract:** All comms between agent and UI are typed JSON SSE frames (8 event types: `step`, `tool_call`, `tool_result`, `approval_request`, `approval_resolved`, `agent_message`, `final`, `error`). This enables the web UI to render the agent's reasoning in real time.
 
 3. **Mode-agnostic guarantee:** Dynatrace toolset is abstracted behind a factory function (`build_dynatrace_toolset(mode)`). `mock` mode runs a bundled MCP server (derives telemetry from the target service's state). `stdio` and `remote` modes point to the official server. The agent code is identical in all three; only env vars change.
 
-4. **No other AI models:** Only Google Cloud AI (Gemini) + Dynatrace's built-in AI (Davis). No other LLMs, no retrieval, no fine-tuning.
+4. **One model, by design:** The only LLM is Gemini 3 on Vertex AI. No other models, no retrieval, no fine-tuning. The observability intelligence comes from Dynatrace through the MCP; detection is live DQL, and because our trial tenant is OpenTelemetry-only we read telemetry directly rather than consuming Davis problems, which we call out honestly.
 
 ---
 
@@ -91,7 +91,7 @@ The agent runs a **6-step loop**:
 
 ## Selected Track
 
-**Dynatrace.** The agent is entirely powered by Dynatrace MCP for observability. Dynatrace Davis (built-in AI) is named as a partner superpower; the Dynatrace MCP is the load-bearing observability source.
+**Dynatrace.** The agent's only observability source is the Dynatrace MCP server, and it is load-bearing: detection and diagnosis run on live DQL against real OpenTelemetry, and every approval is written back to the tenant. (Davis is Dynatrace's built-in problem engine; our trial tenant is OpenTelemetry-only, so we detect via DQL rather than Davis problems.)
 
 ---
 
@@ -101,18 +101,18 @@ The agent runs a **6-step loop**:
 |-------|---------|
 | **Project Name** | AutoSRE: The Autonomous On-Call Engineer |
 | **Tagline** | The on-call engineer that diagnoses and fixes production incidents from Dynatrace, but never acts without your approval. |
-| **Demo video** | [YouTube URL] (≤3:00, shows full DETECT→DIAGNOSE→APPROVE→ACT→VERIFY loop) |
+| **Demo video** | _‹paste your YouTube link here after recording›_ · ≤3:00, opens on the deny run, then the real-Dynatrace DQL cut, then approve → resolved |
 | **Try it** | **https://autosre-ui-vrf7h4n4ra-uc.a.run.app/demo** (works from incognito). The hosted Mission Control runs the **real Gemini agent live** end to end, streaming DETECT, DIAGNOSE, the approval gate, ACT, and VERIFY. Approve and the remediation executes for real against checkout-api and is written back to our real Dynatrace tenant as an audit log. **Try rejecting it too:** the agent stands down, production stays untouched, and the Audit trail records the refusal right next to the approval. The same agent's detection run against the real Dynatrace tenant (live DQL over the official MCP server) is in the demo video and reproducible locally with `DYNATRACE_MCP_MODE=stdio`. |
 | **Code** | https://github.com/thylinao1/autosre (open-source MIT). License visible in About box. |
 | **Inspiration** | IT downtime costs thousands per minute (Gartner's 2014 figure: $5,600/min; EMA Research 2024: ~$14,056/min); MTTR is dominated by the identify phase (30+ min). AutoSRE collapses triage to seconds. |
 | **What it does** | (See section above) |
 | **How we built it** | (See section above) |
 | **Challenges** | (See section above) |
-| **Accomplishments** | Full 6-step loop deployed and tested. SSE streaming + approval pause proven on web UI. ADK-native HITL enforced. Mode-agnostic Dynatrace toolset (mock/stdio/remote). 30 tests (28 deterministic offline, 2 live-gated). Deployed to Vertex AI Agent Engine + Cloud Run. |
+| **Accomplishments** | Full 6-step loop deployed and tested. SSE streaming + approval pause proven on web UI. ADK-native HITL enforced, with both the approve and the reject path audited on Dynatrace's timeline. Mode-agnostic Dynatrace toolset (mock/stdio/remote). 37 tests (35 deterministic offline, 2 live-gated), including regression tests that pin the deny path. Deployed to Vertex AI Agent Engine + Cloud Run. |
 | **What we learned** | The approval pause is the product, not a bug. Framework-enforced human gates are stronger than prompt tricks. Dynatrace MCP is a powerful observability abstraction; the mock mode we built is as valuable as the remote. |
 | **Built with** | Google Cloud (Vertex AI, Agent Development Kit, Cloud Run, Secret Manager), Dynatrace MCP, Gemini 3, Next.js, FastAPI, Python, TypeScript |
 | **Track** | Dynatrace |
-| **Team** | [Your name/team] |
+| **Team** | _‹your name or team name here›_ |
 
 ---
 
@@ -133,12 +133,12 @@ The agent runs a **6-step loop**:
 | Metric | Value | Evidence |
 |--------|-------|----------|
 | **Real-world pain quantified** | Gartner 2014: $5,600/min; EMA 2024: ~$14,056/min; identify phase 30+ min | README opening (sourced); video narration |
-| **MTTR improvement** | 30+ min → ~1 min (detect + diagnose) | Live video demo, timed beat |
-| **Incident types handled** | 2 (payment-flag, latency-scale) | DEMO.md; test suite (30 tests, both fault paths covered) |
+| **MTTR improvement** | 30+ min by hand → seconds (a live on-screen timer freezes on the verified outcome, e.g. ~15s to resolution) | Mission Control header timer; video timed beat |
+| **Incident types handled** | 2 (payment-flag, latency-scale), each with a distinct remediation the agent reasons to | DEMO.md; test suite (37 tests, both fault paths covered) |
 | **Uptime for demo** | 100% (mock mode) | `DYNATRACE_MCP_MODE=mock` is offline-deterministic |
 | **Real-tenant validation** | Supports `remote` mode (production Dynatrace tenant) | ARCHITECTURE.md; tested during dev |
 | **Framework-enforced safety** | ADK `require_confirmation=True` | `autosre/agent/agent.py` (the three remediation tools are wrapped `FunctionTool(..., require_confirmation=True)`); tested in `test_remediation_gate.py` |
-| **Deployment path** | Vertex AI Agent Engine + Cloud Run | `deploy/deploy_cloud_run.sh`; one-liner `make deploy` (pending final Workstream C) |
+| **Deployment path** | Vertex AI Agent Engine + Cloud Run | `deploy/deploy_cloud_run.sh`; live now on project `autosre-470213` |
 
 ---
 
@@ -176,4 +176,4 @@ The agent runs a **6-step loop**:
 - **Judges will read the README.** Lead with the downtime-cost stat and architecture diagram.
 - **Judges will watch the ~3-min video.** Make the approval moment the emotional peak.
 - **Judges will open the code.** Ensure Dynatrace MCP usage is obvious; ensure `require_confirmation` gate is not removed.
-- **Track selection matters.** We are racing other Dynatrace entries, not all 150+ hackathon entries. A finished, polished, on-theme submission with genuine central MCP use is a realistic medal.
+- **Track selection matters.** We are racing other Dynatrace-track entries, not the entire field. A finished, polished, on-theme submission with genuine central MCP use and a differentiator the track-default builds lack (the audited refusal) is a realistic medal.
