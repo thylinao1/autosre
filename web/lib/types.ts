@@ -161,4 +161,8 @@ export interface IncidentState {
   finalEvent: FinalEvent | null;
   errorMessage: string | null;
   serviceHealth: ServiceHealth | null;
+  // Wall-clock timing for the on-screen "time to resolution" readout. `startedAt`
+  // is stamped when the sweep kicks off; `endedAt` freezes on the terminal frame.
+  startedAt: number | null;
+  endedAt: number | null;
 }

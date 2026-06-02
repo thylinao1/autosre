@@ -10,7 +10,7 @@ import { ApprovalModal } from "@/components/approval-modal/ApprovalModal";
 import { DemoControls } from "@/components/demo-controls/DemoControls";
 import { AuditTrail } from "@/components/audit-trail/AuditTrail";
 import { FinalReport } from "@/components/ui/FinalReport";
-import type { FaultType, ServiceHealth } from "@/lib/types";
+import type { FaultType, ServiceHealth, RunStatus } from "@/lib/types";
 import { getHealth } from "@/lib/api";
 
 export default function DemoPage() {
@@ -165,6 +165,7 @@ export default function DemoPage() {
 
         {/* Status indicators */}
         <div style={{ display: "flex", alignItems: "center", gap: "16px", flexShrink: 0 }}>
+          <RunTimer startedAt={state.startedAt} endedAt={state.endedAt} status={state.status} />
           <StatusPill
             label={
               state.status === "idle" ? "Standby" :
@@ -266,6 +267,66 @@ export default function DemoPage() {
 }
 
 /* ── Sub-components ── */
+
+/* Wall-clock readout: ticks from the start of a sweep and freezes on the terminal
+   outcome. Turns the "30+ minutes by hand, seconds here" claim into a number a
+   judge can read for themselves. */
+function RunTimer({
+  startedAt,
+  endedAt,
+  status,
+}: {
+  startedAt: number | null;
+  endedAt: number | null;
+  status: RunStatus;
+}) {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (startedAt === null || endedAt !== null) return;
+    const id = setInterval(() => setTick((t) => t + 1), 100);
+    return () => clearInterval(id);
+  }, [startedAt, endedAt]);
+
+  if (startedAt === null) return null;
+  const done = endedAt !== null;
+  const secs = (((endedAt ?? Date.now()) - startedAt) / 1000).toFixed(1);
+  const color = !done
+    ? "var(--color-accent)"
+    : status === "resolved" || status === "all_clear"
+    ? "var(--color-green)"
+    : status === "declined"
+    ? "var(--color-amber)"
+    : "var(--color-text-secondary)";
+
+  return (
+    <div
+      title="Wall-clock time from the start of the sweep to a verified outcome. A human does this triage in 30+ minutes."
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "5px",
+        fontFamily: "var(--font-mono)",
+        fontSize: "12px",
+        fontWeight: 600,
+        color,
+        fontVariantNumeric: "tabular-nums",
+        transition: "color 0.5s var(--ease-out-expo)",
+        whiteSpace: "nowrap",
+      }}
+    >
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <polyline points="12 8 12 12 14.5 13.5" />
+      </svg>
+      {secs}s
+      {done && (
+        <span style={{ color: "var(--color-text-dim)", fontFamily: "var(--font-sans)", fontSize: "10px", fontWeight: 500 }}>
+          to {status === "declined" ? "stand-down" : status === "all_clear" ? "all-clear" : "resolution"}
+        </span>
+      )}
+    </div>
+  );
+}
 
 function StatusPill({
   label,
