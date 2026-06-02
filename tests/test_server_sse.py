@@ -68,6 +68,28 @@ def test_parse_tool_response_falls_back_for_non_json():
 
 
 @pytest.mark.unit
+def test_operator_hint_normalizes_string_boolean_and_hides_protocol_text():
+    from autosre.server.loop import _operator_hint
+
+    # A disable must read as "Disable" whether `enabled` is a real bool or the
+    # string "false" (Gemini function-calling can emit either) — never "Enable".
+    assert _operator_hint(
+        "toggle_feature_flag", {"name": "new_payment_gateway", "enabled": False}, ""
+    ).startswith("Disable")
+    assert _operator_hint(
+        "toggle_feature_flag", {"name": "new_payment_gateway", "enabled": "false"}, ""
+    ).startswith("Disable")
+    assert _operator_hint(
+        "toggle_feature_flag", {"name": "f", "enabled": True}, ""
+    ).startswith("Enable")
+
+    # The raw ADK confirmation protocol text is never surfaced to the operator.
+    boiler = "respond with a FunctionResponse with an expected ToolConfirmation payload"
+    hint = _operator_hint("toggle_feature_flag", {"name": "f", "enabled": False}, boiler)
+    assert "FunctionResponse" not in hint and "ToolConfirmation" not in hint
+
+
+@pytest.mark.unit
 def test_phase_tracker_advances_monotonically():
     pt = E.PhaseTracker()
     assert pt.advance_for_tool("query-problems")["phase"] == "detect"

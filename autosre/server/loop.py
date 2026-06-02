@@ -80,7 +80,11 @@ def _operator_hint(tool: str, args: dict[str, Any], raw_hint: str) -> str:
     """
     if tool == "toggle_feature_flag":
         flag = args.get("name", "the feature flag")
-        verb = "Disable" if args.get("enabled") is False else "Enable"
+        # Normalize the flag before choosing the verb: Gemini function-calling may
+        # emit `enabled` as a real bool OR as the string "false"/"true", and a naive
+        # `is False` check would mislabel a disable as "Enable" for the string case.
+        enabled = str(args.get("enabled")).strip().lower() in ("true", "1", "yes", "on")
+        verb = "Enable" if enabled else "Disable"
         return f"{verb} the '{flag}' feature flag on checkout-api to clear the incident."
     if tool == "scale_service":
         return f"Scale checkout-api to {args.get('replicas', 'more')} replicas to relieve the saturation."
