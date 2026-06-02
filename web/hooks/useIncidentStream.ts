@@ -49,7 +49,15 @@ function makeEntry(event: SSEEvent, label: string, detail?: string): TimelineEnt
   };
 }
 
+const TERMINAL_STATUSES: RunStatus[] = ["resolved", "declined", "all_clear", "error"];
+
 function processEvent(prev: IncidentState, event: SSEEvent): IncidentState {
+  // Once a run has reached a terminal status, ignore any trailing or out-of-order
+  // frames. Without this, a late `step`/`tool_*` frame arriving after an optimistic
+  // synthesized terminal would flip the run back to "running" (a visible
+  // Resolved → Running → Resolved flicker on the happy path).
+  if (TERMINAL_STATUSES.includes(prev.status)) return prev;
+
   const addEntry = (label: string, detail?: string): TimelineEntry[] => [
     ...prev.timeline,
     makeEntry(event, label, detail),
@@ -294,20 +302,32 @@ export function useIncidentStream(): UseIncidentStreamReturn {
       const { runId, pendingApproval } = stateRef.current;
       if (!runId || !pendingApproval) return;
       const approvalId = pendingApproval.id;
+      // Any delayed work below (the reject beat, the approve health poll) belongs to
+      // THIS run. If the operator resets or starts a new run, the active runId changes;
+      // bail so a stale callback can never mutate a different run's state.
+      const isCurrentRun = () => stateRef.current.runId === runId;
 
       if (!approved) {
         // Reject is deterministic: the agent stands down and nothing changes, so
-        // there is no async outcome to wait on (unlike approve, which polls health
-        // to confirm real recovery). Fire the decision POST so the backend records
-        // the audit entry and the agent acknowledges, but drive the UI straight to
-        // its Declined terminal instead of blocking on the round-trip. A short beat
-        // lets the "Rejected, standing down" moment read before the card resolves.
-        void submitApproval(runId, approvalId, false).catch(() => {
-          /* the audit write is best-effort; the UI stand-down is already correct */
-        });
-        await new Promise((r) => setTimeout(r, 850));
+        // there is no async outcome to poll for (unlike approve, which confirms real
+        // recovery). But the decision must be DURABLE — the backend records the
+        // rejection in the audit ledger only when this POST lands, so we await it
+        // (it returns fast) and surface a failure rather than claim a "declined" the
+        // ledger never recorded. Then a short beat lets the "Rejected, standing down"
+        // moment read, and we synthesize the Declined terminal in case Cloud Run
+        // stalled the SSE stream.
+        try {
+          await submitApproval(runId, approvalId, false);
+        } catch (err) {
+          updateState((prev) => ({
+            ...prev,
+            errorMessage: err instanceof Error ? err.message : "Could not submit your rejection",
+          }));
+          return;
+        }
+        await new Promise((r) => setTimeout(r, 700));
         const REJECT_TERMINAL: RunStatus[] = ["resolved", "declined", "all_clear", "error"];
-        if (REJECT_TERMINAL.includes(stateRef.current.status)) return; // a real frame won
+        if (!isCurrentRun() || REJECT_TERMINAL.includes(stateRef.current.status)) return;
         esRef.current?.close(); // stop late duplicate frames once we synthesize
         const rejectedResolved: ApprovalResolvedEvent = {
           type: "approval_resolved", run_id: runId, seq: 9_998,
@@ -344,11 +364,12 @@ export function useIncidentStream(): UseIncidentStreamReturn {
       const TERMINAL: RunStatus[] = ["resolved", "declined", "all_clear", "error"];
       for (let i = 0; i < 24; i++) {
         await new Promise((r) => setTimeout(r, 2000));
-        if (TERMINAL.includes(stateRef.current.status)) return; // SSE won the race
+        if (!isCurrentRun() || TERMINAL.includes(stateRef.current.status)) return; // run changed, or SSE won
         try {
           const h = await getHealth();
           if (h.healthy && !h.injected_fault) {
-            if (TERMINAL.includes(stateRef.current.status)) return;
+            if (!isCurrentRun() || TERMINAL.includes(stateRef.current.status)) return;
+            esRef.current?.close(); // stop trailing real frames from resurrecting the terminal
             // Clear the approval modal, then flip to a resolved terminal state.
             const resolvedEvent: ApprovalResolvedEvent = {
               type: "approval_resolved", run_id: runId, seq: 9_998,
