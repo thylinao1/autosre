@@ -230,13 +230,15 @@ The final URL is your submission to judges (Devpost requirement: must work from 
 pytest
 ```
 
-Runs 30 tests: 28 offline-deterministic, plus 2 gated on live Gemini credentials.
+Runs 37 tests: 35 offline-deterministic, plus 2 gated on live Gemini credentials.
 - **Machinery tests (deterministic):** Mock Dynatrace server over MCP stdio protocol; verify the approval gate, remediation execution, and incident outcome for both fault types.
+- **Deny-path regression tests:** reproduce the ADK turn-1 confirmation stub and assert a rejected run is audited as `rejected` / `declined` (backend) and applies nothing (replay), so the marquee deny beat cannot silently re-break.
+- **Approval-ledger tests (`test_ledger.py`):** the append-only audit record and the Dynatrace log write-back shape.
 - **Integration tests:** Live SSE streaming from the backend; approval round-trip; full agent loop with real Gemini (skipped unless Gemini credentials present).
 - **MCP envelope parsing:** Regression tests for real ADK tool response unwrapping (fixed a critical bug).
 - **Demo mode (`test_demo_mode.py`):** a deterministic replay exercises the full detect→verify loop and applies the **real** remediation HTTP call. The hosted demo runs the **live Gemini agent by default** (mock Dynatrace telemetry for a reliable click-through); this replay stays available as an instant fallback (`AUTOSRE_DEMO_MODE=1`) if the model API is ever unavailable during judging. The real-tenant, real-DQL detection run is in the demo video.
 
-The 28 deterministic tests pass offline (mock Dynatrace). The 2 live tests run against Gemini if credentials are present.
+The 35 deterministic tests pass offline (mock Dynatrace). The 2 live tests run against Gemini if credentials are present.
 
 ---
 
@@ -253,7 +255,9 @@ autosre/
 │   ├── loop.py               # ADK loop primitives (shared by run_agent.py + server)
 │   ├── events.py             # Event adapter (ADK → CONTRACT.md SSE schema)
 │   ├── runs.py               # Per-run session management + pause/resume bridge
-│   └── demo.py               # Deterministic replay backing the hosted demo (reliability)
+│   ├── ledger.py             # Append-only approval ledger + Dynatrace log write-back
+│   ├── demo.py               # Deterministic replay backing the hosted demo (reliability)
+│   └── __main__.py           # `python -m autosre.server` entrypoint
 ├── mock_dynatrace/
 │   └── server.py             # Offline Dynatrace MCP server (snake_case tool names)
 ├── target_service/
@@ -275,6 +279,7 @@ web/
 │   ├── dql-panel/DqlPanel.tsx             # DQL evidence panel
 │   ├── problem-card/ProblemCard.tsx       # Dynatrace problem display
 │   ├── demo-controls/DemoControls.tsx     # Fault-injection controls
+│   ├── audit-trail/AuditTrail.tsx         # Append-only decision ledger (✓ Dynatrace)
 │   ├── landing/              # CountUp · FlowDiagram · NavLinks · ScrollProgress · ScrollReveal
 │   └── ui/                   # Badge · FinalReport · Panel
 ├── hooks/useIncidentStream.ts             # SSE client hook
@@ -291,8 +296,9 @@ tests/
 ├── test_remediation_gate.py        # Approval gate enforcement
 ├── test_mock_dynatrace.py          # Mock Dynatrace MCP tool shapes
 ├── test_server_sse.py              # Full-loop SSE streaming + contract
-├── test_demo_mode.py               # Deterministic demo replay
+├── test_demo_mode.py               # Deterministic demo replay (+ deny stand-down)
 ├── test_mcp_envelope_parsing.py    # Real ADK result unwrapping
+├── test_ledger.py                  # Approval ledger + Dynatrace write-back shape
 └── test_agent_live.py              # End-to-end with real Gemini (live-gated)
 .env.example                  # Environment variable template
 .env                          # (gitignored) Runtime secrets

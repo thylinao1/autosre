@@ -4,7 +4,8 @@
 - [x] **Hosted project URL** — **https://autosre-ui-vrf7h4n4ra-uc.a.run.app** — live
       Mission-Control web UI on Cloud Run; streams the full incident loop and the operator
       approval gate. Agent (Gemini 3 via Vertex AI) + checkout-api also on Cloud Run.
-      Verified end-to-end from incognito (detect → diagnose → approve → resolved/green).
+      Verified end-to-end from incognito: both APPROVE (detect → diagnose → approve →
+      resolved/green) and REJECT (agent stands down, production untouched, audited as declined).
 - [x] **Public open-source repo** — **https://github.com/thylinao1/autosre** (public).
 - [x] **OSS license detectable in About** — `LICENSE` (MIT) at repo root; GitHub's
       license endpoint detects it as MIT, so the About sidebar shows "MIT".
@@ -34,12 +35,15 @@
 - **Design (25%)** → Mission-Control web UI (Next.js 16, dark ops aesthetic, streaming timeline,
   hero approval modal, responsive). Built in `web/`; SSE backend in `autosre/server/`.
 - **Impact (25%)** → Opening stat: Gartner $5,600/min IT downtime; MTTR identify phase 30+ min.
-  AutoSRE collapses triage to ~10 sec. README README opening + video narration.
-- **Idea (25%)** → Sharp framing: "Autonomous, but on your authority." Differentiator vs.
-  chatbots (read-only) and reckless auto-fix (human gate is framework-enforced, not prompt).
+  AutoSRE collapses triage to the seconds shown on the demo's live header timer (it freezes on
+  the verified outcome). README opening + video narration.
+- **Idea (25%)** → The refusal is the differentiator: the agent asks permission, obeys a no, and
+  logs both the approval and the rejection on Dynatrace's own timeline. That is the one thing the
+  track-default "autonomous SRE reads Dynatrace and remediates" build does not have, and the gate
+  is framework-enforced (ADK `require_confirmation`), not a prompt.
 
 ## Pre-submission verification
-- [ ] `pytest` passes (28 deterministic offline + 2 live-gated = 30 tests).
+- [x] `pytest` passes (35 deterministic offline + 2 live-gated = 37 tests).
 - [ ] With a Gemini key set, `tests/test_agent_live.py` passes (full 6-step loop).
 - [ ] `python -m autosre.run_agent` (CLI) resolves both `payment_errors` and `latency_spike`.
 - [ ] `python -m autosre.server` (SSE backend) + `cd web && npm run dev` (UI) runs full loop.
