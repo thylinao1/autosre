@@ -4,6 +4,27 @@
 
 ---
 
+## Run-of-show (dry-run verified live, 2026-06-02)
+
+Record on the hosted demo as-is (it runs the real Gemini agent). Viewport 1440 wide. Warm
+it first with one throwaway loop so the model is hot, then start recording. Observed timings
+on the warm model path:
+
+| Beat | Click | Observed time | What to say while it happens |
+|---|---|---|---|
+| Trigger | `Run: Payment Errors` on `/demo` | gate appears in **8 to 16s** (plan ~12s) | "The agent queries Dynatrace, finds the 22% failure spike, reads the deploy, and pins the bad flag." The streaming timeline + the blast-radius problem card carry this beat. |
+| **Deny first** | `Reject` | stands down in **~1.4s** | "First, watch what happens if I say no. The agent stands down. Nothing reaches production, and the refusal is written to the audit trail, right there on Dynatrace's timeline." |
+| Approve | `Run Payment Errors Again` then `Approve` | gate ~8-16s again; `Approve` to green in **~3s** | "Now I approve it. The flag is disabled, the agent re-checks health, and the incident clears." |
+| Timer read | (freezes on green) | **approve within 2-3s of the modal** for a tight number (~15-18s); the on-screen timer counts the whole run including your pause | "Detected, diagnosed, fixed, and verified in eighteen seconds, against thirty-plus minutes by hand." |
+| Money shot | (hold on the resolved screen) | audit trail now shows **Approved and Rejected**, both `✓ Dynatrace` | "Two governed outcomes, both on the platform that detected the incident. That is the record a compliance team can audit." |
+
+Reliability fallback only if Vertex flakes mid-take: re-add `AUTOSRE_DEMO_MODE=1` to the agent
+(`gcloud run services update autosre --region us-central1 --update-env-vars AUTOSRE_DEMO_MODE=1`)
+for an instant deterministic replay that still applies the real fix and still honors a reject;
+remove it after (`--remove-env-vars AUTOSRE_DEMO_MODE`).
+
+---
+
 ## [0:00-0:15] OPENING: The Real-World Pain (Impact + Idea)
 
 **Visual:** Graphic overlay: "$5,600 per minute. That's the cost of IT downtime."
