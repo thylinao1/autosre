@@ -215,7 +215,10 @@ class IncidentRun:
         incident_resolved = (
             self._problem_found and self._acted and injected is None and service_healthy
         )
-        if not self._problem_found and not self._acted and not self._declined:
+        if not self._problem_found and not self._acted and not self._declined and injected is None:
+            # Only truly all-clear when DETECT found nothing AND no fault is live. If
+            # detection came up empty while a fault is genuinely injected (a detection
+            # gap), fall through to "unresolved" rather than falsely report all-clear.
             outcome = "all_clear"
         elif incident_resolved:
             outcome = "resolved"

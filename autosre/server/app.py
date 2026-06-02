@@ -22,7 +22,7 @@ from dotenv import load_dotenv
 # Load .env BEFORE importing the agent (it reads AUTOSRE_MODEL / mode at import).
 load_dotenv()
 
-from fastapi import FastAPI, HTTPException  # noqa: E402
+from fastapi import FastAPI, HTTPException, Query  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from pydantic import BaseModel  # noqa: E402
 from sse_starlette.sse import EventSourceResponse  # noqa: E402
@@ -152,7 +152,7 @@ async def demo_health():
 
 # ── 5. approval ledger (the audit trail) ─────────────────────────────────────
 @app.get("/api/ledger")
-async def get_ledger(limit: int = 25):
+async def get_ledger(limit: int = Query(default=25, ge=1, le=1000)):
     """Append-only audit record of every sweep: incident, action, decision, outcome.
 
     `dynatrace_writeback` reflects whether each approval is also written back to
