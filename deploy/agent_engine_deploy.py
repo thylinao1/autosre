@@ -26,17 +26,22 @@ Note: keep the requirements list in sync with requirements.txt. The exact
 agent-engines API surface evolves; if an import moves, check the current
 google-cloud-aiplatform / google-adk docs (Context7: "vertexai agent engines").
 
-KNOWN LIMITATION (verified 2026-06-08, aiplatform 1.156.0): packaging, the
-staging upload, and the create LRO all succeed, but the managed-runtime build
-returns a consistent `500 INTERNAL` for THIS agent. The cause is the Dynatrace
-toolset's stdio MCP transport: in `mock`/`stdio` mode the toolset spawns a
-subprocess (`python -m autosre.mock_dynatrace.server` / `npx ...`), which Agent
-Engine's managed build does not support. To deploy on Agent Engine, run the agent
-with the REMOTE Dynatrace MCP instead (no subprocess): set
-DYNATRACE_MCP_MODE=remote and pass DT_ENVIRONMENT + DT_PLATFORM_TOKEN via env_vars
-(StreamableHTTPConnectionParams in autosre/agent/dynatrace.py), or expose the
-mock tools as in-process FunctionTools. Eligibility does not depend on this: the
-ADK agent reasons on Gemini 3 via Vertex AI and is deployed live on Cloud Run.
+STATUS (verified 2026-06-08, aiplatform 1.156.0):
+- mock/stdio mode -> the managed-runtime build returns a consistent 500 INTERNAL,
+  because the Dynatrace toolset spawns an MCP subprocess
+  (`python -m autosre.mock_dynatrace.server` / `npx ...`) that Agent Engine's
+  managed build does not support. This script defaults to `remote` for that reason.
+- remote mode -> NO subprocess (HTTP to the Dynatrace MCP gateway). The gateway is
+  live and responds, but the platform token currently lacks the
+  `mcp-gateway:servers:invoke` (+ `mcp-gateway:servers:read`) scopes, so it 403s.
+  FIX: regenerate DT_PLATFORM_TOKEN with those two scopes (Dynatrace UI), put it in
+  `.env`, then re-run this script. Remote mode then deploys the agent on Agent
+  Engine using the REAL Dynatrace MCP — a stronger story than mock.
+- Fallback if you cannot add token scopes: expose the mock tools as in-process
+  FunctionTools (no MCP, no gateway), which Agent Engine accepts.
+
+Eligibility does not depend on Agent Engine: the ADK agent reasons on Gemini 3 via
+Vertex AI and is deployed live on Cloud Run today.
 """
 
 from __future__ import annotations
@@ -96,12 +101,32 @@ def main() -> int:
     # (it injects them from the resource), so they must not be passed here. The model
     # therefore reasons at the resource's own location — create the resource where
     # the model serves (global on this project).
+    mcp_mode = os.environ.get("DYNATRACE_MCP_MODE", "remote")
     env_vars = {
         "GOOGLE_GENAI_USE_VERTEXAI": "TRUE",
         "AUTOSRE_MODEL": os.environ.get("AUTOSRE_MODEL", "gemini-3-flash-preview"),
-        "DYNATRACE_MCP_MODE": os.environ.get("DYNATRACE_MCP_MODE", "mock"),
+        "DYNATRACE_MCP_MODE": mcp_mode,
         "TARGET_SERVICE_URL": target_url,
     }
+    # Agent Engine's managed build does NOT support the stdio MCP subprocess
+    # (mock/stdio modes spawn one -> the build returns 500). Use `remote` so the
+    # toolset talks to the Dynatrace MCP gateway over HTTP (no subprocess), and
+    # pass the tenant creds. The token MUST carry mcp-gateway:servers:invoke +
+    # mcp-gateway:servers:read (a 403 with missingScopes means it does not yet).
+    if mcp_mode == "remote":
+        dt_env = os.environ.get("DT_ENVIRONMENT")
+        dt_token = os.environ.get("DT_PLATFORM_TOKEN")
+        if not dt_env or not dt_token:
+            print("ERROR: DYNATRACE_MCP_MODE=remote needs DT_ENVIRONMENT + "
+                  "DT_PLATFORM_TOKEN (token scopes: mcp-gateway:servers:invoke, "
+                  "mcp-gateway:servers:read, storage:*:read).", file=sys.stderr)
+            return 2
+        env_vars["DT_ENVIRONMENT"] = dt_env
+        env_vars["DT_PLATFORM_TOKEN"] = dt_token
+    elif mcp_mode in ("mock", "stdio"):
+        print("WARNING: DYNATRACE_MCP_MODE=" + mcp_mode + " spawns an MCP subprocess "
+              "that Agent Engine's managed build rejects (500). Use 'remote'.",
+              file=sys.stderr)
 
     existing = os.environ.get("AGENT_ENGINE_UPDATE")
     if existing:

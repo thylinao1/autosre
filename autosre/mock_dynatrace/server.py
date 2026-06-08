@@ -1,10 +1,15 @@
 """Mock Dynatrace MCP server (stdio).
 
-Mirrors the tool surface of the official @dynatrace-oss/dynatrace-mcp-server so the
-AutoSRE agent talks to an identical interface whether it's pointed at this mock or
-a real Dynatrace tenant. Telemetry is derived live from the checkout-api demo
-service's internal state, so injecting a fault there surfaces a real "problem"
-here, and a successful remediation makes the problem disappear.
+A bundled MCP server that speaks the same protocol as the official
+@dynatrace-oss/dynatrace-mcp-server, so the agent uses the identical MCP transport
+offline. The TOOL SURFACES are deliberately NOT identical: this mock mirrors a
+Davis-PROBLEM workflow (query_problems / get_problem_by_id) so the demo can show a
+Davis-shaped problem card the OTel-only trial tenant cannot raise, while the real
+v1.8.6 server is DQL-FIRST (list_problems / execute_dql w/ dqlStatement /
+get_kubernetes_events / list_vulnerabilities). The agent instruction is mode-aware
+(see agent.py) so each path drives the tools it actually has. Telemetry here is
+derived live from the checkout-api demo service's internal state, so injecting a
+fault surfaces a real "problem" and a successful remediation makes it disappear.
 
 Run:  python -m autosre.mock_dynatrace.server   (speaks MCP over stdio)
 """
