@@ -108,7 +108,7 @@ The agent runs a **6-step loop**:
 | **What it does** | (See section above) |
 | **How we built it** | (See section above) |
 | **Challenges** | (See section above) |
-| **Accomplishments** | Full 6-step loop deployed and tested. SSE streaming + approval pause proven on web UI. ADK-native HITL enforced, with both the approve and the reject path audited on Dynatrace's timeline. Mode-agnostic Dynatrace toolset (mock/stdio/remote). 37 tests (35 deterministic offline, 2 live-gated), including regression tests that pin the deny path. Deployed to Vertex AI Agent Engine + Cloud Run. |
+| **Accomplishments** | Full 6-step loop deployed and tested. SSE streaming + approval pause proven on web UI. ADK-native HITL enforced, with both the approve and the reject path audited on Dynatrace's timeline. Mode-agnostic Dynatrace toolset (mock/stdio/remote). 38 tests (36 deterministic offline, 2 live-gated), including regression tests that pin the deny path. Deployed to Vertex AI Agent Engine + Cloud Run. |
 | **What we learned** | The approval pause is the product, not a bug. Framework-enforced human gates are stronger than prompt tricks. Dynatrace MCP is a powerful observability abstraction; the mock mode we built is as valuable as the remote. |
 | **Built with** | Google Cloud (Vertex AI, Agent Development Kit, Cloud Run, Secret Manager), Dynatrace MCP, Gemini 3, Next.js, FastAPI, Python, TypeScript |
 | **Track** | Dynatrace |
@@ -134,7 +134,7 @@ The agent runs a **6-step loop**:
 |--------|-------|----------|
 | **Real-world pain quantified** | Gartner 2014: $5,600/min; EMA 2024: ~$14,056/min; identify phase 30+ min | README opening (sourced); video narration |
 | **MTTR improvement** | 30+ min by hand → seconds (a live on-screen timer freezes on the verified outcome, e.g. ~15s to resolution) | Mission Control header timer; video timed beat |
-| **Incident types handled** | 2 (payment-flag, latency-scale), each with a distinct remediation the agent reasons to | DEMO.md; test suite (37 tests, both fault paths covered) |
+| **Incident types handled** | 2 (payment-flag, latency-scale), each with a distinct remediation the agent reasons to | DEMO.md; test suite (38 tests, both fault paths covered) |
 | **Uptime for demo** | 100% (mock mode) | `DYNATRACE_MCP_MODE=mock` is offline-deterministic |
 | **Real-tenant validation** | Supports `remote` mode (production Dynatrace tenant) | ARCHITECTURE.md; tested during dev |
 | **Framework-enforced safety** | ADK `require_confirmation=True` | `autosre/agent/agent.py` (the three remediation tools are wrapped `FunctionTool(..., require_confirmation=True)`); tested in `test_remediation_gate.py` |

@@ -230,7 +230,7 @@ The final URL is your submission to judges (Devpost requirement: must work from 
 pytest
 ```
 
-Runs 37 tests: 35 offline-deterministic, plus 2 gated on live Gemini credentials.
+Runs 38 tests: 36 offline-deterministic, plus 2 gated on live Gemini credentials.
 - **Machinery tests (deterministic):** Mock Dynatrace server over MCP stdio protocol; verify the approval gate, remediation execution, and incident outcome for both fault types.
 - **Deny-path regression tests:** reproduce the ADK turn-1 confirmation stub and assert a rejected run is audited as `rejected` / `declined` (backend) and applies nothing (replay), so the marquee deny beat cannot silently re-break.
 - **Approval-ledger tests (`test_ledger.py`):** the append-only audit record and the Dynatrace log write-back shape.
@@ -238,7 +238,7 @@ Runs 37 tests: 35 offline-deterministic, plus 2 gated on live Gemini credentials
 - **MCP envelope parsing:** Regression tests for real ADK tool response unwrapping (fixed a critical bug).
 - **Demo mode (`test_demo_mode.py`):** a deterministic replay exercises the full detect→verify loop and applies the **real** remediation HTTP call. The hosted demo runs the **live Gemini agent by default** (mock Dynatrace telemetry for a reliable click-through); this replay stays available as an instant fallback (`AUTOSRE_DEMO_MODE=1`) if the model API is ever unavailable during judging. The real-tenant, real-DQL detection run is in the demo video.
 
-The 35 deterministic tests pass offline (mock Dynatrace). The 2 live tests run against Gemini if credentials are present.
+The 36 deterministic tests pass offline (mock Dynatrace). The 2 live tests run against Gemini if credentials are present.
 
 ---
 

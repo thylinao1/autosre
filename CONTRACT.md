@@ -5,6 +5,15 @@ backend (Workstream B, `autosre/`) and the web UI (Workstream A, `web/`). Build
 against this document — do not redefine the wire format. Any change requires a new
 dated line in `DECISION-LOG.md`.
 
+> **Implementation note (current).** Two details settled after this doc was locked, so
+> the prose below is the original design and the code is the source of truth: (1) the
+> agent is served by a small FastAPI app (`python -m autosre.server`), not `adk
+> api_server`; (2) the Dynatrace tool names are **snake_case** as exposed by
+> `@dynatrace-oss/dynatrace-mcp-server` v1.8.6 (`query_problems`, `execute_dql`,
+> `get_kubernetes_events`, `list_vulnerabilities`), so the kebab-case examples below
+> (`query-problems`, `execute-dql`) are the original design only. The event shapes,
+> endpoints, and approval round-trip are exactly as built.
+
 > The contract is **mode-agnostic**. The agent core is identical across
 > `DYNATRACE_MCP_MODE=mock | stdio | remote` (see `autosre/agent/dynatrace.py`) —
 > the tool names and the events below are byte-identical in all three modes. The UI
@@ -110,8 +119,9 @@ See §4.
 
 ## 2. Event schema (discriminated union on `type`)
 
-Every event is a JSON object with `type`, `run_id`, `seq`. The following nine `type`
-values are the complete set the UI must handle. Each maps to a specific observation in
+Every event is a JSON object with `type`, `run_id`, `seq`. The following eight `type`
+values are the complete set the UI must handle (`step`, `tool_call`, `tool_result`,
+`approval_request`, `approval_resolved`, `agent_message`, `final`, `error`). Each maps to a specific observation in
 the ADK event stream that `autosre/run_agent.py` already inspects (line numbers cited
 against `run_agent.py` as committed at `749f512`).
 

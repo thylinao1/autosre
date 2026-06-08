@@ -5,6 +5,14 @@ Owned for implementation by Workstream C (`deploy/`). Consumed by all workstream
 service names, origins, and env-var names. The streaming wire format between the UI and
 the agent is defined in `CONTRACT.md`.
 
+> **Implementation note (current).** As built and deployed: the agent container runs a
+> FastAPI app (`python -m autosre.server`), not `adk api_server`; the live deploy reasons
+> on `gemini-3-flash-preview` via Vertex (the code default is `gemini-3-pro-preview`);
+> and the Dynatrace tools are snake_case per `@dynatrace-oss/dynatrace-mcp-server` v1.8.6
+> (`query_problems`, `execute_dql`, `get_kubernetes_events`, `list_vulnerabilities`), so
+> the kebab-case names in the diagram below are the original design only. The topology
+> itself (Cloud Run services, CORS, env vars) is exactly as described.
+
 ---
 
 ## 1. One-line summary

@@ -3,6 +3,11 @@
 Goal: show a complete, autonomous **detect → diagnose → propose → approve → act →
 verify** loop, with the human approval moment front and center.
 
+> The primary demo is the hosted web "Mission Control" UI
+> (`https://autosre-ui-vrf7h4n4ra-uc.a.run.app/demo`), and the recorded video follows
+> `VIDEO-SCRIPT.md`. This file is the offline CLI runbook, useful as a backup and for
+> the real-Dynatrace `stdio` credibility cut.
+
 ## Setup (before recording)
 
 ```bash
