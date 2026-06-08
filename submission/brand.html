@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>AutoSRE brand</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Inter:wght@400;500&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --navy:#090c11; --navy2:#0d1219; --ink:#e9eef5; --muted:#7f8ea3;
+    --cyan:#22d3ee; --amber:#f2a832; --green:#20cc80; --red:#e03a48;
+  }
+  *{margin:0;box-sizing:border-box}
+  html,body{width:1200px;height:800px;overflow:hidden;background:var(--navy);color:var(--ink);
+    font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .stage{width:1200px;height:800px;display:flex;align-items:center;justify-content:center;position:relative}
+  /* background variants */
+  body[data-bg="mark"] .stage{background:radial-gradient(120% 120% at 50% 38%, #11161f 0%, #090c11 60%)}
+  body[data-bg="gradient"] .stage{background:
+    radial-gradient(80% 90% at 18% 12%, rgba(34,211,238,.16), transparent 55%),
+    radial-gradient(80% 90% at 85% 90%, rgba(242,168,50,.14), transparent 55%),
+    linear-gradient(160deg,#0b1018,#090c11)}
+  body[data-bg="grid"] .stage{background:#090c11}
+  body[data-bg="grid"] .stage::before{content:"";position:absolute;inset:0;opacity:.5;
+    background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);
+    background-size:44px 44px;
+    -webkit-mask-image:radial-gradient(70% 70% at 50% 45%,#000 30%,transparent 80%)}
+  body[data-bg="hero"] .stage{background:
+    radial-gradient(70% 80% at 50% 0%, rgba(34,211,238,.12), transparent 60%),
+    linear-gradient(180deg,#0b1018,#090c11)}
+
+  .lockup{display:flex;flex-direction:column;align-items:center;gap:30px;position:relative;z-index:2}
+  .row{display:flex;align-items:center;gap:22px}
+  .seal{width:92px;height:92px;border-radius:22px;display:flex;align-items:center;justify-content:center;
+    border:1px solid rgba(242,168,50,.42);background:rgba(242,168,50,.08);
+    box-shadow:0 0 0 1px rgba(242,168,50,.06),0 30px 70px rgba(0,0,0,.55),0 0 60px rgba(242,168,50,.12),inset 0 1px 0 rgba(255,255,255,.05)}
+  .wordwrap{display:flex;flex-direction:column;gap:8px}
+  .word{display:flex;align-items:center;gap:14px}
+  .dot{width:13px;height:13px;border-radius:50%;background:var(--cyan);box-shadow:0 0 16px rgba(34,211,238,.8)}
+  .name{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:62px;letter-spacing:-.02em;color:#fff;line-height:1}
+  .sub{font-family:"JetBrains Mono",monospace;font-weight:500;font-size:15px;letter-spacing:.34em;text-transform:uppercase;color:var(--muted);padding-left:27px}
+  .tag{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:34px;letter-spacing:-.02em;color:#fff;text-align:center;line-height:1.12;max-width:760px}
+  .tag .accent{background:linear-gradient(90deg,#ff7a59,#e85d9e,#9b7cf6,#22d3ee);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .pill{font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+    border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:8px 16px}
+  .mark-only .name{font-size:84px}
+  .mark-only .seal{width:120px;height:120px;border-radius:28px}
+  .hide{display:none}
+</style>
+</head>
+<body data-bg="mark">
+  <div class="stage">
+    <div class="lockup">
+      <div class="row" id="logorow">
+        <div class="seal">
+          <!-- gate/shield seal with check -->
+          <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#f2a832" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2.6 4.4 6v6.1c0 4.6 3.2 7.6 7.6 9 4.4-1.4 7.6-4.4 7.6-9V6L12 2.6Z"/>
+            <path d="m8.6 12 2.4 2.4 4.4-4.6"/>
+          </svg>
+        </div>
+        <div class="wordwrap">
+          <div class="word"><span class="dot"></span><span class="name">autosre</span></div>
+          <div class="sub">autonomous on-call SRE</div>
+        </div>
+      </div>
+      <div class="tag" id="tag">The on-call engineer that diagnoses and fixes production incidents from Dynatrace, <span class="accent">but never acts without your approval.</span></div>
+      <div class="pill" id="pill">Gemini 3 · Google Cloud Agent Builder · Dynatrace MCP</div>
+    </div>
+  </div>
+<script>
+  const p = new URLSearchParams(location.search);
+  const bg = p.get('bg') || 'mark';
+  document.body.dataset.bg = bg;
+  // Mark-only variants hide the tagline/pill and enlarge the logo.
+  if (bg === 'mark' || bg === 'grid') {
+    document.getElementById('tag').classList.add('hide');
+    document.getElementById('pill').classList.add('hide');
+    document.querySelector('.lockup').classList.add('mark-only');
+  }
+  if (bg === 'gradient') { document.getElementById('pill').classList.add('hide'); }
+</script>
+</body>
+</html>
