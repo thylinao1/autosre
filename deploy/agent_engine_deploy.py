@@ -37,9 +37,22 @@ STATUS (verified 2026-06-08, aiplatform 1.156.0):
   on an OTel-only tenant (query-problems is empty there). It also needs the token
   scopes mcp-gateway:servers:invoke + :read.
 
-The live demo and the real-tenant credibility cut still use the real MCP transport;
-only the Agent Engine variant uses in-process tools, because its managed runtime
-cannot host the MCP stdio subprocess. Eligibility does not depend on any of this:
+BLOCKING PLATFORM CONSTRAINT (verified 2026-06-08, project autosre-470213):
+The create currently fails with a 500 INTERNAL at the build LRO regardless of MCP
+mode, because of a Google-side region/model bind on this project:
+  - gemini-3-flash-preview is served ONLY from `global` (404 at us-central1), and
+  - Agent Engine's build backend does NOT run at `global` (the create is accepted,
+    then 500s; no Cloud Build is created there) — it builds in regions.
+So the agent cannot be built where Gemini 3 serves, and Gemini 3 is not served
+where the agent can be built. This is not a code problem: with the inprocess mode
+the agent is fully self-contained and deployable. It will deploy once gemini-3 is
+GA in an Agent-Engine region, or Agent Engine supports `global`, or you point
+AUTOSRE_MODEL at a regionally-available model (e.g. a GA Gemini) for the Agent
+Engine variant only.
+
+The live demo and the real-tenant credibility cut use the real MCP transport;
+only the Agent Engine variant would use in-process tools (its managed runtime
+cannot host the MCP stdio subprocess). Eligibility does not depend on any of this:
 the ADK agent reasons on Gemini 3 via Vertex AI and is deployed live on Cloud Run.
 """
 
