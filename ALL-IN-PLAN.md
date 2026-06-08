@@ -21,7 +21,17 @@ Honest target: ~38% top-3 if shipped at prior quality; ceiling ~55-65% with this
 
 **Wave 9 (verification) DONE:** 57 pytest pass / 2 skipped; web `tsc` exit 0; prod build clean; deploy `bash -n` clean. Drove the full local stack (real Gemini backend + prod web build) end to end: confirmed the risk badge, gate motif, two-number timer (Agent 8.6s / Total 24.0s), deny-path relabel ("Proposed, awaiting approval — not yet executed"), ledger-as-memory (`get_recent_decisions` called live), answer-key redaction at the HTTP layer, example tags, and the deny path (target untouched, ledger `rejected/declined/action:None`).
 
-**LEFT FOR YOU (need your cloud/Dynatrace/video):** re-deploy with the hardened script (`bash deploy/deploy_cloud_run.sh`); (optional) `python -m deploy.agent_engine_deploy` to make the Agent Engine claim literally true; (optional) provision OneAgent for real Davis consumption; record the deny-first video on the live agent; fill the DEVPOST team/video fields; commit + push. NOTE: the two secondary docs `HANDOFF-NEXT-SESSION.md` / `HACKATHON-BATTLEPLAN.md` were not changed (the docs sweep reported edits that did not persist); they are internal, not judged, so low priority.
+**SESSION 2 (post-eval, 2026-06-08) — executed:**
+- PR #21 MERGED to main (`38f6705`); hardened code redeployed live (agent rev `autosre-00018-ccg`, same submission URL), OTLP write-back restored (`dynatrace_writeback: true`), answer-key redaction + seeded ledger verified live.
+- Cost guardrail: a $25 budget scoped to project `autosre-470213` with 50/90/100% alerts (id `f4792967...`). Vertex quota is a Console-only task here; the app guardrails (max-instances=1 + single-active-run + per-IP rate limit) already cap effective throughput, so the budget alert is the meaningful addition.
+- Agent Engine: blockers cleared (reserved vars, region/model split, package bundling); the script now defaults to and supports `remote` mode (no subprocess). Verified the remote gateway is live but the platform token 403s with `missingScopes: [mcp-gateway:servers:invoke]`. So the deploy is one token-scope away. Made the agent Davis-aware (DETECT calls `list_problems` first, falls back to DQL). Fixed the mock docstring's "identical interface" overclaim.
+
+**STILL LEFT FOR YOU:**
+- **Agent Engine (1 step):** add scopes `mcp-gateway:servers:invoke` + `mcp-gateway:servers:read` to `DT_PLATFORM_TOKEN` (Dynatrace UI), put it in `.env`, then `GOOGLE_CLOUD_PROJECT=autosre-470213 GOOGLE_CLOUD_LOCATION=global TARGET_SERVICE_URL=https://checkout-api-vrf7h4n4ra-uc.a.run.app DYNATRACE_MCP_MODE=remote python -m deploy.agent_engine_deploy`. Then paste the resource name into SUBMISSION.md.
+- **Vertex quota (optional):** Console > IAM & Admin > Quotas & System Limits > service `aiplatform.googleapis.com` > "Generate content requests per minute" for location `global` > set a low cap.
+- **OneAgent / real Davis:** not feasible on Cloud Run (no host; not K8s). Realistic paths: run checkout-api on GKE with the Dynatrace Operator, or configure custom metric anomaly-detection on the OTel metrics in the tenant UI. The agent is now Davis-ready (consumes `list_problems` when a problem exists).
+- **Video + Devpost fields:** record the deny-first video on the live agent; fill team/video fields.
+- Secondary docs `HANDOFF-NEXT-SESSION.md` / `HACKATHON-BATTLEPLAN.md` unchanged (internal, not judged).
 
 ---
 

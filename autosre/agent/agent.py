@@ -112,7 +112,11 @@ metric (this tenant has no OneAgent, so builtins return nothing).
 
 Follow this loop precisely:
 
-1. DETECT: First check availability with idiomatic DQL:
+1. DETECT: First ask Dynatrace if it already raised a problem — call
+   list_problems. If a Davis problem is OPEN for checkout-api, use its root cause
+   and affected entities as your primary evidence and go straight to DIAGNOSE. If
+   list_problems is empty (this trial tenant is OpenTelemetry-only, so Davis has
+   no problem to raise), detect from live metrics with idiomatic DQL:
      timeseries fail = avg(checkout.failure_rate), from:now()-30m
    Read the most recent non-null bin. Healthy is well under 1%. If the latest
    value is roughly 5% or higher, declare an AVAILABILITY incident on
