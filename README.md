@@ -236,12 +236,14 @@ To also register the ADK agent on **Vertex AI Agent Engine** (Google Cloud's man
 
 ```bash
 export GOOGLE_CLOUD_PROJECT=your-gcp-project
-export GOOGLE_CLOUD_LOCATION=us-central1
-export AGENT_ENGINE_STAGING_BUCKET=gs://your-bucket
+export GOOGLE_CLOUD_LOCATION=global          # where Gemini 3 serves on this project
+export TARGET_SERVICE_URL=https://checkout-api-xxxx.run.app
 python -m deploy.agent_engine_deploy
 ```
 
-It wraps the same `root_agent` in an ADK `AdkApp` and calls `agent_engines.create`, so the "deployed on Agent Engine" claim is literally true. The Mission-Control SSE and human-approval orchestration keep running on Cloud Run (they own the pause/resume bridge and the demo-target proxy); Agent Engine hosts the reasoning runtime.
+It wraps the same `root_agent` in an ADK `AdkApp`, bundles the `autosre` package, and calls `agent_engines.create`. The Mission-Control SSE and human-approval orchestration keep running on Cloud Run (they own the pause/resume bridge and the demo-target proxy); Agent Engine would host the reasoning runtime.
+
+> **Honest status (verified 2026-06-08):** packaging, staging upload, and the create LRO succeed, but the managed-runtime build returns a consistent `500 INTERNAL` for this agent, because the Dynatrace toolset's **stdio MCP transport spawns a subprocess** (`python -m autosre.mock_dynatrace.server` / `npx ...`) that Agent Engine's managed build does not support. Deploying on Agent Engine requires running the toolset over **remote HTTP MCP** (`DYNATRACE_MCP_MODE=remote`, no subprocess) or as in-process tools. The eligibility story does not depend on this: the ADK agent reasons on Gemini 3 via Vertex AI and is deployed live on Cloud Run.
 
 ---
 
