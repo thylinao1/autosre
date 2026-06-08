@@ -158,8 +158,10 @@ async def export_async(entry: dict[str, Any]) -> bool:
 
     Never raises: an audit write must not break the run. Records the result in
     `_LAST_WRITEBACK` and logs it, so a failed write is visible rather than
-    swallowed. Returns True on a 2xx. On success, fires a best-effort read-back
-    so the UI can claim "verified queryable in Dynatrace", not just "sent".
+    swallowed. Returns True on a 2xx. On success, fires a best-effort read-back;
+    the UI shows "verified" only if that read-back confirms the record is queryable,
+    and falls back to "sent" otherwise (the write landed but queryability is
+    unconfirmed — Grail ingest has a short lag, and the read-back needs query scopes).
     """
     endpoint = _logs_ingest_endpoint()
     auth = _auth_header()

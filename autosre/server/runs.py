@@ -78,6 +78,11 @@ class IncidentRun:
         self._declined = False  # operator rejected an approval
         self._acted = False  # set True only when the operator APPROVES the action
         self._auto_approved = False  # set True when policy auto-approved (no human)
+        # Framework stand-downs are NOT operator decisions and must never be audited
+        # as a rejection — the ledger records who DECIDED, and a superseded/timed-out
+        # run had no human decision. These suppress the audit entry entirely.
+        self._superseded = False  # a newer run stood this one down
+        self._timed_out = False  # the approval window elapsed with no decision
         self._risk: dict[str, Any] | None = None  # risk tier of the approved action
         self._problem_found = False  # DETECT surfaced at least one open problem
         # Captured for the approval ledger (audit record on terminal).
@@ -121,6 +126,7 @@ class IncidentRun:
         stand-down → declined terminal); otherwise cancel the driver. This keeps
         at most one active run, so a refresh/restart never orphans a Gemini loop.
         """
+        self._superseded = True
         if self.has_pending_approval and self._approval and not self._approval.done():
             self._approval.set_result(False)
         elif self._task is not None and not self._task.done():
@@ -214,6 +220,8 @@ class IncidentRun:
                     # for the gated tool BEFORE this point. Deriving it from the stub
                     # would mislabel a rejection as an approval (the deny-path bug).
                     self._acted = True
+                elif self._superseded or self._timed_out:
+                    pass  # framework stand-down, not an operator rejection
                 else:
                     self._declined = True
                 self._emit(E.approval_resolved_frame(self._pending["id"], approved))
@@ -267,6 +275,7 @@ class IncidentRun:
                 self.run_id,
                 APPROVAL_TIMEOUT_S,
             )
+            self._timed_out = True
             return False
 
     # ── terminal frames ──────────────────────────────────────────────────────
@@ -297,25 +306,29 @@ class IncidentRun:
             outcome = "unresolved"
 
         # Audit ledger: one immutable record per sweep, then a best-effort
-        # write-back to Dynatrace (no-op unless OTLP creds are configured).
-        entry = ledger.record(
-            {
-                "run_id": self.run_id,
-                "incident": self._incident_title
-                or ("checkout-api incident" if self._problem_found else None),
-                "action": self._approved_action,
-                "decision": "approved"
-                if self._approved_action is not None
-                else ("rejected" if self._declined else "none"),
-                "outcome": outcome,
-                "service_healthy": service_healthy,
-                "incident_resolved": incident_resolved,
-                "auto_approved": self._auto_approved,
-                "risk": self._risk,
-            }
-        )
-        if ledger.export_enabled():
-            asyncio.create_task(ledger.export_async(entry))
+        # write-back to Dynatrace. A superseded/timed-out run is a FRAMEWORK
+        # stand-down, not a human decision, so it is NOT recorded — the audit must
+        # only ever contain real operator decisions and genuine outcomes, never a
+        # framework eviction mislabeled as an operator rejection.
+        if not (self._superseded or self._timed_out):
+            entry = ledger.record(
+                {
+                    "run_id": self.run_id,
+                    "incident": self._incident_title
+                    or ("checkout-api incident" if self._problem_found else None),
+                    "action": self._approved_action,
+                    "decision": "approved"
+                    if self._approved_action is not None
+                    else ("rejected" if self._declined else "none"),
+                    "outcome": outcome,
+                    "service_healthy": service_healthy,
+                    "incident_resolved": incident_resolved,
+                    "auto_approved": self._auto_approved,
+                    "risk": self._risk,
+                }
+            )
+            if ledger.export_enabled():
+                asyncio.create_task(ledger.export_async(entry))
 
         self._emit(
             E.final_frame(

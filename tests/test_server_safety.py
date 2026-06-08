@@ -174,6 +174,35 @@ async def test_graduated_autoapprove_needs_no_human(target_service, monkeypatch)
 
 
 @pytest.mark.asyncio
+async def test_superseded_run_is_not_audited_as_rejection(target_service):
+    """A run stood down by a newer run is a framework eviction, not an operator
+    decision, so it must NOT appear in the audit ledger (and never as 'rejected')."""
+    from autosre.server import ledger
+    from autosre.server.runs import RunRegistry
+
+    ledger.clear()
+    reg = RunRegistry()
+    first = await reg.create(prompt=None, runner_factory=_PausingRunner)
+    for _ in range(50):
+        if first.has_pending_approval:
+            break
+        await asyncio.sleep(0.02)
+
+    # A new run supersedes the first (stands it down).
+    second = await reg.create(prompt=None, runner_factory=_PausingRunner)
+    for _ in range(50):
+        if first.is_terminal:
+            break
+        await asyncio.sleep(0.02)
+
+    assert first.is_terminal is True
+    audited_run_ids = [e["run_id"] for e in ledger.recent(50)]
+    assert first.run_id not in audited_run_ids  # the superseded run is not audited
+    second.abandon()
+    ledger.clear()
+
+
+@pytest.mark.asyncio
 async def test_starting_a_run_supersedes_the_previous_active_run(target_service):
     from autosre.server.runs import RunRegistry
 

@@ -7,9 +7,12 @@
       `python -m autosre.server` on Cloud Run) + checkout-api also on Cloud Run.
       Verified end-to-end from incognito: both APPROVE (detect → diagnose → approve →
       resolved/green) and REJECT (agent stands down, production untouched, audited as declined).
-- [ ] **Vertex AI Agent Engine resource (optional proof)** — run
-      `python -m deploy.agent_engine_deploy` to register the same ADK `root_agent` on
-      Agent Engine, then paste the printed resource name here: _‹TODO: agent-engine resource name›_.
+  > Note (not a required deliverable): a runnable Agent Engine registration path is
+  > provided in `deploy/agent_engine_deploy.py` (wraps the same ADK `root_agent` in an
+  > `AdkApp` + `agent_engines.create`). It is not deployed because of a documented
+  > Google-side bind on this project: `gemini-3-flash-preview` serves only from
+  > `global`, while Agent Engine builds regionally. The agent runs on Cloud Run today;
+  > eligibility is met via ADK + Gemini 3 on Vertex AI.
 - [x] **Public open-source repo** — **https://github.com/thylinao1/autosre** (public).
 - [x] **OSS license detectable in About** — `LICENSE` (MIT) at repo root; GitHub's
       license endpoint detects it as MIT, so the About sidebar shows "MIT".
