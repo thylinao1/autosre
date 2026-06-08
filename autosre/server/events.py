@@ -175,6 +175,13 @@ class PhaseTracker:
         phase = phase_for_tool(name)
         if phase == "detect" and self._current in ("act", "verify"):
             phase = "verify"
+        # get_service_health read during DIAGNOSE (before any action) is diagnostic
+        # evidence — live agents call it to read deploy version / flags — not
+        # recovery confirmation. Keep the phase at diagnose so the approval still
+        # renders under ACT, not a premature VERIFY. It only means verify once an
+        # action has happened (current is act/verify).
+        if phase == "verify" and self._current not in ("act", "verify"):
+            phase = "diagnose"
         return self._advance(phase)
 
     def advance_for_approval(self) -> dict[str, str] | None:
@@ -216,6 +223,8 @@ def approval_request_frame(pending: dict[str, Any]) -> dict[str, Any]:
         "tool": pending["tool"],
         "args": pending["args"],
         "hint": pending.get("hint", ""),
+        # Graduated-autonomy risk tier {tier, rationale} for this action.
+        "risk": pending.get("risk"),
     }
 
 

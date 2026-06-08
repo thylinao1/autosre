@@ -1,0 +1,63 @@
+{
+  "scenarios": 5,
+  "overall_accuracy": 1.0,
+  "tool_selection_accuracy": 1.0,
+  "false_action_rate": 0.0,
+  "rows": [
+    {
+      "name": "payment_errors",
+      "expect_action": true,
+      "proposed_tool": "toggle_feature_flag",
+      "proposed_args": {
+        "enabled": false,
+        "name": "new_payment_gateway"
+      },
+      "correct": true,
+      "false_action": false,
+      "detail": "OK: toggle_feature_flag({'enabled': False, 'name': 'new_payment_gateway'})"
+    },
+    {
+      "name": "latency_spike",
+      "expect_action": true,
+      "proposed_tool": "scale_service",
+      "proposed_args": {
+        "replicas": 10
+      },
+      "correct": true,
+      "false_action": false,
+      "detail": "OK: scale_service({'replicas': 10})"
+    },
+    {
+      "name": "dependency_rollback",
+      "expect_action": true,
+      "proposed_tool": "rollback_deployment",
+      "proposed_args": {
+        "version": "2.3.0"
+      },
+      "correct": true,
+      "false_action": false,
+      "detail": "OK: rollback_deployment({'version': '2.3.0'})"
+    },
+    {
+      "name": "memory_leak",
+      "expect_action": true,
+      "proposed_tool": "rollback_deployment",
+      "proposed_args": {
+        "version": "2.3.0"
+      },
+      "correct": true,
+      "false_action": false,
+      "detail": "OK: rollback_deployment({'version': '2.3.0'})"
+    },
+    {
+      "name": "all_clear",
+      "expect_action": false,
+      "proposed_tool": null,
+      "proposed_args": {},
+      "correct": true,
+      "false_action": false,
+      "detail": "proposed nothing (correct)"
+    }
+  ],
+  "generated_at": "2026-06-08T03:06:01Z"
+}

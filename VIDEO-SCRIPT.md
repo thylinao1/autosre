@@ -195,7 +195,7 @@ This is the future of production incident management: *autonomous, but accountab
 ## Recording Notes
 
 1. **Two layers, recorded separately, cut together:**
-   - **The polished UI loop** is recorded on the hosted Mission Control URL in `AUTOSRE_DEMO_MODE=1` (deterministic, model-free replay). This never stalls on a model blip and the approved remediation still runs for real, so the full DETECT → DIAGNOSE → APPROVE → ACT → VERIFY story plays cleanly every take.
+   - **The polished UI loop** is recorded on the hosted Mission Control URL running the **real Gemini agent live** (this is the primary path, verified: model-generated DQL that varies run to run, real ADK confirmation ids). `AUTOSRE_DEMO_MODE=1` is the deterministic model-free **fallback** only, to be used if Vertex flakes mid-take; the approved remediation still runs for real in that mode too. Record live; keep the fallback in your back pocket.
    - **The real-Dynatrace credibility cut** (the 0:50-1:20 terminal beat) is recorded locally with `DYNATRACE_MCP_MODE=stdio` against the live tenant. This is the proof that the integration is real, not a mock. Exact reproduce steps are in the appendix below; it is verified working end to end (real DQL returns 22, the agent diagnoses the flag, the approval gate fires, recovery confirms).
 2. **Pacing:** Aim for roughly 3:00. Every beat must be visible and named (judges should hear "Gemini 3," "Agent Builder / ADK," "Dynatrace MCP," "Vertex AI Agent Engine" at least once each).
 3. **Audio:** Clean, clear narration. Emphasize the **one-tap approval moment** as the emotional peak.
@@ -238,7 +238,10 @@ tenant over the official MCP server, with no mock. Verified end to end this sess
 - `.env` already holds `DT_ENVIRONMENT`, the Platform token (`DT_PLATFORM_TOKEN`), the Gemini
   key, and the OTLP ingest vars. The agent uses `DYNATRACE_MCP_MODE=stdio` against this tenant.
 - The real server is DQL-first: the trial tenant has no Davis problem, so the agent detects
-  on `timeseries avg(checkout.failure_rate)`, not on a precomputed problem.
+  on `timeseries avg(checkout.failure_rate)`, not on a precomputed problem. The latency
+  scenario queries `checkout.cpu_utilization` (a real OTel custom metric the service exports),
+  never a `builtin:kubernetes.*` metric — this tenant has no OneAgent, so builtins return
+  nothing. The instruction pins the real metric keys so the agent cannot invent one.
 
 **Steps:**
 

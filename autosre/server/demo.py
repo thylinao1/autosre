@@ -25,6 +25,8 @@ import httpx
 from google.adk.events import Event
 from google.genai import types
 
+from autosre.gcp_auth import target_headers
+
 CONFIRM = "adk_request_confirmation"
 
 
@@ -112,7 +114,10 @@ class DemoRunner:
 
     def _state(self) -> dict:
         try:
-            return httpx.get(f"{self._target}/_internal/state", timeout=10.0).json()
+            return httpx.get(
+                f"{self._target}/_internal/state", timeout=10.0,
+                headers=target_headers(self._target),
+            ).json()
         except Exception:  # noqa: BLE001 - missing target degrades to all-clear
             return {}
 
@@ -155,7 +160,7 @@ class DemoRunner:
         yield _ev([_fr("query_problems", {"problems": [problem], "total": 1})])
 
         if self._fault == "latency_spike":
-            yield _ev([_fc("execute_dql", {"dqlQueryString": "fetch metrics | filter cpu, replicas for checkout-api"})])
+            yield _ev([_fc("execute_dql", {"dqlQueryString": "timeseries cpu = avg(checkout.cpu_utilization), from:now()-30m"})])
             m = st.get("metrics", {})
             yield _ev([_fr("execute_dql", {"records": [{
                 "metric": "cpu_utilization", "value": m.get("cpu_utilization"), "unit": "%",
@@ -217,7 +222,10 @@ class DemoRunner:
 
     def _apply(self, path: str, payload: dict) -> dict:
         try:
-            return httpx.post(f"{self._target}{path}", json=payload, timeout=10.0).json()
+            return httpx.post(
+                f"{self._target}{path}", json=payload, timeout=10.0,
+                headers=target_headers(self._target),
+            ).json()
         except Exception as exc:  # noqa: BLE001 - surface as a tool-visible payload
             return {"error": f"could not apply remediation: {exc}"}
 

@@ -4,6 +4,7 @@ import { NavLinks } from "@/components/landing/NavLinks";
 import { ScrollReveal } from "@/components/landing/ScrollReveal";
 import { ScrollProgress } from "@/components/landing/ScrollProgress";
 import { CountUp } from "@/components/landing/CountUp";
+import { REPO_URL } from "@/lib/api";
 
 /* ── Landing page — AutoSRE
    Server Component — no event handlers here.
@@ -96,7 +97,7 @@ function SiteNav() {
       {/* GitHub pill — right */}
       <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
         <a
-          href="https://github.com/thylinao1/autosre"
+          href={REPO_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="pill-btn-outline"
@@ -275,7 +276,7 @@ function HeroSection() {
           </Link>
 
           <a
-            href="https://github.com/thylinao1/autosre"
+            href={REPO_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="pill-btn-secondary"
@@ -1006,12 +1007,12 @@ function SiteFooter() {
       </div>
 
       <a
-        href="https://github.com/thylinao1/autosre"
+        href={REPO_URL}
         target="_blank"
         rel="noopener noreferrer"
         className="footer-gh-link"
       >
-        github.com/thylinao1/autosre →
+        {REPO_URL.replace(/^https?:\/\//, "")} →
       </a>
     </footer>
   );

@@ -13,9 +13,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY autosre ./autosre
 
+# Default to the model actually available on this project's Vertex. pro-preview is
+# not allowlisted here; override AUTOSRE_MODEL where pro is enabled.
 ENV PYTHONUNBUFFERED=1 \
     DYNATRACE_MCP_MODE=mock \
-    AUTOSRE_MODEL=gemini-3-pro-preview
+    AUTOSRE_MODEL=gemini-3-flash-preview
 
 # Cloud Run provides $PORT.
 # python -m autosre.server starts uvicorn on that port (see autosre/server/__main__.py).

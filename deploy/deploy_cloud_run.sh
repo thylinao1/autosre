@@ -65,6 +65,9 @@ set -euo pipefail
 # Demo mode: when 1, the agent serves the deterministic, model-free replay so the
 # hosted URL never stalls on a model blip (the real fix still runs). Empty = live agent.
 : "${AUTOSRE_DEMO_MODE:=}"
+# Service-to-service auth: when 1, checkout-api is deployed private and the agent
+# calls it with a Cloud Run ID token (see the optional hardening block in step 1).
+: "${TARGET_REQUIRE_AUTH:=}"
 
 IMAGE_TS="$(date +%Y%m%d%H%M%S)"
 UI_IMAGE="gcr.io/${PROJECT_ID}/autosre-ui:${IMAGE_TS}"
@@ -110,6 +113,8 @@ gcloud run deploy autosre \
   --allow-unauthenticated \
   --no-cpu-throttling \
   --timeout=600 \
+  --min-instances=1 \
+  --max-instances=1 \
   --quiet \
   --set-env-vars "\
 GOOGLE_GENAI_USE_VERTEXAI=TRUE,\
@@ -119,9 +124,19 @@ AUTOSRE_MODEL=${AUTOSRE_MODEL},\
 DYNATRACE_MCP_MODE=${DYNATRACE_MCP_MODE},\
 TARGET_SERVICE_URL=${TARGET_URL},\
 AUTOSRE_DEMO_MODE=${AUTOSRE_DEMO_MODE},\
+TARGET_REQUIRE_AUTH=${TARGET_REQUIRE_AUTH},\
 ALLOWED_ORIGIN=*"
+# ^ --min/--max-instances=1 is REQUIRED, not optional: the run registry, the audit
+#   ledger, and the SSE+approval pairing are all per-process in-memory. With >1
+#   instance a second viewer hits a cold instance (404 / empty ledger) and the
+#   approval POST can land on a different instance than the open SSE stream (409,
+#   silent no-op, the agent blocks forever). Min=1 also kills cold-start latency.
 # ^ ALLOWED_ORIGIN starts permissive; step 4 tightens it to UI_URL.
 # ^ For remote mode add: --set-secrets "DT_ENVIRONMENT=dt-environment:latest,DT_PLATFORM_TOKEN=dt-platform-token:latest"
+# ^ For LIVE Dynatrace audit write-back from the hosted demo, also pass the OTLP
+#   ingest creds (Secret Manager), which is what makes /api/ledger report a real
+#   landed write rather than just "configured":
+#     --set-secrets "OTEL_EXPORTER_OTLP_ENDPOINT=otlp-endpoint:latest,OTEL_EXPORTER_OTLP_HEADERS=otlp-headers:latest"
 
 AGENT_URL=$(gcloud run services describe autosre \
   --region "${REGION}" \
@@ -163,6 +178,33 @@ gcloud run services update autosre \
   --project "${PROJECT_ID}" \
   --update-env-vars "ALLOWED_ORIGIN=${UI_URL}" \
   --quiet
+# Verify the tighten actually applied (don't leave the agent at ALLOWED_ORIGIN=*).
+# Use a JSON describe + python parse so this never false-fails on a projection quirk.
+APPLIED_ORIGIN=$(gcloud run services describe autosre --region "${REGION}" \
+  --project "${PROJECT_ID}" --format=json 2>/dev/null \
+  | python3 -c "import sys,json; e=json.load(sys.stdin)['spec']['template']['spec']['containers'][0].get('env',[]); print(next((x.get('value','') for x in e if x.get('name')=='ALLOWED_ORIGIN'), ''))" 2>/dev/null || true)
+if [ "${APPLIED_ORIGIN}" != "${UI_URL}" ]; then
+  echo "ERROR: CORS tighten did not apply (ALLOWED_ORIGIN='${APPLIED_ORIGIN}', want '${UI_URL}')." >&2
+  exit 1
+fi
+
+# ── 5. (Optional) Lock checkout-api to service-to-service auth ────────────────
+# Set TARGET_REQUIRE_AUTH=1 to make checkout-api private (its /_admin/* surface is
+# then unreachable by anyone who finds the URL). The agent calls it with a Cloud
+# Run ID token (autosre/gcp_auth.py). Requires the agent runtime SA as invoker.
+if [ "${TARGET_REQUIRE_AUTH}" = "1" ]; then
+  echo "==> [5] Locking checkout-api to authenticated invocation"
+  AGENT_SA=$(gcloud run services describe autosre --region "${REGION}" \
+    --project "${PROJECT_ID}" --format="value(spec.template.spec.serviceAccountName)")
+  AGENT_SA=${AGENT_SA:-$(gcloud iam service-accounts list --project "${PROJECT_ID}" \
+    --filter="displayName:'Default compute service account'" --format="value(email)")}
+  gcloud run services update checkout-api --region "${REGION}" --project "${PROJECT_ID}" \
+    --no-allow-unauthenticated --quiet
+  gcloud run services add-iam-policy-binding checkout-api --region "${REGION}" \
+    --project "${PROJECT_ID}" --member="serviceAccount:${AGENT_SA}" \
+    --role="roles/run.invoker" --quiet
+  echo "    checkout-api is now private; agent SA ${AGENT_SA} granted run.invoker."
+fi
 
 # ── Summary ──────────────────────────────────────────────────────────────────
 echo ""
@@ -175,3 +217,13 @@ echo ""
 echo "  Agent endpoint (internal):  ${AGENT_URL}"
 echo "  Target endpoint (internal): ${TARGET_URL}"
 echo "============================================================"
+echo ""
+echo "RECOMMENDED COST GUARDRAILS (run once; the demo is public + unauthenticated):"
+echo "  # Hard cap Vertex spend with a budget + alert (replace BILLING_ACCOUNT):"
+echo "  gcloud billing budgets create --billing-account=BILLING_ACCOUNT \\"
+echo "    --display-name='autosre-demo' --budget-amount=25USD \\"
+echo "    --threshold-rule=percent=0.5 --threshold-rule=percent=0.9 --threshold-rule=percent=1.0"
+echo "  # Cap Gemini throughput so a runaway loop fails closed (Vertex quota):"
+echo "  # Console: IAM & Admin > Quotas > 'Generate content requests per minute' for ${VERTEX_LOCATION}."
+echo "  # The agent already enforces --max-instances=1, a single active run, and a"
+echo "  # per-IP rate limit on /api/incident/start + /api/demo/*."

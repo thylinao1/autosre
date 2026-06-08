@@ -3,9 +3,13 @@
 ## Required deliverables
 - [x] **Hosted project URL** — **https://autosre-ui-vrf7h4n4ra-uc.a.run.app** — live
       Mission-Control web UI on Cloud Run; streams the full incident loop and the operator
-      approval gate. Agent (Gemini 3 via Vertex AI) + checkout-api also on Cloud Run.
+      approval gate. Agent (ADK on Gemini 3 via Vertex AI, self-hosted FastAPI app
+      `python -m autosre.server` on Cloud Run) + checkout-api also on Cloud Run.
       Verified end-to-end from incognito: both APPROVE (detect → diagnose → approve →
       resolved/green) and REJECT (agent stands down, production untouched, audited as declined).
+- [ ] **Vertex AI Agent Engine resource (optional proof)** — run
+      `python -m deploy.agent_engine_deploy` to register the same ADK `root_agent` on
+      Agent Engine, then paste the printed resource name here: _‹TODO: agent-engine resource name›_.
 - [x] **Public open-source repo** — **https://github.com/thylinao1/autosre** (public).
 - [x] **OSS license detectable in About** — `LICENSE` (MIT) at repo root; GitHub's
       license endpoint detects it as MIT, so the About sidebar shows "MIT".
@@ -29,21 +33,25 @@
   (valid Gemini function-call identifiers) and verified against `@dynatrace-oss/dynatrace-mcp-server` v1.8.6.
   Toolset built in `autosre/agent/dynatrace.py`; mode-agnostic (mock/stdio/remote).
 - **Gemini 3 + Google Cloud Agent Builder** → ADK `LlmAgent` on **Gemini 3**
-  (`gemini-3-flash-preview` on Vertex AI for the deploy; `gemini-3-pro-preview` is the code
-  default where allowlisted), reasoning on **Vertex AI**, deployed on **Cloud Run**.
+  (`gemini-3-flash-preview` is the code/Dockerfile default; `gemini-3-pro-preview` is an
+  opt-in via `AUTOSRE_MODEL` where pro is allowlisted), reasoning on **Vertex AI**, built
+  with the ADK (the code-first surface of Agent Builder), self-hosted on **Cloud Run** and
+  also deployable to **Vertex AI Agent Engine** via `deploy/agent_engine_deploy.py`.
   Explicit in README + video narration.
 - **Design (25%)** → Mission-Control web UI (Next.js 16, dark ops aesthetic, streaming timeline,
   hero approval modal, responsive). Built in `web/`; SSE backend in `autosre/server/`.
-- **Impact (25%)** → Opening stat: Gartner $5,600/min IT downtime; MTTR identify phase 30+ min.
-  AutoSRE collapses triage to the seconds shown on the demo's live header timer (it freezes on
-  the verified outcome). README opening + video narration.
+- **Impact (25%)** → Lead with the measured on-screen number: the demo's live header timer
+  reports the agent's detect-to-proposed-fix latency in seconds, separate from total
+  time-to-resolution (which includes human deliberation). Industry context for the pain
+  (framed as context, not our measurement): Gartner $5,600/min and EMA ~$14,056/min IT
+  downtime; MTTR identify phase 30+ min. README opening + video narration.
 - **Idea (25%)** → The refusal is the differentiator: the agent asks permission, obeys a no, and
   logs both the approval and the rejection on Dynatrace's own timeline. That is the one thing the
   track-default "autonomous SRE reads Dynatrace and remediates" build does not have, and the gate
   is framework-enforced (ADK `require_confirmation`), not a prompt.
 
 ## Pre-submission verification
-- [x] `pytest` passes (36 deterministic offline + 2 live-gated = 38 tests).
+- [x] `pytest` passes (the test suite is offline-deterministic except 2 live-gated tests; run `pytest`). Covers the approval gate, the server-side action allow-lists, the deny path, rate limiting, the ledger write-back shape, and SSE streaming.
 - [ ] With a Gemini key set, `tests/test_agent_live.py` passes (full 6-step loop).
 - [ ] `python -m autosre.run_agent` (CLI) resolves both `payment_errors` and `latency_spike`.
 - [ ] `python -m autosre.server` (SSE backend) + `cd web && npm run dev` (UI) runs full loop.

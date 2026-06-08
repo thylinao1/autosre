@@ -52,6 +52,37 @@ FAULTS = {
         # re-run isn't already "scaled" from a previous remediation.
         "precondition": {"replicas": 3},
     },
+    # ── Decoy incidents (the obvious reflex is WRONG) ────────────────────────
+    # These exist for the eval harness and prove the diagnosis generalizes beyond
+    # a 2-item menu: the agent must read the evidence, not pattern-match the metric.
+    "dependency_rollback": {
+        # Same SYMPTOM as payment_errors (failure-rate spike) but the flag is
+        # already OFF, so the reflex "disable the flag" does nothing — the fix is
+        # to roll back the bad deploy. Decoy against toggle_feature_flag.
+        "summary": "Checkout failure rate spiked to 18% after deploy v2.3.1 (gateway client regression)",
+        "metric": "failure_rate",
+        "bad_value": 18.0,
+        "root_cause": "Deploy v2.3.1 shipped a payment-gateway CLIENT regression. The "
+        "new_payment_gateway flag is already disabled, so toggling it changes nothing; "
+        "rolling back to v2.3.0 restores the working client.",
+        "correct_fix": {"action": "rollback_deployment", "args": {"version": "2.3.0"}},
+        "alt_fix": None,
+        "precondition": {"version": "2.3.1", "feature_flags": {"new_payment_gateway": False}},
+    },
+    "memory_leak": {
+        # Same SYMPTOM as latency_spike (high p99) but CPU is NORMAL and pods are
+        # OOMKilled — adding replicas does not help (each new pod leaks too); the
+        # fix is to roll back. Decoy against scale_service.
+        "summary": "Checkout p99 latency climbed to 3800ms; pods OOMKilled and restarting",
+        "metric": "p99_latency_ms",
+        "bad_value": 3800.0,
+        "root_cause": "A memory leak in v2.3.1 drives pods to OOMKill and restart. CPU is "
+        "not saturated, so scaling adds more leaking pods; rolling back to v2.3.0 restores "
+        "stable memory.",
+        "correct_fix": {"action": "rollback_deployment", "args": {"version": "2.3.0"}},
+        "alt_fix": None,
+        "precondition": {"version": "2.3.1", "replicas": 3},
+    },
 }
 
 
@@ -120,14 +151,37 @@ def checkout(req: CheckoutRequest):
 
 
 # ── Internal surface (consumed by Dynatrace MCP layer) ─────────────────────
+# OBSERVABLE symptom fields only. The agent reads this via get_service_health and
+# the mock MCP derives the problem card from it, so it MUST NOT leak the answer
+# key: root_cause (the prose explanation), correct_fix / alt_fix (the exact
+# remediation), or precondition. A real Davis problem surfaces a symptom (a title
+# + the impacted metric), never the fix — the agent has to reason its way there.
+_OBSERVABLE_FAULT_FIELDS = ("summary", "metric", "bad_value")
+
+
 @app.get("/_internal/state")
 def internal_state():
     snap = asdict(STATE)
     snap["metrics"] = current_metrics()
     snap["healthy"] = _healthy()
     if STATE.injected_fault:
-        snap["active_fault_detail"] = FAULTS[STATE.injected_fault]
+        full = FAULTS[STATE.injected_fault]
+        snap["active_fault_detail"] = {
+            k: full[k] for k in _OBSERVABLE_FAULT_FIELDS if k in full
+        }
     return snap
+
+
+@app.get("/_internal/answer_key")
+def internal_answer_key():
+    """TEST-ONLY: the full fault detail incl. correct_fix, for eval scoring.
+
+    Kept on a separate route so it can never reach the agent through
+    get_service_health / the mock MCP, which read /_internal/state above.
+    """
+    if not STATE.injected_fault:
+        return {"injected_fault": None}
+    return {"injected_fault": STATE.injected_fault, **FAULTS[STATE.injected_fault]}
 
 
 # ── Admin: inject incidents ────────────────────────────────────────────────

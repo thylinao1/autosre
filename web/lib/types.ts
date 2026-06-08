@@ -34,12 +34,23 @@ export interface ToolResultEvent extends BaseEvent {
   response: Record<string, unknown>;
 }
 
+// Graduated-autonomy risk tier of a proposed action. Lower tiers may be
+// auto-approved by policy; higher tiers always route through a human.
+export type RiskTier = "low" | "medium" | "high";
+
+export interface RiskAssessment {
+  tier: RiskTier;
+  rationale: string;
+}
+
 export interface ApprovalRequestEvent extends BaseEvent {
   type: "approval_request";
   id: string;
   tool: RemediationTool;
   args: Record<string, unknown>;
   hint: string;
+  // Optional: present when the backend attaches a graduated-autonomy risk tier.
+  risk?: RiskAssessment;
 }
 
 export interface ApprovalResolvedEvent extends BaseEvent {
@@ -165,4 +176,7 @@ export interface IncidentState {
   // is stamped when the sweep kicks off; `endedAt` freezes on the terminal frame.
   startedAt: number | null;
   endedAt: number | null;
+  // Stamped when the approval_request frame arrives (the agent reached a proposed
+  // fix). Lets the header split "model time" from "model time + your review time".
+  proposedAt: number | null;
 }

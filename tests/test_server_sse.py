@@ -101,6 +101,20 @@ def test_phase_tracker_advances_monotonically():
     assert pt.advance_for_tool("query-problems") is None
 
 
+@pytest.mark.unit
+def test_phase_tracker_get_service_health_during_diagnose_is_not_verify():
+    """An early get_service_health (read for evidence, before any act) is diagnose,
+    so the approval still renders under ACT, not a premature VERIFY."""
+    pt = E.PhaseTracker()
+    assert pt.advance_for_tool("query_problems")["phase"] == "detect"
+    # get_service_health called for config evidence during diagnosis → diagnose
+    assert pt.advance_for_tool("get_service_health")["phase"] == "diagnose"
+    assert pt.advance_for_tool("execute_dql") is None  # still diagnose
+    assert pt.advance_for_approval()["phase"] == "act"
+    # after acting, get_service_health is the recovery confirmation → verify
+    assert pt.advance_for_tool("get_service_health")["phase"] == "verify"
+
+
 # ── end-to-end SSE test (gated on Gemini credentials) ────────────────────────
 
 _HAS_KEY = bool(os.environ.get("GOOGLE_API_KEY")) or \

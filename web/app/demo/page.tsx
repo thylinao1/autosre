@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useIncidentStream } from "@/hooks/useIncidentStream";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { ProblemCard } from "@/components/problem-card/ProblemCard";
 import { Timeline } from "@/components/timeline/Timeline";
 import { DqlPanel } from "@/components/dql-panel/DqlPanel";
@@ -44,8 +45,43 @@ export default function DemoPage() {
     state.status === "all_clear" ||
     state.status === "error";
 
+  // Gate which layout mounts so the shared surfaces (AuditTrail + its poller,
+  // ProblemCard, DemoControls) instantiate exactly once. Matches the CSS 1024px
+  // breakpoint. `false` on the server keeps SSR deterministic (mobile-first).
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+
+  // The latest agent critique, if it is a "Second opinion:" message, surfaced in
+  // the approval modal. The hook strips/keeps the full reasoning buffer; we only
+  // forward a clearly-marked second opinion.
+  const secondOpinion =
+    state.agentReasoning.startsWith("Second opinion:")
+      ? state.agentReasoning.slice("Second opinion:".length).trim()
+      : undefined;
+
+  // A soft "reconnecting…" hint can ride on errorMessage while the run is still
+  // non-terminal (the stream blipped but the backend is still working). Only the
+  // hard "error" status renders the alert banner; otherwise this is an inline note.
+  const isHardError = state.status === "error";
+  const softNotice = !isHardError && state.errorMessage ? state.errorMessage : null;
+
+  // Screen-reader status line. Announces the run phase as plain text via aria-live.
+  const statusAnnouncement =
+    state.status === "idle" ? "Standby. No incident running." :
+    state.status === "starting" ? "Starting incident sweep." :
+    state.status === "running" ? `Running${state.currentPhase ? `, phase ${state.currentPhase}` : ""}.` :
+    state.status === "awaiting_approval" ? "Awaiting your approval. A remediation is proposed and blocked until you decide." :
+    state.status === "resolved" ? "Resolved. The service is healthy." :
+    state.status === "declined" ? "Declined. The agent stood down, nothing changed." :
+    state.status === "all_clear" ? "All clear. No action was needed." :
+    "Error. Something went wrong.";
+
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Page-level heading and live status, for assistive tech only. */}
+      <h1 className="visually-hidden">AutoSRE Mission Control — live incident response</h1>
+      <div className="visually-hidden" role="status" aria-live="polite">
+        {statusAnnouncement}
+      </div>
       {/* ── Top navigation ── */}
       <header
         style={{
@@ -165,7 +201,7 @@ export default function DemoPage() {
 
         {/* Status indicators */}
         <div style={{ display: "flex", alignItems: "center", gap: "16px", flexShrink: 0 }}>
-          <RunTimer startedAt={state.startedAt} endedAt={state.endedAt} status={state.status} />
+          <RunTimer startedAt={state.startedAt} proposedAt={state.proposedAt} endedAt={state.endedAt} status={state.status} />
           <StatusPill
             label={
               state.status === "idle" ? "Standby" :
@@ -218,49 +254,57 @@ export default function DemoPage() {
           overflow: "hidden",
         }}
       >
-        {/* Desktop 3-column */}
-        <div
-          className="layout-desktop"
-          style={{
-            gridTemplateColumns: "clamp(280px, 22vw, 340px) 1fr clamp(248px, 20vw, 308px)",
-            minHeight: 0,
-            height: "calc(100vh - 52px - 40px)",
-          }}
-        >
-          <LeftSidebar
-            state={state}
-            serviceHealth={serviceHealth}
-            onStart={handleStart}
-            onReset={handleReset}
-          />
-          <CenterTimeline state={state} isBusy={isBusy} isTerminal={isTerminal} />
-          <RightPanel state={state} />
-        </div>
+        {/* Only ONE layout subtree mounts (gated on isDesktop), so AuditTrail and
+            its 5s poller, ProblemCard, and DemoControls never double-mount. */}
+        {isDesktop ? (
+          <>
+            {/* Desktop 3-column */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "clamp(280px, 22vw, 340px) 1fr clamp(248px, 20vw, 308px)",
+                minHeight: 0,
+                height: "calc(100vh - 52px - 40px)",
+              }}
+            >
+              <LeftSidebar
+                state={state}
+                serviceHealth={serviceHealth}
+                softNotice={softNotice}
+                onStart={handleStart}
+                onReset={handleReset}
+              />
+              <CenterTimeline state={state} isBusy={isBusy} isTerminal={isTerminal} />
+              <RightPanel state={state} />
+            </div>
 
-        {/* Telemetry footer (desktop) */}
-        <FooterTelemetry />
-
-        {/* Mobile stacked layout */}
-        <div className="layout-mobile" style={{ flexDirection: "column", overflowY: "auto", padding: "14px", gap: "14px" }}>
-          {state.status === "error" && state.errorMessage && (
-            <ErrorBanner message={state.errorMessage} />
-          )}
-          <ProblemCard problem={state.problem} status={state.status} health={serviceHealth} currentPhase={state.currentPhase} />
-          {state.finalEvent && <FinalReport event={state.finalEvent} />}
-          <DemoControls status={state.status} onStart={handleStart} onReset={handleReset} />
-          <PanelBlock title="Agent timeline">
-            <Timeline entries={state.timeline} currentPhase={state.currentPhase} isBusy={isBusy} />
-          </PanelBlock>
-          <PanelBlock title="DQL evidence">
-            <DqlPanel query={state.dqlQuery} records={state.dqlRecords} reasoning={state.agentReasoning} />
-          </PanelBlock>
-          <AuditTrail refreshKey={state.status} />
-        </div>
+            {/* Telemetry footer (desktop) */}
+            <FooterTelemetry />
+          </>
+        ) : (
+          /* Mobile stacked layout */
+          <div style={{ display: "flex", flexDirection: "column", overflowY: "auto", padding: "14px", gap: "14px" }}>
+            {isHardError && state.errorMessage && (
+              <ErrorBanner message={state.errorMessage} />
+            )}
+            {softNotice && <SoftNotice message={softNotice} />}
+            <ProblemCard problem={state.problem} status={state.status} health={serviceHealth} currentPhase={state.currentPhase} />
+            {state.finalEvent && <FinalReport event={state.finalEvent} />}
+            <DemoControls status={state.status} onStart={handleStart} onReset={handleReset} />
+            <PanelBlock title="Agent timeline">
+              <Timeline entries={state.timeline} currentPhase={state.currentPhase} isBusy={isBusy} />
+            </PanelBlock>
+            <PanelBlock title="DQL evidence">
+              <DqlPanel query={state.dqlQuery} records={state.dqlRecords} reasoning={state.agentReasoning} />
+            </PanelBlock>
+            <AuditTrail refreshKey={state.status} />
+          </div>
+        )}
       </main>
 
       {/* Approval modal */}
       {state.pendingApproval && (
-        <ApprovalModal event={state.pendingApproval} onDecide={handleApprove} />
+        <ApprovalModal event={state.pendingApproval} onDecide={handleApprove} secondOpinion={secondOpinion} />
       )}
     </div>
   );
@@ -268,15 +312,20 @@ export default function DemoPage() {
 
 /* ── Sub-components ── */
 
-/* Wall-clock readout: ticks from the start of a sweep and freezes on the terminal
-   outcome. Turns the "30+ minutes by hand, seconds here" claim into a number a
-   judge can read for themselves. */
+/* Two measured numbers, so the "30+ minutes by hand, seconds here" claim splits
+   honestly into model time and total time:
+     Agent: proposedAt - startedAt   (detection → proposed fix; pure model time)
+     Total: endedAt - startedAt      (start → verified outcome; includes review)
+   The Total label notes that it counts your deliberation, so neither number
+   overstates the agent. Both freeze on the terminal frame. */
 function RunTimer({
   startedAt,
+  proposedAt,
   endedAt,
   status,
 }: {
   startedAt: number | null;
+  proposedAt: number | null;
   endedAt: number | null;
   status: RunStatus;
 }) {
@@ -289,8 +338,13 @@ function RunTimer({
 
   if (startedAt === null) return null;
   const done = endedAt !== null;
-  const secs = (((endedAt ?? Date.now()) - startedAt) / 1000).toFixed(1);
-  const color = !done
+  const totalSecs = (((endedAt ?? Date.now()) - startedAt) / 1000).toFixed(1);
+  // Agent time = time to the proposed fix. Before the proposal arrives, the agent
+  // is still working, so tick the live elapsed; freeze once proposed or terminal.
+  const agentEnd = proposedAt ?? (done ? endedAt : Date.now());
+  const agentSecs = ((agentEnd - startedAt) / 1000).toFixed(1);
+
+  const totalColor = !done
     ? "var(--color-accent)"
     : status === "resolved" || status === "all_clear"
     ? "var(--color-green)"
@@ -300,30 +354,35 @@ function RunTimer({
 
   return (
     <div
-      title="Wall-clock time from the start of the sweep to a verified outcome. A human does this triage in 30+ minutes."
+      title="Agent = detection to proposed fix (model time only). Total = start to a verified outcome, which includes the time you spent reviewing. A human does this triage in 30+ minutes."
       style={{
         display: "flex",
         alignItems: "center",
-        gap: "5px",
+        gap: "10px",
         fontFamily: "var(--font-mono)",
         fontSize: "12px",
         fontWeight: 600,
-        color,
         fontVariantNumeric: "tabular-nums",
-        transition: "color 0.5s var(--ease-out-expo)",
         whiteSpace: "nowrap",
       }}
     >
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="9" />
         <polyline points="12 8 12 12 14.5 13.5" />
       </svg>
-      {secs}s
-      {done && (
-        <span style={{ color: "var(--color-text-dim)", fontFamily: "var(--font-sans)", fontSize: "10px", fontWeight: 500 }}>
-          to {status === "declined" ? "stand-down" : status === "all_clear" ? "all-clear" : "resolution"}
+      <span style={{ display: "flex", alignItems: "center", gap: "4px", color: "var(--color-accent)" }}>
+        <span style={{ color: "var(--color-text-dim)", fontFamily: "var(--font-sans)", fontSize: "10px", fontWeight: 500 }}>Agent</span>
+        {agentSecs}s
+      </span>
+      <span
+        style={{ display: "flex", alignItems: "center", gap: "4px", color: totalColor, transition: "color 0.5s var(--ease-out-expo)" }}
+      >
+        <span style={{ color: "var(--color-text-dim)", fontFamily: "var(--font-sans)", fontSize: "10px", fontWeight: 500 }}>Total</span>
+        {totalSecs}s
+        <span className="hidden xl:inline" style={{ color: "var(--color-text-dim)", fontFamily: "var(--font-sans)", fontSize: "9px", fontWeight: 500 }}>
+          incl. review
         </span>
-      )}
+      </span>
     </div>
   );
 }
@@ -370,6 +429,7 @@ function StatusPill({
 function ErrorBanner({ message }: { message: string }) {
   return (
     <div
+      role="alert"
       style={{
         borderRadius: "8px",
         border: "1px solid rgba(224,58,72,0.35)",
@@ -380,6 +440,31 @@ function ErrorBanner({ message }: { message: string }) {
     >
       <p style={{ fontSize: "11px", fontFamily: "var(--font-sans)", fontWeight: 600, letterSpacing: "-0.005em", color: "var(--color-red-text)", marginBottom: "3px" }}>Something went wrong</p>
       <p style={{ fontSize: "12.5px", fontFamily: "var(--font-sans)", letterSpacing: "-0.005em", color: "var(--color-text-secondary)" }}>{message}</p>
+    </div>
+  );
+}
+
+/* Soft, non-fatal notice (e.g. a stream blip mid-run). Distinct from the red
+   error alert: amber, lighter weight, does not claim the run failed. */
+function SoftNotice({ message }: { message: string }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        borderRadius: "8px",
+        border: "1px solid rgba(242,168,50,0.3)",
+        backgroundColor: "var(--color-amber-dim)",
+        padding: "8px 12px",
+      }}
+    >
+      <span
+        aria-hidden="true"
+        className="animate-status-blink"
+        style={{ width: "5px", height: "5px", borderRadius: "50%", backgroundColor: "var(--color-amber)", flexShrink: 0 }}
+      />
+      <p style={{ fontSize: "11.5px", fontFamily: "var(--font-sans)", letterSpacing: "-0.005em", color: "var(--color-amber)" }}>{message}</p>
     </div>
   );
 }
@@ -396,11 +481,13 @@ function PanelBlock({ title, children }: { title: string; children: React.ReactN
 function LeftSidebar({
   state,
   serviceHealth,
+  softNotice,
   onStart,
   onReset,
 }: {
   state: ReturnType<typeof useIncidentStream>["state"];
   serviceHealth: ServiceHealth | null;
+  softNotice: string | null;
   onStart: (inject: FaultType | null) => void;
   onReset: () => Promise<void>;
 }) {
@@ -419,6 +506,7 @@ function LeftSidebar({
       {state.status === "error" && state.errorMessage && (
         <ErrorBanner message={state.errorMessage} />
       )}
+      {softNotice && <SoftNotice message={softNotice} />}
       <ProblemCard
         problem={state.problem}
         status={state.status}
@@ -438,7 +526,7 @@ function FooterTelemetry() {
   const chips: { label: string; value: string }[] = [
     { label: "Model", value: "Gemini 3" },
     { label: "Framework", value: "Google ADK" },
-    { label: "Runtime", value: "Vertex AI Agent Engine" },
+    { label: "Runtime", value: "Vertex AI · Cloud Run" },
     { label: "Senses", value: "Dynatrace MCP" },
     { label: "Human gate", value: "require_confirmation" },
     { label: "Target", value: "checkout-api" },

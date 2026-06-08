@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getLedger, type LedgerEntry } from "@/lib/api";
+import { getLedger, type LedgerEntry, type LastWriteback } from "@/lib/api";
 
 const DECISION_COLOR: Record<string, string> = {
   approved: "var(--color-green)",
@@ -27,9 +27,39 @@ function relTime(ts: number): string {
  * agent service has Dynatrace ingest configured, each approval is also written
  * back to the tenant as a log — surfaced here with a "Dynatrace" badge.
  */
+// Derive the compact Dynatrace badge from the writeback signals. `last_writeback`
+// reflects whether the most recent write actually landed (`ok`) and whether a
+// read-back DQL confirmed it is queryable (`verified`); `dynatrace_writeback`
+// only means creds are configured. Returns null when there is nothing to show.
+function dynatraceBadge(
+  writeback: boolean,
+  last: LastWriteback | null
+): { text: string; title: string } | null {
+  if (last?.verified) {
+    return {
+      text: "✓ Dynatrace · verified",
+      title: "The decision was written back to Dynatrace and a read-back DQL confirmed it is queryable on the tenant.",
+    };
+  }
+  if (last?.ok) {
+    return {
+      text: "✓ Dynatrace · sent",
+      title: "The decision was written back to Dynatrace (the write landed); read-back verification is pending or unavailable.",
+    };
+  }
+  if (writeback) {
+    return {
+      text: "Dynatrace · configured",
+      title: "Dynatrace ingest credentials are configured. No write has been confirmed for the latest decision yet.",
+    };
+  }
+  return null;
+}
+
 export function AuditTrail({ refreshKey }: { refreshKey?: string | number }) {
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
   const [writeback, setWriteback] = useState(false);
+  const [lastWriteback, setLastWriteback] = useState<LastWriteback | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -40,6 +70,7 @@ export function AuditTrail({ refreshKey }: { refreshKey?: string | number }) {
           if (cancelled) return;
           setEntries(r.entries);
           setWriteback(r.dynatrace_writeback);
+          setLastWriteback(r.last_writeback ?? null);
           setLoaded(true);
         })
         .catch(() => {
@@ -59,6 +90,8 @@ export function AuditTrail({ refreshKey }: { refreshKey?: string | number }) {
   // Nothing recorded yet → don't take up space.
   if (loaded && entries.length === 0) return null;
 
+  const badge = dynatraceBadge(writeback, lastWriteback);
+
   return (
     <div style={{ border: "1px solid var(--color-border-subtle)", borderRadius: "8px", overflow: "hidden" }}>
       <div
@@ -66,9 +99,9 @@ export function AuditTrail({ refreshKey }: { refreshKey?: string | number }) {
         style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}
       >
         <span>Audit trail</span>
-        {writeback && (
+        {badge && (
           <span
-            title="Every approval is written back to the Dynatrace tenant as a log — auditable on Dynatrace's own timeline."
+            title={badge.title}
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -81,9 +114,10 @@ export function AuditTrail({ refreshKey }: { refreshKey?: string | number }) {
               backgroundColor: "var(--color-accent-dim)",
               border: "1px solid rgba(0,212,240,0.2)",
               letterSpacing: "0.02em",
+              whiteSpace: "nowrap",
             }}
           >
-            ✓ Dynatrace
+            {badge.text}
           </span>
         )}
       </div>
@@ -114,6 +148,10 @@ export function AuditTrail({ refreshKey }: { refreshKey?: string | number }) {
             <div style={{ minWidth: 0, flex: 1 }}>
               <div
                 style={{
+                  display: "flex",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: "6px",
                   fontSize: "11.5px",
                   fontFamily: "var(--font-sans)",
                   color: "var(--color-text-secondary)",
@@ -121,18 +159,53 @@ export function AuditTrail({ refreshKey }: { refreshKey?: string | number }) {
                   lineHeight: 1.4,
                 }}
               >
-                <span style={{ color: DECISION_COLOR[e.decision], fontWeight: 600 }}>
-                  {DECISION_LABEL[e.decision] ?? e.decision}
+                <span>
+                  <span style={{ color: DECISION_COLOR[e.decision], fontWeight: 600 }}>
+                    {DECISION_LABEL[e.decision] ?? e.decision}
+                  </span>
+                  {e.action?.tool && (
+                    <>
+                      {" · "}
+                      <span style={{ fontFamily: "var(--font-mono)", color: "var(--color-text-primary)" }}>
+                        {e.action.tool}
+                      </span>
+                    </>
+                  )}
                 </span>
-                {e.action?.tool && (
-                  <>
-                    {" · "}
-                    <span style={{ fontFamily: "var(--font-mono)", color: "var(--color-text-primary)" }}>
-                      {e.action.tool}
-                    </span>
-                  </>
+                {e.example && (
+                  <span
+                    title="Seeded placeholder so a cold redeploy is never empty. Not a real decision."
+                    style={{
+                      fontSize: "8.5px",
+                      fontFamily: "var(--font-mono)",
+                      padding: "0 5px",
+                      borderRadius: "3px",
+                      color: "var(--color-text-muted)",
+                      border: "1px dashed var(--color-border-strong)",
+                      letterSpacing: "0.04em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    example
+                  </span>
                 )}
               </div>
+              {(e.auto_approved || e.risk) && (
+                <div
+                  style={{
+                    fontSize: "9.5px",
+                    fontFamily: "var(--font-mono)",
+                    color: "var(--color-text-muted)",
+                    letterSpacing: "0.02em",
+                    marginTop: "2px",
+                  }}
+                  title={e.risk?.rationale || undefined}
+                >
+                  {[e.auto_approved ? "auto" : null, e.risk ? `${e.risk.tier} risk` : null]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </div>
+              )}
               <div
                 style={{
                   fontSize: "9.5px",

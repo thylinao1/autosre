@@ -2,12 +2,28 @@
 
 import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
-import type { ApprovalRequestEvent } from "@/lib/types";
+import type { ApprovalRequestEvent, RiskTier } from "@/lib/types";
 
 interface ApprovalModalProps {
   event: ApprovalRequestEvent;
   onDecide: (approved: boolean) => void;
+  // Optional latest "Second opinion:" critique to surface in the modal.
+  secondOpinion?: string;
 }
+
+// The args and hint are model-controlled, so they are a security surface: cap the
+// length and always render as plain text (the JSX below never uses innerHTML).
+const MAX_FIELD_CHARS = 240;
+
+function truncate(value: string): string {
+  return value.length > MAX_FIELD_CHARS ? value.slice(0, MAX_FIELD_CHARS) + "…" : value;
+}
+
+const RISK_LABEL: Record<RiskTier, string> = {
+  low: "Low risk",
+  medium: "Medium risk",
+  high: "High risk",
+};
 
 const toolDescriptions: Record<string, { label: string; icon: React.ReactNode; description: string }> = {
   toggle_feature_flag: {
@@ -44,12 +60,14 @@ const toolDescriptions: Record<string, { label: string; icon: React.ReactNode; d
 };
 
 function ArgRow({ label, value }: { label: string; value: unknown }) {
-  const displayVal =
+  const rawVal =
     typeof value === "boolean"
       ? value ? "true" : "false"
       : typeof value === "object"
       ? JSON.stringify(value)
       : String(value);
+  // Args are model-controlled: cap length and render as plain text only.
+  const displayVal = truncate(rawVal);
 
   const isBoolean = typeof value === "boolean";
   const isFalse = isBoolean && !value;
@@ -85,7 +103,7 @@ function ArgRow({ label, value }: { label: string; value: unknown }) {
   );
 }
 
-export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
+export function ApprovalModal({ event, onDecide, secondOpinion }: ApprovalModalProps) {
   const [decided, setDecided] = useState<boolean | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -157,6 +175,8 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
 
   const isApproved = decided === true;
   const isRejected = decided === false;
+  const decidedState = decided === null ? "pending" : isApproved ? "approved" : "rejected";
+  const risk = event.risk;
 
   return (
     <div
@@ -164,6 +184,7 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
       aria-modal="true"
       role="dialog"
       aria-labelledby="approval-modal-title"
+      aria-describedby="approval-modal-desc"
     >
       {/* Backdrop */}
       <div
@@ -218,52 +239,62 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
         {/* Header */}
         <div style={{ padding: "18px 22px 14px", borderBottom: "1px solid var(--color-border-subtle)" }}>
           <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", marginBottom: "10px" }}>
-            {/* Icon container */}
+            {/* Gate seal — the visual signature of the approval moment. A shield
+                glyph framed by an amber ring, sitting over the tool icon, so the
+                hero moment reads as a deliberate gate rather than a generic dialog.
+                Color follows the pending/approved/rejected tokens. */}
             <div
-              style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "10px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "1px solid",
-                flexShrink: 0,
-                transition: "all 0.45s var(--ease-out-expo)",
-                borderColor: decided !== null
-                  ? isApproved ? "rgba(32,204,128,0.4)" : "rgba(224,58,72,0.4)"
-                  : "rgba(242,168,50,0.4)",
-                backgroundColor: decided !== null
-                  ? isApproved ? "var(--color-green-dim)" : "var(--color-red-dim)"
-                  : "var(--color-amber-dim)",
-                color: decided !== null
-                  ? isApproved ? "var(--color-green)" : "var(--color-red-text)"
-                  : "var(--color-amber)",
-                boxShadow: decided !== null
-                  ? isApproved ? "0 0 12px rgba(32,204,128,0.15)" : "0 0 12px rgba(224,58,72,0.12)"
-                  : "0 0 12px rgba(242,168,50,0.12)",
-              }}
+              className="gate-seal"
+              data-decided={decidedState}
+              style={{ flexDirection: "column", gap: "4px" }}
             >
-              {decided !== null ? (
-                isApproved ? (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
+              <div
+                style={{
+                  position: "relative",
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "10px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "1px solid",
+                  flexShrink: 0,
+                  transition: "all 0.45s var(--ease-out-expo)",
+                  borderColor: decided !== null
+                    ? isApproved ? "rgba(32,204,128,0.4)" : "rgba(224,58,72,0.4)"
+                    : "rgba(242,168,50,0.4)",
+                  backgroundColor: decided !== null
+                    ? isApproved ? "var(--color-green-dim)" : "var(--color-red-dim)"
+                    : "var(--color-amber-dim)",
+                  color: decided !== null
+                    ? isApproved ? "var(--color-green)" : "var(--color-red-text)"
+                    : "var(--color-amber)",
+                  boxShadow: decided !== null
+                    ? isApproved ? "0 0 12px rgba(32,204,128,0.15)" : "0 0 12px rgba(224,58,72,0.12)"
+                    : "0 0 12px rgba(242,168,50,0.12)",
+                }}
+              >
+                <span className="gate-seal-ring" aria-hidden="true" />
+                {decided !== null ? (
+                  isApproved ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  )
                 ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/>
-                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  /* Shield + check = the gate glyph while awaiting a decision. */
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 2.5 5 5.2v5.5c0 4.4 3 7.7 7 8.8 4-1.1 7-4.4 7-8.8V5.2L12 2.5Z"/>
+                    <polyline points="9 11.5 11.2 13.7 15 9.6"/>
                   </svg>
-                )
-              ) : (
-                toolCfg.icon ?? (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="12" y1="8" x2="12" y2="12"/>
-                    <line x1="12" y1="16" x2="12.01" y2="16"/>
-                  </svg>
-                )
-              )}
+                )}
+              </div>
+              <span className="gate-label" aria-hidden="true">Gate</span>
             </div>
 
             {/* Title block */}
@@ -302,16 +333,51 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
             </div>
           </div>
 
-          <p style={{
-            fontSize: "12.5px",
-            fontFamily: "var(--font-sans)",
-            color: "var(--color-text-secondary)",
-            lineHeight: 1.6,
-            letterSpacing: "-0.005em",
-          }}>
+          {/* Risk tier — makes graduated autonomy visible. Renders nothing when
+              the backend did not attach a risk assessment. */}
+          {risk && (
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px", flexWrap: "wrap" }}>
+              <span className="risk-badge" data-tier={risk.tier}>
+                <span className="risk-badge-dot" aria-hidden="true" />
+                {RISK_LABEL[risk.tier]}
+              </span>
+              {risk.rationale && (
+                <span style={{
+                  fontSize: "11px",
+                  fontFamily: "var(--font-sans)",
+                  color: "var(--color-text-muted)",
+                  lineHeight: 1.5,
+                  letterSpacing: "-0.005em",
+                }}>
+                  {truncate(risk.rationale)}
+                </span>
+              )}
+            </div>
+          )}
+
+          <p
+            id="approval-modal-desc"
+            style={{
+              fontSize: "12.5px",
+              fontFamily: "var(--font-sans)",
+              color: "var(--color-text-secondary)",
+              lineHeight: 1.6,
+              letterSpacing: "-0.005em",
+            }}
+          >
             {toolCfg.description}{" "}
             <span style={{ color: "var(--color-text-muted)" }}>
               Nothing has reached production yet. This stays blocked until you decide.
+            </span>
+            {/* Visually-hidden so screen readers hear WHAT will run (args + agent
+                note), not just the tool name, when the dialog opens. */}
+            <span className="visually-hidden">
+              {" "}Proposed arguments:{" "}
+              {Object.entries(event.args)
+                .map(([k, v]) => `${k} is ${typeof v === "object" ? truncate(JSON.stringify(v)) : truncate(String(v))}`)
+                .join(", ")}
+              .
+              {event.hint ? ` Agent note: ${truncate(event.hint)}` : ""}
             </span>
           </p>
         </div>
@@ -340,7 +406,8 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
           </div>
         </div>
 
-        {/* Hint */}
+        {/* Hint — agent note. The hint is model-controlled: truncated and rendered
+            as plain text, with a caption marking it as unverified. */}
         {event.hint && (
           <div style={{ padding: "0 22px 14px" }}>
             <div style={{
@@ -349,15 +416,58 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
               backgroundColor: "rgba(120,85,240,0.06)",
               padding: "10px 12px",
             }}>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "8px", marginBottom: "4px" }}>
+                <p style={{
+                  fontSize: "11px",
+                  fontFamily: "var(--font-sans)",
+                  letterSpacing: "-0.005em",
+                  color: "#9b7cf6",
+                  fontWeight: 600,
+                }}>
+                  Agent note
+                </p>
+                <span style={{
+                  fontSize: "9px",
+                  fontFamily: "var(--font-mono)",
+                  color: "var(--color-text-muted)",
+                  letterSpacing: "0.02em",
+                  whiteSpace: "nowrap",
+                }}>
+                  agent-generated, unverified
+                </span>
+              </div>
+              <p style={{
+                fontSize: "12.5px",
+                fontFamily: "var(--font-sans)",
+                color: "var(--color-text-secondary)",
+                lineHeight: 1.6,
+                letterSpacing: "-0.005em",
+              }}>
+                {truncate(event.hint)}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Second opinion — an independent critique of the proposed fix, when the
+            agent ran one. Surfaced so the operator sees the dissent before deciding. */}
+        {secondOpinion && (
+          <div style={{ padding: "0 22px 14px" }}>
+            <div style={{
+              borderRadius: "8px",
+              border: "1px solid rgba(0,212,240,0.2)",
+              backgroundColor: "var(--color-accent-dim)",
+              padding: "10px 12px",
+            }}>
               <p style={{
                 fontSize: "11px",
                 fontFamily: "var(--font-sans)",
                 letterSpacing: "-0.005em",
-                color: "#9b7cf6",
+                color: "var(--color-accent)",
                 marginBottom: "4px",
                 fontWeight: 600,
               }}>
-                Agent note
+                Second opinion
               </p>
               <p style={{
                 fontSize: "12.5px",
@@ -366,7 +476,7 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
                 lineHeight: 1.6,
                 letterSpacing: "-0.005em",
               }}>
-                {event.hint}
+                {truncate(secondOpinion)}
               </p>
             </div>
           </div>
@@ -389,72 +499,21 @@ export function ApprovalModal({ event, onDecide }: ApprovalModalProps) {
         <div style={{ padding: "0 22px 20px" }}>
           {decided === null ? (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-              {/* Reject button */}
+              {/* Reject — hover/active/focus live in CSS (.approval-btn-reject) so
+                  keyboard and touch get the same affordances. */}
               <button
                 onClick={() => handleDecide(false)}
                 disabled={submitting}
-                className={clsx(
-                  "h-11 rounded-lg border text-sm font-semibold font-sans",
-                  "transition-all",
-                  "focus-visible:outline-2 focus-visible:outline-[var(--color-red)]",
-                  "disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
-                )}
-                style={{
-                  backgroundColor: "var(--color-surface-1)",
-                  borderColor: "var(--color-border)",
-                  color: "var(--color-text-secondary)",
-                  transitionDuration: "var(--duration-fast)",
-                  transitionTimingFunction: "var(--ease-out-expo)",
-                }}
-                onMouseEnter={(e) => {
-                  const t = e.currentTarget as HTMLButtonElement;
-                  t.style.borderColor = "rgba(224,58,72,0.5)";
-                  t.style.color = "var(--color-red-text)";
-                  t.style.backgroundColor = "var(--color-red-dim)";
-                  t.style.boxShadow = "0 0 14px rgba(224,58,72,0.1)";
-                }}
-                onMouseLeave={(e) => {
-                  const t = e.currentTarget as HTMLButtonElement;
-                  t.style.borderColor = "var(--color-border)";
-                  t.style.color = "var(--color-text-secondary)";
-                  t.style.backgroundColor = "var(--color-surface-1)";
-                  t.style.boxShadow = "none";
-                }}
-                onMouseDown={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.97)"; }}
-                onMouseUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}
+                className="approval-btn-reject"
               >
                 Reject
               </button>
 
-              {/* Approve button */}
+              {/* Approve — see .approval-btn-approve. */}
               <button
                 onClick={() => handleDecide(true)}
                 disabled={submitting}
-                className={clsx(
-                  "h-11 rounded-lg text-sm font-semibold font-sans",
-                  "transition-all",
-                  "focus-visible:outline-2 focus-visible:outline-[var(--color-amber)]",
-                  "disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
-                )}
-                style={{
-                  backgroundColor: "var(--color-amber)",
-                  color: "#1a0e00",
-                  transitionDuration: "var(--duration-fast)",
-                  transitionTimingFunction: "var(--ease-out-expo)",
-                  boxShadow: "0 1px 0 rgba(255,255,255,0.15) inset",
-                }}
-                onMouseEnter={(e) => {
-                  const t = e.currentTarget as HTMLButtonElement;
-                  t.style.filter = "brightness(1.1)";
-                  t.style.boxShadow = "0 1px 0 rgba(255,255,255,0.15) inset, 0 0 28px var(--color-amber-glow)";
-                }}
-                onMouseLeave={(e) => {
-                  const t = e.currentTarget as HTMLButtonElement;
-                  t.style.filter = "brightness(1)";
-                  t.style.boxShadow = "0 1px 0 rgba(255,255,255,0.15) inset";
-                }}
-                onMouseDown={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.97)"; }}
-                onMouseUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}
+                className="approval-btn-approve"
               >
                 Approve
               </button>

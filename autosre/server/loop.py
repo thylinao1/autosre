@@ -27,6 +27,8 @@ from typing import Any
 from google.adk.runners import InMemoryRunner
 from google.genai import types
 
+from . import policy
+
 APP = "autosre"
 USER = "operator"
 CONFIRM = "adk_request_confirmation"
@@ -105,13 +107,21 @@ def _extract_pending(fc: Any) -> dict[str, Any]:
     args = fc.args or {}
     orig = args.get("originalFunctionCall", {}) or {}
     tool = orig.get("name", "unknown")
-    tool_args = orig.get("args", {}) or {}
+    tool_args = dict(orig.get("args", {}) or {})
+    # Canonicalize the value ONCE at the boundary so the hint, the modal, the
+    # production call, and the audit log all see the same real bool (Gemini may
+    # emit `enabled` as a string).
+    if tool == "toggle_feature_flag" and "enabled" in tool_args:
+        tool_args["enabled"] = (
+            str(tool_args["enabled"]).strip().lower() in ("true", "1", "yes", "on")
+        )
     raw_hint = (args.get("toolConfirmation", {}) or {}).get("hint", "")
     return {
         "id": fc.id,
         "tool": tool,
         "args": tool_args,
         "hint": _operator_hint(tool, tool_args, raw_hint),
+        "risk": policy.classify(tool, tool_args),
     }
 
 
