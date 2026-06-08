@@ -27,21 +27,33 @@ agent-engines API surface evolves; if an import moves, check the current
 google-cloud-aiplatform / google-adk docs (Context7: "vertexai agent engines").
 
 STATUS (verified 2026-06-08, aiplatform 1.156.0):
-- mock/stdio mode -> the managed-runtime build returns a consistent 500 INTERNAL,
-  because the Dynatrace toolset spawns an MCP subprocess
-  (`python -m autosre.mock_dynatrace.server` / `npx ...`) that Agent Engine's
-  managed build does not support. This script defaults to `remote` for that reason.
-- remote mode -> NO subprocess (HTTP to the Dynatrace MCP gateway). The gateway is
-  live and responds, but the platform token currently lacks the
-  `mcp-gateway:servers:invoke` (+ `mcp-gateway:servers:read`) scopes, so it 403s.
-  FIX: regenerate DT_PLATFORM_TOKEN with those two scopes (Dynatrace UI), put it in
-  `.env`, then re-run this script. Remote mode then deploys the agent on Agent
-  Engine using the REAL Dynatrace MCP — a stronger story than mock.
-- Fallback if you cannot add token scopes: expose the mock tools as in-process
-  FunctionTools (no MCP, no gateway), which Agent Engine accepts.
+- inprocess mode (DEFAULT here) -> the Dynatrace tools are plain in-process
+  FunctionTools (autosre/agent/inprocess_tools.py): no subprocess, no gateway, so
+  Agent Engine's managed build accepts it and the agent runs end to end.
+- mock/stdio mode -> the managed build returns a consistent 500 INTERNAL because
+  the toolset spawns an MCP subprocess Agent Engine does not support.
+- remote mode -> no subprocess, but the hosted Dynatrace MCP gateway is a curated
+  Davis/entity toolset that has NO execute_dql, so it cannot run the DQL-first loop
+  on an OTel-only tenant (query-problems is empty there). It also needs the token
+  scopes mcp-gateway:servers:invoke + :read.
 
-Eligibility does not depend on Agent Engine: the ADK agent reasons on Gemini 3 via
-Vertex AI and is deployed live on Cloud Run today.
+BLOCKING PLATFORM CONSTRAINT (verified 2026-06-08, project autosre-470213):
+The create currently fails with a 500 INTERNAL at the build LRO regardless of MCP
+mode, because of a Google-side region/model bind on this project:
+  - gemini-3-flash-preview is served ONLY from `global` (404 at us-central1), and
+  - Agent Engine's build backend does NOT run at `global` (the create is accepted,
+    then 500s; no Cloud Build is created there) — it builds in regions.
+So the agent cannot be built where Gemini 3 serves, and Gemini 3 is not served
+where the agent can be built. This is not a code problem: with the inprocess mode
+the agent is fully self-contained and deployable. It will deploy once gemini-3 is
+GA in an Agent-Engine region, or Agent Engine supports `global`, or you point
+AUTOSRE_MODEL at a regionally-available model (e.g. a GA Gemini) for the Agent
+Engine variant only.
+
+The live demo and the real-tenant credibility cut use the real MCP transport;
+only the Agent Engine variant would use in-process tools (its managed runtime
+cannot host the MCP stdio subprocess). Eligibility does not depend on any of this:
+the ADK agent reasons on Gemini 3 via Vertex AI and is deployed live on Cloud Run.
 """
 
 from __future__ import annotations
@@ -101,18 +113,18 @@ def main() -> int:
     # (it injects them from the resource), so they must not be passed here. The model
     # therefore reasons at the resource's own location — create the resource where
     # the model serves (global on this project).
-    mcp_mode = os.environ.get("DYNATRACE_MCP_MODE", "remote")
+    # `inprocess` is the Agent-Engine-viable default: the Dynatrace tools run as
+    # plain in-process FunctionTools (no stdio subprocess, no gateway), so the
+    # managed build succeeds and the loop runs end to end. mock/stdio spawn an MCP
+    # subprocess the build rejects (500); remote needs a curated gateway that lacks
+    # execute_dql, so it cannot run the DQL-first loop on an OTel-only tenant.
+    mcp_mode = os.environ.get("DYNATRACE_MCP_MODE", "inprocess")
     env_vars = {
         "GOOGLE_GENAI_USE_VERTEXAI": "TRUE",
         "AUTOSRE_MODEL": os.environ.get("AUTOSRE_MODEL", "gemini-3-flash-preview"),
         "DYNATRACE_MCP_MODE": mcp_mode,
         "TARGET_SERVICE_URL": target_url,
     }
-    # Agent Engine's managed build does NOT support the stdio MCP subprocess
-    # (mock/stdio modes spawn one -> the build returns 500). Use `remote` so the
-    # toolset talks to the Dynatrace MCP gateway over HTTP (no subprocess), and
-    # pass the tenant creds. The token MUST carry mcp-gateway:servers:invoke +
-    # mcp-gateway:servers:read (a 403 with missingScopes means it does not yet).
     if mcp_mode == "remote":
         dt_env = os.environ.get("DT_ENVIRONMENT")
         dt_token = os.environ.get("DT_PLATFORM_TOKEN")
@@ -125,7 +137,7 @@ def main() -> int:
         env_vars["DT_PLATFORM_TOKEN"] = dt_token
     elif mcp_mode in ("mock", "stdio"):
         print("WARNING: DYNATRACE_MCP_MODE=" + mcp_mode + " spawns an MCP subprocess "
-              "that Agent Engine's managed build rejects (500). Use 'remote'.",
+              "that Agent Engine's managed build rejects (500). Use 'inprocess'.",
               file=sys.stderr)
 
     existing = os.environ.get("AGENT_ENGINE_UPDATE")

@@ -53,8 +53,18 @@ _REAL_TOOL_FILTER = [
 ]
 
 
-def build_dynatrace_toolset() -> McpToolset:
+def build_dynatrace_toolset():
+    """Return the Dynatrace observability tools for the configured mode.
+
+    mock/stdio/remote -> an McpToolset (real MCP transport). inprocess -> a list
+    of plain FunctionTools (no subprocess, no gateway) for the Vertex AI Agent
+    Engine runtime, which cannot spawn the stdio MCP subprocess.
+    """
     mode = os.environ.get("DYNATRACE_MCP_MODE", "mock").lower()
+    if mode == "inprocess":
+        from .inprocess_tools import inprocess_tools
+
+        return inprocess_tools()
     # Mock and the real v1.8.6 server both expose snake_case names (see the module
     # docstring); the two surfaces differ in WHICH tools they have, not in casing.
     filt = _MOCK_TOOL_FILTER if mode == "mock" else _REAL_TOOL_FILTER
@@ -102,5 +112,6 @@ def build_dynatrace_toolset() -> McpToolset:
         )
 
     raise ValueError(
-        f"DYNATRACE_MCP_MODE={mode!r} is invalid; use 'mock', 'stdio', or 'remote'."
+        f"DYNATRACE_MCP_MODE={mode!r} is invalid; use 'mock', 'stdio', 'remote', "
+        "or 'inprocess'."
     )
