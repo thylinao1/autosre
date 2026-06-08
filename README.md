@@ -1,6 +1,6 @@
 # AutoSRE: autonomous incident response, with you in the loop
 
-**Track: Dynatrace** · Built with the **Agent Development Kit (ADK)**, the code-first surface of **Google Cloud's Agent Platform (Agent Builder)**, reasoning on **Gemini 3 via Vertex AI**, deployed on **Cloud Run**. The same ADK agent is also deployable to **Vertex AI Agent Engine** via `deploy/agent_engine_deploy.py`. Partner superpower via the **Dynatrace MCP server**.
+**Track: Dynatrace** · Built with **Gemini 3** on **Google Cloud Agent Builder** — specifically the **Agent Development Kit (ADK)**, the Python SDK of Google Cloud's Agent Builder / Gemini Enterprise Agent Platform (the rules' "Developer SDK" build path) — reasoning on **Gemini 3 via Vertex AI** and deployed on **Cloud Run** (the deploy script wires the Dynatrace token through **Secret Manager** for remote mode). The same ADK agent is also deployable to **Vertex AI Agent Engine** via `deploy/agent_engine_deploy.py`. Partner superpower via the **Dynatrace MCP server**.
 
 ## The Real-World Problem
 
@@ -17,7 +17,7 @@ Production incidents don't wait. When a checkout service crashes at scale, **eve
 The track is full of agents that read Dynatrace and remediate. The part almost nobody builds is the moment the agent is told **no**, obeys, and leaves a record of it. That refusal is the product.
 
 - **The agent asks permission, and the gate is real.** The three remediation tools are wrapped in ADK's `FunctionTool(..., require_confirmation=True)`, so the model physically cannot push a change to production without an explicit human decision. It is a code-level guarantee you can read in `autosre/agent/agent.py`, not a sentence in a prompt the model might talk itself out of. Reject the fix and the agent stands down: nothing reaches production, and it does not retry or route around you.
-- **Two governed outcomes, both on Dynatrace's own timeline.** Every sweep ends in an append-only audit entry that records who decided, what they decided, and what happened. Approve and you get `approved / resolved`. Reject and you get `rejected / declined`, with production left untouched. When the Dynatrace ingest credentials are configured (including on the hosted demo, where they are), each decision is written back into the tenant as a log via the Log Monitoring API v2, so the same platform that detected the incident also holds the proof of who authorized, or refused, the fix. The API reports both whether write-back is configured (`dynatrace_writeback`) and whether the most recent write actually landed and is queryable, confirmed by a read-back DQL (`last_writeback`). That turns autonomous remediation into a compliance-grade record (who, what, when, outcome) instead of a black box.
+- **Two governed outcomes, both on Dynatrace's own timeline.** Every sweep ends in an append-only audit entry that records who decided, what they decided, and what happened. Approve and you get `approved / resolved`. Reject and you get `rejected / declined`, with production left untouched. When the Dynatrace ingest credentials are configured (including on the hosted demo, where they are), each decision is written back into the tenant as a log via the Log Monitoring API v2, so the same platform that detected the incident also holds the proof of who authorized, or refused, the fix. The API reports both whether write-back is configured (`dynatrace_writeback`) and whether the most recent write actually landed (`last_writeback`, an HTTP 2xx from the tenant); a best-effort read-back DQL then tries to confirm the record is queryable, so the audit badge reads `configured`, `sent`, or `verified` accordingly. That turns autonomous remediation into a compliance-grade record (who, what, when, outcome) instead of a black box.
 - **It reads a real Dynatrace tenant, not only a mock.** checkout-api streams real OpenTelemetry into Dynatrace, and the agent detects the incident from a live DQL query (`timeseries avg(checkout.failure_rate)`) that returns the real failure-rate spike. The demo video shows that query running against the live tenant over the official Dynatrace MCP server.
 - **Autonomous diagnosis, human authority.** The agent does the slow 3 AM detective work in seconds. A person still owns every change that reaches production, and every decision is on the record. That is the line we care about: autonomous, but accountable.
 
@@ -69,7 +69,7 @@ graph LR
     end
     
     subgraph dt["Dynatrace<br/>(Partner MCP)"]
-        MCP["Dynatrace MCP<br/>query_problems · execute_dql<br/>get_events_for_kubernetes_cluster<br/>(Read-Only Observability)"]
+        MCP["Dynatrace MCP (mock/stdio surface)<br/>query_problems · execute_dql<br/>get_events_for_kubernetes_cluster<br/>(Read-Only; the curated remote gateway<br/>is Davis/entity-only, no execute_dql)"]
     end
     
     UI -->|SSE Stream| AGENT
@@ -253,7 +253,7 @@ It wraps the same `root_agent` in an ADK `AdkApp`, bundles the `autosre` package
 pytest
 ```
 
-The test suite (40+ tests, run `pytest`) is offline-deterministic except for 2 tests gated on live Gemini credentials.
+The test suite (66 tests: 64 offline-deterministic, 2 gated on live Gemini credentials; run `pytest`) covers the deny-path audit, the action allow-list bounds, the rate limiter, the in-process tools, and the diagnosis-eval scorer.
 - **Machinery tests (deterministic):** Mock Dynatrace server over MCP stdio protocol; verify the approval gate, remediation execution, and incident outcome for both fault types.
 - **Remediation allow-list tests (`test_remediation_gate.py`):** assert the server-side bounds (replica band, known-good versions, managed flag names) refuse out-of-band actions even when approved, so an approved-but-poisoned action fails closed.
 - **Deny-path regression tests:** reproduce the ADK turn-1 confirmation stub and assert a rejected run is audited as `rejected` / `declined` (backend) and applies nothing (replay), so the marquee deny beat cannot silently re-break.
