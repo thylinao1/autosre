@@ -17,13 +17,17 @@ import os
 import httpx
 from mcp.server.fastmcp import FastMCP
 
+from autosre.gcp_auth import target_headers
+
 TARGET = os.environ.get("TARGET_SERVICE_URL", "http://localhost:8081")
 mcp = FastMCP("dynatrace-mock")
 
 
 def _state() -> dict:
     try:
-        return httpx.get(f"{TARGET}/_internal/state", timeout=5.0).json()
+        return httpx.get(
+            f"{TARGET}/_internal/state", timeout=5.0, headers=target_headers(TARGET)
+        ).json()
     except Exception as exc:  # noqa: BLE001 - surface as a tool-visible message
         return {"error": f"could not reach target service at {TARGET}: {exc}"}
 
@@ -123,9 +127,15 @@ def get_events_for_kubernetes_cluster(clusterId: str = "") -> str:
     st = _state()
     events = [{"reason": "Scheduled", "object": f"pod/checkout-api-{i}",
                "message": "Successfully assigned to node"} for i in range(st.get("replicas", 3))]
-    if not st.get("healthy", True) and st.get("injected_fault") == "latency_spike":
+    fault = st.get("injected_fault")
+    if not st.get("healthy", True) and fault == "latency_spike":
+        # Saturation signal: scaling is the right call.
         events.append({"reason": "Unhealthy", "object": "pod/checkout-api",
-                       "message": "Readiness probe failed: CPU throttling"})
+                       "message": "Readiness probe failed: CPU throttling at 98%"})
+    if not st.get("healthy", True) and fault == "memory_leak":
+        # OOM signal: more replicas won't help — this points to a rollback.
+        events.append({"reason": "OOMKilled", "object": "pod/checkout-api",
+                       "message": "Container memory usage exceeded limit; killed and restarted (CPU nominal)"})
     return json.dumps({"events": events}, indent=2)
 
 

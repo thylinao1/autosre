@@ -34,6 +34,7 @@ const INITIAL_STATE: IncidentState = {
   serviceHealth: null,
   startedAt: null,
   endedAt: null,
+  proposedAt: null,
 };
 
 function makeEntry(event: SSEEvent, label: string, detail?: string): TimelineEntry {
@@ -50,6 +51,15 @@ function makeEntry(event: SSEEvent, label: string, detail?: string): TimelineEnt
 }
 
 const TERMINAL_STATUSES: RunStatus[] = ["resolved", "declined", "all_clear", "error"];
+
+// The gated remediation tools. The ADK confirmation stub can emit a `tool_result`
+// for one of these BEFORE the human decides, which would otherwise render a
+// misleading "returned" line while the approval modal is still open.
+const GATED_TOOLS = new Set(["scale_service", "rollback_deployment", "toggle_feature_flag"]);
+
+// Cap on agentReasoning length: a long run can stream many tokens; keep only the
+// tail so the buffer (and the panel it feeds) can't grow unbounded.
+const MAX_REASONING_CHARS = 4000;
 
 function processEvent(prev: IncidentState, event: SSEEvent): IncidentState {
   // Once a run has reached a terminal status, ignore any trailing or out-of-order
@@ -119,6 +129,21 @@ function processEvent(prev: IncidentState, event: SSEEvent): IncidentState {
         nextState.dqlRecords = tr.response.records as DqlRecord[];
       }
 
+      // Deny-path label fix: the ADK confirmation stub emits a `tool_result` for a
+      // gated remediation tool BEFORE the human decides. Rendering "returned" then
+      // would falsely imply the action ran while the modal is still open. While the
+      // run is awaiting approval (or an approval is pending), relabel that frame so
+      // it reads as proposed-not-executed. The real post-approval result still
+      // renders normally (this branch only fires in the awaiting-approval window).
+      const awaitingApproval =
+        prev.status === "awaiting_approval" || prev.pendingApproval !== null;
+      if (GATED_TOOLS.has(tr.name) && awaitingApproval) {
+        return {
+          ...nextState,
+          timeline: addEntry("Proposed, awaiting approval — not yet executed", undefined),
+        };
+      }
+
       return {
         ...nextState,
         timeline: addEntry(`result: ${tr.summary}`, undefined),
@@ -127,19 +152,27 @@ function processEvent(prev: IncidentState, event: SSEEvent): IncidentState {
 
     case "agent_message": {
       const am = event as AgentMessageEvent;
+      const merged = am.done ? am.text : prev.agentReasoning + am.text;
+      // Keep only the tail so a long run can't grow the buffer unbounded.
+      const bounded =
+        merged.length > MAX_REASONING_CHARS ? merged.slice(-MAX_REASONING_CHARS) : merged;
       return {
         ...prev,
-        agentReasoning: am.done ? am.text : prev.agentReasoning + am.text,
+        agentReasoning: bounded,
         timeline: addEntry("Agent reasoning…", am.text.slice(0, 80) + (am.text.length > 80 ? "…" : "")),
       };
     }
 
     case "approval_request": {
       const ar = event as ApprovalRequestEvent;
+      // `pendingApproval` stores the whole event, so the risk tier rides along for
+      // the modal. Stamp `proposedAt` now: this is the moment the agent reached a
+      // proposed fix, which lets the header split model time from total time.
       return {
         ...prev,
         pendingApproval: ar,
         status: "awaiting_approval",
+        proposedAt: prev.proposedAt ?? Date.now(),
         timeline: addEntry(
           `Approval required: ${ar.tool}`,
           ar.hint || Object.entries(ar.args).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(" ")
@@ -283,13 +316,18 @@ export function useIncidentStream(): UseIncidentStreamReturn {
       }
 
       es.onerror = () => {
-        // SSE connection closed after final/error is normal
-        if (
-          stateRef.current.status !== "resolved" &&
-          stateRef.current.status !== "declined" &&
-          stateRef.current.status !== "all_clear"
-        ) {
-          // Only treat as error if not already in a terminal state
+        // A close after a terminal frame is normal. A close mid-run is not fatal
+        // either: on Cloud Run the SSE stream can drop during the human-approval
+        // pause while the backend keeps working, and the approve/reject paths
+        // reconcile via the health poll. So if we drop while still pre-approval and
+        // non-terminal (starting/running), surface a soft "reconnecting…" hint
+        // rather than flipping to a hard error that would mask a recoverable blip.
+        const status = stateRef.current.status;
+        if (status === "starting" || status === "running") {
+          updateState((prev) => ({
+            ...prev,
+            errorMessage: "Connection interrupted, reconnecting…",
+          }));
         }
         es.close();
       };
@@ -330,11 +368,11 @@ export function useIncidentStream(): UseIncidentStreamReturn {
         if (!isCurrentRun() || REJECT_TERMINAL.includes(stateRef.current.status)) return;
         esRef.current?.close(); // stop late duplicate frames once we synthesize
         const rejectedResolved: ApprovalResolvedEvent = {
-          type: "approval_resolved", run_id: runId, seq: 9_998,
+          type: "approval_resolved", run_id: runId, seq: Number.MAX_SAFE_INTEGER - 1,
           id: approvalId, approved: false,
         };
         const declinedFinal: FinalEvent = {
-          type: "final", run_id: runId, seq: 9_999,
+          type: "final", run_id: runId, seq: Number.MAX_SAFE_INTEGER,
           report:
             "You rejected the proposed remediation, so the agent stood down. Nothing was changed on checkout-api; the incident stays open for manual handling.",
           service_healthy: false, incident_resolved: false, outcome: "declined",
@@ -372,11 +410,11 @@ export function useIncidentStream(): UseIncidentStreamReturn {
             esRef.current?.close(); // stop trailing real frames from resurrecting the terminal
             // Clear the approval modal, then flip to a resolved terminal state.
             const resolvedEvent: ApprovalResolvedEvent = {
-              type: "approval_resolved", run_id: runId, seq: 9_998,
+              type: "approval_resolved", run_id: runId, seq: Number.MAX_SAFE_INTEGER - 1,
               id: approvalId, approved: true,
             };
             const finalEvent: FinalEvent = {
-              type: "final", run_id: runId, seq: 9_999,
+              type: "final", run_id: runId, seq: Number.MAX_SAFE_INTEGER,
               report: "Remediation approved and applied. checkout-api health check confirms the incident is resolved, and the service is healthy.",
               service_healthy: true, incident_resolved: true, outcome: "resolved",
             };

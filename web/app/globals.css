@@ -399,15 +399,6 @@ body {
   }
 }
 
-/* ── Responsive layout helpers ── */
-.layout-desktop { display: none; }
-.layout-mobile  { display: flex; }
-
-@media (min-width: 1024px) {
-  .layout-desktop { display: grid; }
-  .layout-mobile  { display: none; }
-}
-
 /* ── Hover gate ── */
 @media (hover: hover) and (pointer: fine) {
   .hover-glow-accent:hover {
@@ -567,4 +558,156 @@ body {
   .footer-gh-link:hover {
     color: var(--color-text-muted);
   }
+}
+
+/* ── Visually-hidden (screen-reader only) ──
+   Kept out of the visual flow but still announced by assistive tech. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Approval modal: decision buttons ──
+   Hover/active/focus moved off inline JS handlers onto CSS so keyboard and touch
+   get the same affordances. Compositor-only motion (transform/box-shadow). */
+.approval-btn-reject,
+.approval-btn-approve {
+  height: 44px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-out-expo),
+    color var(--duration-fast) var(--ease-out-expo),
+    background-color var(--duration-fast) var(--ease-out-expo),
+    box-shadow var(--duration-fast) var(--ease-out-expo),
+    filter var(--duration-fast) var(--ease-out-expo),
+    transform var(--duration-fast) var(--ease-out-expo);
+}
+
+.approval-btn-reject {
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface-1);
+  color: var(--color-text-secondary);
+}
+
+.approval-btn-approve {
+  border: none;
+  background-color: var(--color-amber);
+  color: #1a0e00;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.15) inset;
+}
+
+.approval-btn-reject:focus-visible {
+  outline: 2px solid var(--color-red);
+  outline-offset: 2px;
+}
+
+.approval-btn-approve:focus-visible {
+  outline: 2px solid var(--color-amber);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .approval-btn-reject:hover {
+    border-color: rgba(224, 58, 72, 0.5);
+    color: var(--color-red-text);
+    background-color: var(--color-red-dim);
+    box-shadow: 0 0 14px rgba(224, 58, 72, 0.1);
+  }
+  .approval-btn-approve:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.15) inset, 0 0 28px var(--color-amber-glow);
+  }
+}
+
+.approval-btn-reject:active,
+.approval-btn-approve:active {
+  transform: scale(0.97);
+}
+
+.approval-btn-reject:disabled,
+.approval-btn-approve:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Risk tier badge (graduated autonomy) ── */
+.risk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  border: 1px solid;
+  font-size: 10px;
+  font-family: var(--font-mono), monospace;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.risk-badge[data-tier="low"] {
+  color: var(--color-green-text);
+  border-color: rgba(32, 204, 128, 0.35);
+  background-color: var(--color-green-dim);
+}
+.risk-badge[data-tier="medium"] {
+  color: var(--color-amber);
+  border-color: rgba(242, 168, 50, 0.4);
+  background-color: var(--color-amber-dim);
+}
+.risk-badge[data-tier="high"] {
+  color: var(--color-red-text);
+  border-color: rgba(224, 58, 72, 0.4);
+  background-color: var(--color-red-dim);
+}
+.risk-badge-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: currentColor;
+  flex-shrink: 0;
+}
+
+/* ── Approval gate motif ──
+   The visual signature of the approval moment: a framed shield seal in the modal
+   header. Subtle amber ring + soft glow, consistent with the pending-state tokens.
+   Animation is compositor-only and disabled under prefers-reduced-motion. */
+.gate-seal {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.gate-seal-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 11px;
+  border: 1px solid rgba(242, 168, 50, 0.28);
+  pointer-events: none;
+}
+.gate-seal[data-decided="approved"] .gate-seal-ring {
+  border-color: rgba(32, 204, 128, 0.4);
+}
+.gate-seal[data-decided="rejected"] .gate-seal-ring {
+  border-color: rgba(224, 58, 72, 0.4);
+}
+.gate-label {
+  font-size: 8.5px;
+  font-family: var(--font-mono), monospace;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-amber);
+  opacity: 0.7;
 }

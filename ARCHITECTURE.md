@@ -6,29 +6,38 @@ service names, origins, and env-var names. The streaming wire format between the
 the agent is defined in `CONTRACT.md`.
 
 > **Implementation note (current).** As built and deployed: the agent container runs a
-> FastAPI app (`python -m autosre.server`), not `adk api_server`; the live deploy reasons
-> on `gemini-3-flash-preview` via Vertex (the code default is `gemini-3-pro-preview`);
-> and the Dynatrace tools are snake_case per `@dynatrace-oss/dynatrace-mcp-server` v1.8.6
-> (`query_problems`, `execute_dql`, `get_kubernetes_events`, `list_vulnerabilities`), so
-> the kebab-case names in the diagram below are the original design only. The topology
-> itself (Cloud Run services, CORS, env vars) is exactly as described.
+> self-hosted FastAPI app (`python -m autosre.server`, ADK `InMemoryRunner`) on Cloud Run,
+> not `adk api_server`. The same ADK `root_agent` is also deployable to Vertex AI Agent
+> Engine via `deploy/agent_engine_deploy.py` (it wraps the agent in an `AdkApp` and calls
+> `agent_engines.create`); the live hosted demo runs on Cloud Run, and Agent Engine is the
+> managed-runtime option, not the present hosting of the demo URL. The code/Dockerfile
+> default model is `gemini-3-flash-preview` (`gemini-3-pro-preview` is an opt-in via
+> `AUTOSRE_MODEL` where it is allowlisted). The Dynatrace tools are snake_case per
+> `@dynatrace-oss/dynatrace-mcp-server` v1.8.6 (`list_problems`/`query_problems` in mock,
+> `execute_dql`, `get_kubernetes_events`, `list_vulnerabilities`), so the kebab-case names
+> in the diagram below are the original design only. The topology itself (Cloud Run
+> services, CORS, env vars) is exactly as described.
 
 ---
 
 ## 1. One-line summary
 
-AutoSRE is an autonomous incident-response agent built on **Google Cloud's Agent
-Platform (Agent Builder) using the Agent Development Kit (ADK)**, **reasoning on Gemini
-3 via Vertex AI**, and **registered/served on Vertex AI Agent Engine** (Google Cloud's
-managed Agent Platform runtime). It uses the **Dynatrace MCP** as its only sensory
-system (detect + diagnose) and a human-gated set of remediation tools to act on a demo
-`checkout-api` service. A web "Mission Control" UI streams the whole loop live.
+AutoSRE is an autonomous incident-response agent built with the **Agent Development Kit
+(ADK)**, the code-first surface of **Google Cloud's Agent Platform (Agent Builder)**,
+**reasoning on Gemini 3 via Vertex AI**, and **deployed on Cloud Run** (the same ADK
+`root_agent` is also deployable to **Vertex AI Agent Engine**, Google Cloud's managed
+Agent Platform runtime, via `deploy/agent_engine_deploy.py`). It uses the **Dynatrace
+MCP** as its only sensory system (detect + diagnose) and a human-gated set of remediation
+tools to act on a demo `checkout-api` service. A web "Mission Control" UI streams the
+whole loop live.
 
-> Wording note (scoring point — use verbatim in README/video): *"AutoSRE runs on Google
-> Cloud's Agent Platform (Agent Builder), built with the Agent Development Kit and
-> reasoning on Gemini 3 via Vertex AI, deployed on Vertex AI Agent Engine."* ADK is the
-> code-first surface of Agent Builder; state this explicitly so a Google DevRel judge
-> ticks the box rather than having to infer it.
+> Wording note (scoring point — use verbatim in README/video): *"AutoSRE is built with
+> the Agent Development Kit, the code-first surface of Google Cloud's Agent Platform
+> (Agent Builder), reasoning on Gemini 3 via Vertex AI, deployed on Cloud Run, and also
+> deployable to Vertex AI Agent Engine."* ADK is the code-first surface of Agent Builder;
+> state this explicitly so a Google DevRel judge ticks the box rather than having to
+> infer it. Genuine Gemini 3 plus genuine ADK on Vertex AI is what clears the eligibility
+> gate, independent of which runtime hosts the demo URL.
 
 ---
 
@@ -36,7 +45,7 @@ system (detect + diagnose) and a human-gated set of remediation tools to act on 
 
 | Service | What it is | Host | Public? | Source |
 |---|---|---|---|---|
-| **AutoSRE agent** | ADK `LlmAgent` (Gemini 3 via Vertex), served over HTTP by `adk api_server`; registered on **Vertex AI Agent Engine**. Emits the SSE stream + approval/demo endpoints per `CONTRACT.md`. | **Cloud Run** (front) + **Vertex AI Agent Engine** (managed agent runtime) | Yes (CORS-restricted to UI origin) | `autosre/`, `deploy/Dockerfile.agent` |
+| **AutoSRE agent** | ADK `LlmAgent` (Gemini 3 via Vertex), served over HTTP by the self-hosted FastAPI app `python -m autosre.server` (ADK `InMemoryRunner`). Emits the SSE stream + approval/demo endpoints per `CONTRACT.md`. The same ADK `root_agent` is also deployable to **Vertex AI Agent Engine** via `deploy/agent_engine_deploy.py`. | **Cloud Run** (hosts the live demo); **Vertex AI Agent Engine** is the managed-runtime option | Yes (CORS-restricted to UI origin) | `autosre/`, `deploy/Dockerfile.agent`, `deploy/agent_engine_deploy.py` |
 | **checkout-api** | Demo target service the agent observes and remediates; exposes `/checkout`, `/healthz`, `/_internal/state`, `/_admin/*`. | **Cloud Run** | Internal/agent-only (the agent and demo-control proxy reach it server-side) | `autosre/target_service/`, `deploy/Dockerfile.target` |
 | **Mission-Control UI** | The web war-room app that streams the agent loop and renders the APPROVE/REJECT moment. | **Cloud Run** (containerized Next.js/Vite) **or Firebase Hosting** | Yes — **this is the public submission URL** | `web/` |
 | **Dynatrace MCP** | Observability source (Davis problems, DQL). `remote` = tenant gateway; `mock`/`stdio` = local. The agent's senses. | External (Dynatrace tenant) or in-process mock | n/a | partner / `autosre/mock_dynatrace/` |
@@ -57,9 +66,9 @@ flowchart LR
   end
 
   subgraph gcp["Google Cloud"]
-    AGENT["AutoSRE agent<br/>ADK LlmAgent · adk api_server<br/>Cloud Run + Vertex AI Agent Engine"]
+    AGENT["AutoSRE agent<br/>ADK LlmAgent · python -m autosre.server<br/>Cloud Run (also deployable to Agent Engine)"]
     TARGET["checkout-api (demo target)<br/>Cloud Run<br/>/_internal/state · /_admin/*"]
-    VERTEX["Vertex AI<br/>Gemini 3 (gemini-3-pro-preview)"]
+    VERTEX["Vertex AI<br/>Gemini 3 (gemini-3-flash-preview)"]
   end
 
   subgraph dt["Dynatrace (partner MCP — the agent's senses)"]
@@ -118,19 +127,20 @@ Cloud Run. Names below match the existing code (`autosre/agent/agent.py`,
 `autosre/agent/dynatrace.py`, `autosre/agent/remediation.py`,
 `deploy/deploy_cloud_run.sh`) and `.env.example`.
 
-### AutoSRE agent (Cloud Run + Vertex AI Agent Engine)
+### AutoSRE agent (Cloud Run; same agent also registerable on Vertex AI Agent Engine)
 | Env var | Purpose |
 |---|---|
 | `GOOGLE_GENAI_USE_VERTEXAI` | `TRUE` — route Gemini reasoning through Vertex AI (not AI-Studio key). |
 | `GOOGLE_CLOUD_PROJECT` | GCP project id for Vertex / Agent Engine. |
 | `GOOGLE_CLOUD_LOCATION` | Vertex region, e.g. `us-central1`. |
-| `AUTOSRE_MODEL` | `gemini-3-pro-preview` (read at import in `agent.py:26`). |
-| `DYNATRACE_MCP_MODE` | `mock` \| `stdio` \| `remote` (read in `dynatrace.py:38`). |
+| `AUTOSRE_MODEL` | Model id; default `gemini-3-flash-preview` (read at import in `agent.py`). `gemini-3-pro-preview` is an opt-in where pro is allowlisted. |
+| `DYNATRACE_MCP_MODE` | `mock` \| `stdio` \| `remote` (read in `dynatrace.py`). |
 | `DT_ENVIRONMENT` | Dynatrace tenant base URL (remote/stdio). **Secret-ish; from env/Secret Manager.** |
 | `DT_PLATFORM_TOKEN` | Dynatrace platform token (remote/stdio). **SECRET — Secret Manager only.** |
-| `TARGET_SERVICE_URL` | The deployed `checkout-api` URL (read in `remediation.py:19`); also used by the demo-control proxy and `mock` MCP server. |
-| `ALLOWED_ORIGIN` | UI origin allowed for CORS (§4). *(new; consumed by the HTTP layer B adds.)* |
-| `PORT` | Provided by Cloud Run; `adk api_server` binds it (`Dockerfile.agent:19`). |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` / `OTEL_EXPORTER_OTLP_HEADERS` | Dynatrace OTLP ingest config; when set, enables the approval write-back to the tenant (Log Monitoring API v2). **Token in headers is SECRET.** |
+| `TARGET_SERVICE_URL` | The deployed `checkout-api` URL (read in `remediation.py`); also used by the demo-control proxy and `mock` MCP server. |
+| `ALLOWED_ORIGIN` | UI origin allowed for CORS (§4). |
+| `PORT` | Provided by Cloud Run; `python -m autosre.server` (uvicorn) binds it (`deploy/Dockerfile.agent`). |
 
 > Auth to Vertex on Cloud Run uses the service's runtime service account
 > (Application Default Credentials), not a key file. No `GOOGLE_API_KEY` in prod.
@@ -160,11 +170,13 @@ Cloud Run. Names below match the existing code (`autosre/agent/agent.py`,
   `ALLOWED_ORIGIN` on the agent = the deployed UI origin, and the UI's
   `*_AGENT_BASE_URL` = the deployed agent origin. (Two-pass or capture-then-set, since
   each needs the other's URL.)
-- The agent container (`deploy/Dockerfile.agent`) already runs `adk api_server autosre`
-  on `$PORT`; the HTTP layer B adds (per `CONTRACT.md` §6) must be served by that same
-  process/port.
-- Vertex AI Agent Engine registration is the "Agent Platform" scoring hook: deploy/
-  register the ADK agent on Agent Engine and reference it in `SUBMISSION.md`/README.
+- The agent container (`deploy/Dockerfile.agent`) runs the self-hosted FastAPI app
+  `python -m autosre.server` on `$PORT` (ADK `InMemoryRunner`); it serves the SSE stream,
+  the approval round-trip, and the demo-control proxy per `CONTRACT.md` §6.
+- The "Agent Platform" scoring hook is genuine ADK on Gemini 3 via Vertex AI. To also
+  make the "deployed on Vertex AI Agent Engine" claim literally true, run
+  `python -m deploy.agent_engine_deploy` to register the ADK `root_agent` on Agent Engine
+  and paste the printed resource name into `SUBMISSION.md`/README.
 - The final public URL (the UI) goes in `SUBMISSION.md`; it must work from an incognito
   window on a cold load (Stage-1 requirement).
 - Required GCP APIs (already in the deploy-script preamble): `run.googleapis.com`,

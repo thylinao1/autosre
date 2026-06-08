@@ -1,5 +1,8 @@
 // API client — reads NEXT_PUBLIC_AGENT_BASE_URL; falls back to /api (mock mode)
-import type { FaultType, ServiceHealth } from "./types";
+import type { FaultType, ServiceHealth, RiskAssessment } from "./types";
+
+// Single source of truth for the public repo link (nav, hero, footer, etc.).
+export const REPO_URL = "https://github.com/thylinao1/autosre";
 
 function baseUrl(): string {
   const env = process.env.NEXT_PUBLIC_AGENT_BASE_URL;
@@ -71,11 +74,30 @@ export interface LedgerEntry {
   outcome: string;
   service_healthy?: boolean;
   incident_resolved?: boolean;
+  // Seeded placeholder so a cold redeploy is never empty.
+  example?: boolean;
+  // Resolved by policy without a human (graduated autonomy).
+  auto_approved?: boolean;
+  // Graduated-autonomy risk tier recorded with the decision.
+  risk?: RiskAssessment;
+}
+
+// Status of the most recent attempt to write the decision back to Dynatrace.
+// `ok` = the write actually landed; `verified` = a read-back DQL confirmed it is
+// queryable in the tenant. Distinct from `dynatrace_writeback` (creds present).
+export interface LastWriteback {
+  attempted: boolean;
+  ok: boolean | null;
+  status: number | null;
+  verified: boolean | null;
+  error: string | null;
+  ts: number | null;
 }
 
 export interface LedgerResponse {
   entries: LedgerEntry[];
   dynatrace_writeback: boolean;
+  last_writeback?: LastWriteback;
 }
 
 export async function getLedger(limit = 25): Promise<LedgerResponse> {

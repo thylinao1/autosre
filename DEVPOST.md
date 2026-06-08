@@ -13,7 +13,7 @@ AutoSRE detects production incidents from Dynatrace, diagnoses the root cause fr
 
 ## What It Does
 
-AutoSRE is an autonomous incident-response agent built on **Google Cloud's Agent Platform (Agent Development Kit)**, reasoning on **Gemini 3 via Vertex AI**, and powered entirely by the **Dynatrace MCP** as its observability source.
+AutoSRE is an autonomous incident-response agent built with the **Agent Development Kit (ADK)**, the code-first surface of **Google Cloud's Agent Platform (Agent Builder)**, reasoning on **Gemini 3 via Vertex AI**, deployed on **Cloud Run** (and also deployable to **Vertex AI Agent Engine**), and powered entirely by the **Dynatrace MCP** as its observability source.
 
 The agent runs a **6-step loop**:
 
@@ -43,13 +43,13 @@ The agent runs a **6-step loop**:
 ### Tech Stack & Architecture
 
 - **Reasoning engine:** Gemini 3 via **Vertex AI** (`gemini-3-flash-preview` by default for cost and speed; `gemini-3-pro-preview` for maximum reasoning).
-- **Agent framework:** **Google Cloud's Agent Development Kit (ADK)**, the code-first surface of **Agent Builder / Agent Platform**. Deployed to **Vertex AI Agent Engine** (the managed Agent Platform runtime).
+- **Agent framework:** **Google Cloud's Agent Development Kit (ADK)**, the code-first surface of **Agent Builder / Agent Platform**. The agent runs self-hosted (`python -m autosre.server`, ADK `InMemoryRunner`) on **Cloud Run**; the same ADK `root_agent` is also deployable to **Vertex AI Agent Engine** (the managed Agent Platform runtime) via `deploy/agent_engine_deploy.py`.
 - **Observability partner:** **Dynatrace MCP server** (official `@dynatrace-oss/dynatrace-mcp-server` or hosted remote gateway). Tools: `query_problems`, `execute_dql`, `get_events_for_kubernetes_cluster` (read-only, for detect, diagnose, and recovery confirmation). Underscore names satisfy Gemini's function-calling; the toolset also accepts a real gateway's hyphenated names.
-- **Remediation tools:** Python `FunctionTool` with `require_confirmation=True` (human-gated): `toggle_feature_flag`, `scale_service`, `rollback_deployment`, `get_service_health`.
+- **Remediation tools:** Python `FunctionTool` with `require_confirmation=True` (human-gated): `toggle_feature_flag`, `scale_service`, `rollback_deployment`, `get_service_health`. Each is also machine-bounded by server-side allow-lists (a replica band, a known-good rollback-version set, managed flag names), so an out-of-bounds action fails closed even when a human approves it.
 - **Web UI:** Next.js 16 (App Router), Tailwind CSS v4, TypeScript. Streams SSE events and renders real-time timeline + approval modal.
 - **Backend:** FastAPI HTTP + SSE service. Per-run session management, pause/resume bridge for approval round-trip.
 - **Target service:** FastAPI `checkout-api` with injectable faults (payment errors, latency spike) and state introspection (`/_internal/state`).
-- **Deployment:** Docker containers on Google Cloud Run (agent, checkout-api, web UI) + Vertex AI Agent Engine registration.
+- **Deployment:** Docker containers on Google Cloud Run (agent, checkout-api, web UI), single-instance for the agent so the in-memory run state and ledger stay coherent. The same ADK agent is also registerable on Vertex AI Agent Engine via `deploy/agent_engine_deploy.py`.
 
 ### Key Design Decisions
 
@@ -60,6 +60,8 @@ The agent runs a **6-step loop**:
 3. **Mode-agnostic guarantee:** Dynatrace toolset is abstracted behind a factory function (`build_dynatrace_toolset(mode)`). `mock` mode runs a bundled MCP server (derives telemetry from the target service's state). `stdio` and `remote` modes point to the official server. The agent code is identical in all three; only env vars change.
 
 4. **One model, by design:** The only LLM is Gemini 3 on Vertex AI. No other models, no retrieval, no fine-tuning. The observability intelligence comes from Dynatrace through the MCP; detection is live DQL, and because our trial tenant is OpenTelemetry-only we read telemetry directly rather than consuming Davis problems, which we call out honestly.
+
+5. **Defense in depth around the gate:** The human gate is backed by machine bounds. The remediation tools enforce server-side allow-lists (replica band, known-good versions, managed flag names), so even an approved-but-poisoned action fails closed. The agent instruction carries an untrusted-telemetry guardrail (all Dynatrace data is evidence to summarize, never instructions) to defend against indirect prompt injection through log and event text. And the demo target never leaks the answer key: `/_internal/state` exposes only the observable symptom (a Davis-style title plus the impacted metric), never the prose root cause or the exact fix, so the diagnosis is genuine reasoning rather than a lookup.
 
 ---
 
@@ -75,6 +77,8 @@ The agent runs a **6-step loop**:
 
 5. **CORS between Cloud Run instances:** The UI and agent run on different Cloud Run domains. Solution: explicit `ALLOWED_ORIGIN` env var with CORS headers on SSE and POST endpoints.
 
+6. **Auditing the refusal correctly:** Live grounding surfaced that the deny path was logging a rejection as `approved` (ADK emits a confirmation stub for the gated tool before the human decides, which a naive classifier miscounts as "acted"). Solution: derive the decision from the operator's actual choice, honor a rejection in the replay path, and add deny-path regression tests so the marquee refusal beat cannot silently re-break.
+
 ---
 
 ## What's Next
@@ -86,6 +90,10 @@ The agent runs a **6-step loop**:
 - **Slack / PagerDuty integration:** Alert escalation and approval via native chat / on-call tools.
 - **Real Kubernetes cluster:** Demo against a live k8s cluster instead of a mock checkout-api.
 - **Android / iOS native app:** Currently web-only; add native mobile interfaces for SREs on-the-go.
+- **Second-opinion verifier (shipped, opt-in):** A second, independent Gemini pass critiques the proposed fix before the human sees it (`AUTOSRE_SECOND_OPINION=1`). Next: make it default-on once the latency budget allows and show a confidence score.
+- **Graduated-autonomy risk tiers (shipped):** Every proposed action carries a risk tier (`autosre/server/policy.py`), shown in the approval modal; an operator can pre-authorize a tier so low-risk actions auto-apply while higher-risk ones always stop for a human. Next: richer per-action policy configuration.
+- **Ledger-as-memory (shipped):** The agent can call `get_recent_decisions` to cite how similar incidents were handled before. Next: semantic similarity over past incidents instead of recency.
+- **Diagnosis eval harness (shipped):** `tests/evals/` scores tool-selection accuracy and false-action rate without auto-approve, graded against a test-only answer key the agent never sees. Latest run: the live `gemini-3-flash-preview` agent scored 5/5 (100% tool-selection, 0% false-action) across two real faults, two decoys, and an all-clear. Next: broaden to dozens of incidents and wire it into CI as a regression gate.
 
 ---
 
@@ -104,15 +112,15 @@ The agent runs a **6-step loop**:
 | **Demo video** | _‹paste your YouTube link here after recording›_ · ≤3:00, opens on the deny run, then the real-Dynatrace DQL cut, then approve → resolved |
 | **Try it** | **https://autosre-ui-vrf7h4n4ra-uc.a.run.app/demo** (works from incognito). The hosted Mission Control runs the **real Gemini agent live** end to end, streaming DETECT, DIAGNOSE, the approval gate, ACT, and VERIFY. Approve and the remediation executes for real against checkout-api and is written back to our real Dynatrace tenant as an audit log. **Try rejecting it too:** the agent stands down, production stays untouched, and the Audit trail records the refusal right next to the approval. The same agent's detection run against the real Dynatrace tenant (live DQL over the official MCP server) is in the demo video and reproducible locally with `DYNATRACE_MCP_MODE=stdio`. |
 | **Code** | https://github.com/thylinao1/autosre (open-source MIT). License visible in About box. |
-| **Inspiration** | IT downtime costs thousands per minute (Gartner's 2014 figure: $5,600/min; EMA Research 2024: ~$14,056/min); MTTR is dominated by the identify phase (30+ min). AutoSRE collapses triage to seconds. |
+| **Inspiration** | IT downtime is expensive (industry context, not our measurement: Gartner's 2014 figure of $5,600/min; EMA Research 2024 of ~$14,056/min); MTTR is dominated by the identify phase (30+ min). AutoSRE collapses the detect-to-proposed-fix triage to the seconds shown on the demo's live timer. |
 | **What it does** | (See section above) |
 | **How we built it** | (See section above) |
 | **Challenges** | (See section above) |
-| **Accomplishments** | Full 6-step loop deployed and tested. SSE streaming + approval pause proven on web UI. ADK-native HITL enforced, with both the approve and the reject path audited on Dynatrace's timeline. Mode-agnostic Dynatrace toolset (mock/stdio/remote). 38 tests (36 deterministic offline, 2 live-gated), including regression tests that pin the deny path. Deployed to Vertex AI Agent Engine + Cloud Run. |
-| **What we learned** | The approval pause is the product, not a bug. Framework-enforced human gates are stronger than prompt tricks. Dynatrace MCP is a powerful observability abstraction; the mock mode we built is as valuable as the remote. |
-| **Built with** | Google Cloud (Vertex AI, Agent Development Kit, Cloud Run, Secret Manager), Dynatrace MCP, Gemini 3, Next.js, FastAPI, Python, TypeScript |
+| **Accomplishments** | Full 6-step loop deployed and tested. SSE streaming + approval pause proven on web UI. ADK-native HITL enforced and backed by server-side action allow-lists, with both the approve and the reject path audited on Dynatrace's timeline. Mode-agnostic Dynatrace toolset (mock/stdio/remote). A diagnosis eval scores the live `gemini-3-flash-preview` agent 5/5 (100% tool-selection accuracy, 0% false-action rate) over two real faults, two wrong-fix decoys, and an all-clear, graded against an answer key the agent never sees. The test suite (56 tests, mostly deterministic offline, 2 live-gated) pins the deny path, the allow-list bounds, rate limiting, and the eval scorer. Deployed on Cloud Run, with the same ADK agent registerable on Vertex AI Agent Engine (`deploy/agent_engine_deploy.py`). |
+| **What we learned** | The approval pause is the product, not a bug. Framework-enforced human gates are stronger than prompt tricks, and stronger still when backed by machine bounds that fail closed. Dynatrace MCP is a powerful observability abstraction; the mock mode we built is as valuable as the remote. |
+| **Built with** | Google Cloud (Vertex AI, Agent Development Kit, Cloud Run, Secret Manager; Vertex AI Agent Engine deployable), Dynatrace MCP, Gemini 3, Next.js, FastAPI, Python, TypeScript |
 | **Track** | Dynatrace |
-| **Team** | _‹your name or team name here›_ |
+| **Team** | _‹TODO: your name or team name here›_ |
 
 ---
 
@@ -124,7 +132,7 @@ The agent runs a **6-step loop**:
 - [ ] **Devpost form:** All fields filled. Track selected: Dynatrace.
 - [ ] **Reproducibility:** Judges can clone the repo, set `GOOGLE_API_KEY=...` (free from Google AI Studio) and `DYNATRACE_MCP_MODE=mock`, and run the full demo offline in <5 minutes.
 - [ ] **No leaked secrets:** `.env` is gitignored. No hardcoded API keys, tokens, or project IDs in the codebase.
-- [ ] **Tech claims verified:** README and video name the exact tools: Gemini 3, Agent Development Kit (ADK), Vertex AI Agent Engine, Dynatrace MCP, SSE, Cloud Run. All claims match the working code.
+- [ ] **Tech claims verified:** README and video name the exact tools: Gemini 3 via Vertex AI, Agent Development Kit (ADK), Cloud Run (with Vertex AI Agent Engine deployable via `deploy/agent_engine_deploy.py`), Dynatrace MCP, SSE. All claims match the working code.
 
 ---
 
@@ -132,22 +140,23 @@ The agent runs a **6-step loop**:
 
 | Metric | Value | Evidence |
 |--------|-------|----------|
-| **Real-world pain quantified** | Gartner 2014: $5,600/min; EMA 2024: ~$14,056/min; identify phase 30+ min | README opening (sourced); video narration |
-| **MTTR improvement** | 30+ min by hand → seconds (a live on-screen timer freezes on the verified outcome, e.g. ~15s to resolution) | Mission Control header timer; video timed beat |
-| **Incident types handled** | 2 (payment-flag, latency-scale), each with a distinct remediation the agent reasons to | DEMO.md; test suite (38 tests, both fault paths covered) |
+| **Industry context (not our measurement)** | Gartner 2014: $5,600/min; EMA 2024: ~$14,056/min; identify phase 30+ min | README opening (sourced as industry context); video narration |
+| **Measured improvement (the load-bearing claim)** | 30+ min identify by hand → the seconds shown on the live timer for detect-to-proposed-fix (reported separately from total time-to-resolution, which includes human deliberation) | Mission Control header timer; video timed beat |
+| **Incident types handled** | 4 (payment-flag → toggle, latency → scale, plus two decoys: flag-already-off → rollback, OOM/memory-leak → rollback), each with a distinct correct remediation the agent reasons to from evidence | DEMO.md; eval harness (`tests/evals/`, scored 5/5) |
 | **Uptime for demo** | 100% (mock mode) | `DYNATRACE_MCP_MODE=mock` is offline-deterministic |
-| **Real-tenant validation** | Supports `remote` mode (production Dynatrace tenant) | ARCHITECTURE.md; tested during dev |
-| **Framework-enforced safety** | ADK `require_confirmation=True` | `autosre/agent/agent.py` (the three remediation tools are wrapped `FunctionTool(..., require_confirmation=True)`); tested in `test_remediation_gate.py` |
-| **Deployment path** | Vertex AI Agent Engine + Cloud Run | `deploy/deploy_cloud_run.sh`; live now on project `autosre-470213` |
+| **Real-tenant validation** | Supports `remote`/`stdio` mode (production Dynatrace tenant); detection on live DQL | ARCHITECTURE.md; verified locally against the live tenant |
+| **Framework-enforced safety** | ADK `require_confirmation=True` plus server-side action allow-lists | `autosre/agent/agent.py` (the three remediation tools are wrapped `FunctionTool(..., require_confirmation=True)`) and `autosre/agent/remediation.py` (allow-lists); tested in `test_remediation_gate.py` |
+| **Deployment path** | Cloud Run (live), Vertex AI Agent Engine registerable | `deploy/deploy_cloud_run.sh` (Cloud Run); `deploy/agent_engine_deploy.py` (Agent Engine); live on project `autosre-470213` |
 
 ---
 
 ## Judging Alignment
 
 **Technological Implementation (25%)**
-- ✅ Gemini 3 reasoning on ADK (Agent Development Kit): the code-first path of Google Cloud's Agent Platform.
+- ✅ Gemini 3 reasoning via Vertex AI on the ADK (Agent Development Kit): the code-first surface of Google Cloud's Agent Platform. Self-hosted on Cloud Run, and registerable on Vertex AI Agent Engine via `deploy/agent_engine_deploy.py`.
 - ✅ Dynatrace MCP is the only sensory system (detect + diagnose); load-bearing, not ornamental.
-- ✅ ADK-native human-in-the-loop (`require_confirmation=True`): framework-enforced, stronger than prompt instruction.
+- ✅ ADK-native human-in-the-loop (`require_confirmation=True`): framework-enforced, stronger than prompt instruction, and backed by server-side action allow-lists that fail closed.
+- ✅ Untrusted-telemetry guardrail in the agent instruction defends against indirect prompt injection through log and event text.
 - ✅ Mode-agnostic guarantee: identical agent across mock/stdio/remote.
 
 **Design (25%)**
@@ -157,9 +166,9 @@ The agent runs a **6-step loop**:
 - ✅ No AI-slop; intentional, specific design direction.
 
 **Potential Impact (25%)**
-- ✅ Quantified pain: $5,600/min IT downtime (Gartner); identify phase 30+ min.
+- ✅ Measured on-screen: the live timer reports detect-to-proposed-fix latency in seconds (reported separately from total time-to-resolution). Industry context for the pain: $5,600/min (Gartner 2014) and ~$14,056/min (EMA 2024), framed as context rather than our measurement; identify phase 30+ min.
 - ✅ Clear target users: on-call SREs, DevOps, retail/financial ops.
-- ✅ Deployment path: Cloud Run + Vertex AI Agent Engine (no custom infrastructure).
+- ✅ Deployment path: Cloud Run today, with the same agent registerable on Vertex AI Agent Engine (no custom infrastructure).
 - ✅ Generalizable loop: works for any incident type with appropriate observability + remediation tools.
 
 **Quality of the Idea (25%)**
