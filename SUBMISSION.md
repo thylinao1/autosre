@@ -43,7 +43,7 @@
   is framework-enforced (ADK `require_confirmation`), not a prompt.
 
 ## Pre-submission verification
-- [x] `pytest` passes (35 deterministic offline + 2 live-gated = 37 tests).
+- [x] `pytest` passes (36 deterministic offline + 2 live-gated = 38 tests).
 - [ ] With a Gemini key set, `tests/test_agent_live.py` passes (full 6-step loop).
 - [ ] `python -m autosre.run_agent` (CLI) resolves both `payment_errors` and `latency_spike`.
 - [ ] `python -m autosre.server` (SSE backend) + `cd web && npm run dev` (UI) runs full loop.
