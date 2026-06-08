@@ -153,9 +153,17 @@ Follow this loop precisely:
 Be concise and operational. Show your reasoning as short status lines.
 """
 
+# mock + inprocess share the Davis-problem-shaped flow (query_problems / execute_dql);
+# only stdio/remote use the DQL-first real-tenant instruction.
 INSTRUCTION = (
-    SECURITY_PREAMBLE + "\n" + (INSTRUCTION_MOCK if MODE == "mock" else INSTRUCTION_REAL)
+    SECURITY_PREAMBLE + "\n"
+    + (INSTRUCTION_MOCK if MODE in ("mock", "inprocess") else INSTRUCTION_REAL)
 )
+
+# build_dynatrace_toolset returns an McpToolset (mock/stdio/remote) OR a list of
+# plain FunctionTools (inprocess); flatten so the agent's tool list stays flat.
+_dynatrace = build_dynatrace_toolset()
+_dynatrace_tools = _dynatrace if isinstance(_dynatrace, list) else [_dynatrace]
 
 root_agent = LlmAgent(
     model=MODEL,
@@ -164,7 +172,7 @@ root_agent = LlmAgent(
                 "incidents using Dynatrace observability, with human approval.",
     instruction=INSTRUCTION,
     tools=[
-        build_dynatrace_toolset(),
+        *_dynatrace_tools,
         get_service_health,
         get_recent_decisions,  # read-only: cite precedent from the audit ledger
         # Mutating actions: ADK pauses each for explicit human approval.
