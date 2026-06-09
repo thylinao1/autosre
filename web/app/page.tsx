@@ -6,8 +6,8 @@ import { ScrollProgress } from "@/components/landing/ScrollProgress";
 import { CountUp } from "@/components/landing/CountUp";
 import { REPO_URL } from "@/lib/api";
 
-/* ── Landing page — AutoSRE
-   Server Component — no event handlers here.
+/* ── Landing page - AutoSRE
+   Server Component - no event handlers here.
    All interactivity is delegated to Client Components (NavLinks, FlowDiagram).
    ──────────────────────────────────────────────────────── */
 
@@ -50,7 +50,7 @@ function SiteNav() {
         borderBottom: "1px solid var(--color-border-subtle)",
       }}
     >
-      {/* Wordmark — left */}
+      {/* Wordmark - left */}
       <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1 }}>
         <span
           aria-hidden="true"
@@ -78,7 +78,7 @@ function SiteNav() {
         </span>
       </div>
 
-      {/* Center nav links — Client Component (uses Link + CSS hover).
+      {/* Center nav links - Client Component (uses Link + CSS hover).
           Display is controlled by the `hidden md:flex` utilities (hidden under
           768px so the links can't collide with the wordmark/GitHub pill on
           mobile); an inline `display` here would override `.hidden` and force
@@ -94,7 +94,7 @@ function SiteNav() {
         <NavLinks />
       </div>
 
-      {/* GitHub pill — right */}
+      {/* GitHub pill - right */}
       <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
         <a
           href={REPO_URL}

@@ -19,7 +19,7 @@ runtime can observe and remediate it. AGENT_ENGINE_STAGING_BUCKET is optional
 package (incl. the bundled mock Dynatrace MCP server it spawns) is shipped via
 extra_packages, and DYNATRACE_MCP_MODE / AUTOSRE_MODEL ride along as env_vars.
 
-It prints the Agent Engine resource name — paste that into SUBMISSION.md as proof.
+It prints the Agent Engine resource name - paste that into SUBMISSION.md as proof.
 Idempotent-ish: pass AGENT_ENGINE_UPDATE=<resource_name> to update in place.
 
 Note: keep the requirements list in sync with requirements.txt. The exact
@@ -42,7 +42,7 @@ The create currently fails with a 500 INTERNAL at the build LRO regardless of MC
 mode, because of a Google-side region/model bind on this project:
   - gemini-3-flash-preview is served ONLY from `global` (404 at us-central1), and
   - Agent Engine's build backend does NOT run at `global` (the create is accepted,
-    then 500s; no Cloud Build is created there) — it builds in regions.
+    then 500s; no Cloud Build is created there) - it builds in regions.
 So the agent cannot be built where Gemini 3 serves, and Gemini 3 is not served
 where the agent can be built. This is not a code problem: with the inprocess mode
 the agent is fully self-contained and deployable. It will deploy once gemini-3 is
@@ -111,7 +111,7 @@ def main() -> int:
     # Runtime env: Vertex routing + which Dynatrace surface + the target to remediate.
     # NOTE: GOOGLE_CLOUD_PROJECT / GOOGLE_CLOUD_LOCATION are RESERVED by Agent Engine
     # (it injects them from the resource), so they must not be passed here. The model
-    # therefore reasons at the resource's own location — create the resource where
+    # therefore reasons at the resource's own location - create the resource where
     # the model serves (global on this project).
     # `inprocess` is the Agent-Engine-viable default: the Dynatrace tools run as
     # plain in-process FunctionTools (no stdio subprocess, no gateway), so the

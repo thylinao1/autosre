@@ -21,8 +21,8 @@ Open two terminals (or split panes):
 
 ## Script
 
-**[0:00–0:25] The setup.**
-"This is AutoSRE — an agent that resolves production incidents using Dynatrace,
+**[0:00-0:25] The setup.**
+"This is AutoSRE - an agent that resolves production incidents using Dynatrace,
 but never acts without my approval. Here's a checkout service in production."
 ```bash
 # Terminal A
@@ -30,7 +30,7 @@ python -m autosre.target_service.main
 ```
 Show `GET /healthz` returns `ok`.
 
-**[0:25–0:45] Trigger an incident.**
+**[0:25-0:45] Trigger an incident.**
 "A bad deploy just went out. Payment errors are spiking."
 ```bash
 # Terminal A (new pane)
@@ -38,26 +38,26 @@ curl -X POST localhost:8081/_admin/inject \
      -H 'content-type: application/json' -d '{"fault":"payment_errors"}'
 ```
 
-**[0:45–2:10] The agent works the incident.**
+**[0:45-2:10] The agent works the incident.**
 ```bash
 # Terminal B
 python -m autosre.run_agent
 ```
 Narrate as the tool lines stream:
-- "It pulls open problems from **Dynatrace** — 22% checkout failure rate."
+- "It pulls open problems from **Dynatrace** - 22% checkout failure rate."
 - "It runs **DQL** to inspect the failure metric and the deployment history, and
   finds deploy v2.3.1 flipped on the `new_payment_gateway` flag."
-- "It proposes a single fix — disable that flag — and **stops**."
+- "It proposes a single fix - disable that flag - and **stops**."
 
-**[2:10–2:35] The human in the loop.** ← the money shot
+**[2:10-2:35] The human in the loop.** ← the money shot
 The runner prints `HUMAN APPROVAL REQUIRED` with the exact action.
 "Nothing has touched production yet. The action is blocked in code until I
 approve. I'll approve it."  → type `y`.
 
-**[2:35–3:00] Resolution.**
+**[2:35-3:00] Resolution.**
 - "It executes the approved remediation and re-checks health."
 - Show the agent's final report and, in Terminal A, `GET /healthz` → `ok`.
-"Detected, diagnosed, and fixed — autonomously, but on my authority."
+"Detected, diagnosed, and fixed - autonomously, but on my authority."
 
 ## Backup / talking points
 - Run the **latency** incident instead: inject `latency_spike`; the agent diagnoses

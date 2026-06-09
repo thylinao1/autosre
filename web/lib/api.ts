@@ -1,4 +1,4 @@
-// API client — reads NEXT_PUBLIC_AGENT_BASE_URL; falls back to /api (mock mode)
+// API client - reads NEXT_PUBLIC_AGENT_BASE_URL; falls back to /api (mock mode)
 import type { FaultType, ServiceHealth, RiskAssessment } from "./types";
 
 // Single source of truth for the public repo link (nav, hero, footer, etc.).
@@ -7,7 +7,7 @@ export const REPO_URL = "https://github.com/thylinao1/autosre";
 function baseUrl(): string {
   const env = process.env.NEXT_PUBLIC_AGENT_BASE_URL;
   if (env && env.length > 0) return env.replace(/\/$/, "");
-  return ""; // relative — hits the Next.js route handlers (mock mode)
+  return ""; // relative - hits the Next.js route handlers (mock mode)
 }
 
 export async function startRun(inject: FaultType | null): Promise<{ run_id: string; status: string }> {

@@ -159,7 +159,7 @@ async def test_graduated_autoapprove_needs_no_human(target_service, monkeypatch)
     async def consume():
         nonlocal terminal
         async for frame in run.stream():
-            # Deliberately never call submit_approval — policy must auto-approve.
+            # Deliberately never call submit_approval - policy must auto-approve.
             if frame["type"] in ("final", "error"):
                 terminal = frame
                 return
@@ -214,7 +214,7 @@ async def test_starting_a_run_supersedes_the_previous_active_run(target_service)
         await asyncio.sleep(0.02)
     assert reg.has_active_run() is True
 
-    # A new run stands the old one down — only one Gemini loop is ever live.
+    # A new run stands the old one down - only one Gemini loop is ever live.
     second = await reg.create(prompt=None, runner_factory=_PausingRunner)
     for _ in range(50):
         if first.is_terminal:

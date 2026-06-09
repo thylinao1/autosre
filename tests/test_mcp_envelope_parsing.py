@@ -2,7 +2,7 @@
 
 A live run revealed ADK delivers MCP tool output as a CallToolResult envelope
 (`{"content": [{"type": "text", "text": "<json>"}], "structuredContent":
-{"result": "<json>"}}`) — not a bare JSON string. If the parser fails to unwrap
+{"result": "<json>"}}`) - not a bare JSON string. If the parser fails to unwrap
 it, the UI's problem card (`response.problems[0]`) and DQL panel
 (`response.records`) render empty in the live demo. These tests pin the real
 wire shapes captured from the running mock Dynatrace MCP server over ADK.
@@ -44,7 +44,7 @@ def test_unwraps_structured_content_result():
     parsed = parse_tool_response(_mcp_envelope(_PROBLEMS_JSON))
     assert parsed["total"] == 1
     assert parsed["problems"][0]["impacted_metric"] == "failure_rate"
-    # The UI's problem card reads response.problems[0] — it must be present.
+    # The UI's problem card reads response.problems[0] - it must be present.
     assert parsed["problems"][0]["observed_value"] == 22.0
 
 

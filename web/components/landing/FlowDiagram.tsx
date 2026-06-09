@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-/* AutoSRE — Agent Flow Diagram
+/* AutoSRE - Agent Flow Diagram
    Dynatrace -> DETECT -> DIAGNOSE -> APPROVE (human gate) -> ACT -> VERIFY.
    Bigger canvas, a looping execution sweep that lights each phase in order, a
    data pulse that travels the pipeline, and hover-to-focus on every node.
@@ -155,7 +155,7 @@ export function FlowDiagram() {
               {/* base rail */}
               <path d={d} fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="1.5"
                 strokeDasharray={e.dashed ? "6 5" : undefined} />
-              {/* charged overlay — draws in when the sweep reaches it */}
+              {/* charged overlay - draws in when the sweep reaches it */}
               <path
                 d={d}
                 fill="none"
@@ -188,7 +188,7 @@ export function FlowDiagram() {
           );
         })}
 
-        {/* Traveling data pulse — continuous flow along the pipeline */}
+        {/* Traveling data pulse - continuous flow along the pipeline */}
         {!reduced && (
           <circle r="4.5" fill="#cfeffd" opacity="0">
             <animateMotion dur="3.8s" repeatCount="indefinite" path={pulsePath} keyPoints="0;1" keyTimes="0;1" calcMode="linear" />
@@ -265,7 +265,7 @@ export function FlowDiagram() {
                 {node.sublabel}
               </text>
 
-              {/* Gate badge — sits below the circle so it never collides with it */}
+              {/* Gate badge - sits below the circle so it never collides with it */}
               {node.isGate && (
                 <>
                   <rect x={node.x - 32} y={node.y + R + 12} width={64} height={19} rx={6}

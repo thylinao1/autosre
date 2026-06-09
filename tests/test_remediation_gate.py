@@ -72,7 +72,7 @@ def test_get_service_health_does_not_leak_the_answer_key(target_service):
 
 def test_scale_service_rejects_out_of_band_replicas(target_service):
     httpx.post(f"{target_service}/_admin/inject", json={"fault": "latency_spike"})
-    res = R.scale_service(0)  # below the floor — a poisoned "scale to nothing"
+    res = R.scale_service(0)  # below the floor - a poisoned "scale to nothing"
     assert res.get("blocked") is True
     assert res["resolved_incident"] is False
     # And the fault is untouched: the bound fired before any mutation.
@@ -102,7 +102,7 @@ def test_toggle_rejects_unknown_flag_and_coerces_string_bool(target_service):
 def test_dependency_rollback_decoy(target_service):
     """Failure-rate spike with the flag already OFF: toggling is a no-op; rollback fixes it."""
     httpx.post(f"{target_service}/_admin/inject", json={"fault": "dependency_rollback"})
-    # Reflex: disable the flag (already off) — must NOT resolve.
+    # Reflex: disable the flag (already off) - must NOT resolve.
     toggled = R.toggle_feature_flag("new_payment_gateway", False)
     assert toggled["resolved_incident"] is False
     # Correct: roll back the bad deploy.
@@ -114,7 +114,7 @@ def test_dependency_rollback_decoy(target_service):
 def test_memory_leak_decoy(target_service):
     """High p99 but CPU normal + OOMKilled: scaling is a no-op; rollback fixes it."""
     httpx.post(f"{target_service}/_admin/inject", json={"fault": "memory_leak"})
-    scaled = R.scale_service(10)  # reflex: scale — must NOT resolve a leak
+    scaled = R.scale_service(10)  # reflex: scale - must NOT resolve a leak
     assert scaled["resolved_incident"] is False
     rolled = R.rollback_deployment("2.3.0")
     assert rolled["resolved_incident"] is True

@@ -1,12 +1,12 @@
 """Event adapter: turn loop observations into CONTRACT.md §2 SSE frames.
 
 Pure, side-effect-free helpers:
-  * `parse_tool_response` — Dynatrace tools return JSON *strings*; this parses
+  * `parse_tool_response` - Dynatrace tools return JSON *strings*; this parses
     them into structured `response` objects (problems / records / state) so the
     UI's problem card (`response.problems[0]`) and DQL panel (`response.records`)
     get real data. Non-JSON falls back to `{"text": "<raw>"}`.
-  * `summarize_tool_result` — a one-line `summary` for the timeline.
-  * `PhaseTracker` — classifies the loop into detect/diagnose/act/verify and
+  * `summarize_tool_result` - a one-line `summary` for the timeline.
+  * `PhaseTracker` - classifies the loop into detect/diagnose/act/verify and
     emits at most one `step` per phase transition (CONTRACT §2.1).
   * frame builders for each of the nine event types.
 
@@ -40,11 +40,11 @@ _REMEDIATION_TOOLS = {"scale_service", "rollback_deployment", "toggle_feature_fl
 _PHASE_STATUS = {
     "detect": "Pulling open problems from Dynatrace…",
     "diagnose": "Querying DQL evidence to pin the root cause…",
-    "act": "Proposing a remediation — awaiting human approval…",
+    "act": "Proposing a remediation - awaiting human approval…",
     "verify": "Re-checking service health to confirm recovery…",
 }
 
-# Phase ordering — we only ever advance forward, never regress.
+# Phase ordering - we only ever advance forward, never regress.
 _PHASE_ORDER = {"detect": 0, "diagnose": 1, "act": 2, "verify": 3}
 
 
@@ -53,7 +53,7 @@ def _unwrap_mcp_envelope(d: dict[str, Any]) -> Any:
 
     The real ADK MCP transport wraps a tool's return as
     ``{"content": [{"type": "text", "text": "<json>"}], "structuredContent":
-    {"result": "<json>"}, "isError": false}`` — NOT a bare ``{"result": "<str>"}``.
+    {"result": "<json>"}, "isError": false}`` - NOT a bare ``{"result": "<str>"}``.
     Prefer ``structuredContent.result``; fall back to concatenated text parts.
     Returns the inner string (to be JSON-parsed), or ``None`` if not an envelope.
     """
@@ -118,7 +118,7 @@ def summarize_tool_result(name: str, response: dict[str, Any]) -> str:
     if "problems" in response:
         problems = response.get("problems") or []
         if not problems:
-            return "No open problems — service is clear."
+            return "No open problems - service is clear."
         p = problems[0]
         n = len(problems)
         return (
@@ -140,7 +140,7 @@ def summarize_tool_result(name: str, response: dict[str, Any]) -> str:
         return f"{len(response.get('vulnerabilities') or [])} vulnerability(ies)."
     if "resolved_incident" in response or "service_healthy" in response:
         healthy = response.get("service_healthy")
-        return f"Action applied — service {'healthy' if healthy else 'still degraded'}."
+        return f"Action applied - service {'healthy' if healthy else 'still degraded'}."
     if "healthy" in response:
         return f"Service health: {'healthy' if response.get('healthy') else 'degraded'}."
     return f"{name} returned."
@@ -176,7 +176,7 @@ class PhaseTracker:
         if phase == "detect" and self._current in ("act", "verify"):
             phase = "verify"
         # get_service_health read during DIAGNOSE (before any action) is diagnostic
-        # evidence — live agents call it to read deploy version / flags — not
+        # evidence - live agents call it to read deploy version / flags - not
         # recovery confirmation. Keep the phase at diagnose so the approval still
         # renders under ACT, not a premature VERIFY. It only means verify once an
         # action has happened (current is act/verify).

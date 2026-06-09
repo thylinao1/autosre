@@ -3,7 +3,7 @@
 Each scenario injects a fault (or none) and declares whether the agent SHOULD
 propose an action. Whether the proposed action is *correct* is graded by scorer.py
 against the target's answer key (correct_fix / alt_fix), so this list does not
-hardcode the right tool — it only says "an action is expected" vs "all clear".
+hardcode the right tool - it only says "an action is expected" vs "all clear".
 
 The decoys are the point: dependency_rollback shares the symptom of
 payment_errors (failure-rate spike) but needs a rollback not a flag toggle;

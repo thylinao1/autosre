@@ -1,4 +1,4 @@
-"""`python -m autosre.server` — boot the Mission-Control SSE backend.
+"""`python -m autosre.server` - boot the Mission-Control SSE backend.
 
 Binds the Cloud Run-provided PORT (default 8080). The app loads `.env` and the
 agent at import time, so credentials/mode are already populated.

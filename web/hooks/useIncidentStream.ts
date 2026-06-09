@@ -140,7 +140,7 @@ function processEvent(prev: IncidentState, event: SSEEvent): IncidentState {
       if (GATED_TOOLS.has(tr.name) && awaitingApproval) {
         return {
           ...nextState,
-          timeline: addEntry("Proposed, awaiting approval — not yet executed", undefined),
+          timeline: addEntry("Proposed, awaiting approval - not yet executed", undefined),
         };
       }
 
@@ -208,9 +208,9 @@ function processEvent(prev: IncidentState, event: SSEEvent): IncidentState {
         f.outcome === "resolved"
           ? "Service restored, incident resolved"
           : f.outcome === "declined"
-          ? "Agent stood down — nothing changed"
+          ? "Agent stood down - nothing changed"
           : f.outcome === "all_clear"
-          ? "All clear — no action needed"
+          ? "All clear - no action needed"
           : "Run complete";
       return {
         ...prev,
@@ -310,7 +310,7 @@ export function useIncidentStream(): UseIncidentStreamReturn {
             const parsed = JSON.parse(evt.data as string) as SSEEvent;
             updateState((prev) => processEvent(prev, parsed));
           } catch {
-            // malformed frame — ignore
+            // malformed frame - ignore
           }
         });
       }
@@ -348,7 +348,7 @@ export function useIncidentStream(): UseIncidentStreamReturn {
       if (!approved) {
         // Reject is deterministic: the agent stands down and nothing changes, so
         // there is no async outcome to poll for (unlike approve, which confirms real
-        // recovery). But the decision must be DURABLE — the backend records the
+        // recovery). But the decision must be DURABLE - the backend records the
         // rejection in the audit ledger only when this POST lands, so we await it
         // (it returns fast) and surface a failure rather than claim a "declined" the
         // ledger never recorded. Then a short beat lets the "Rejected, standing down"
@@ -422,7 +422,7 @@ export function useIncidentStream(): UseIncidentStreamReturn {
             return;
           }
         } catch {
-          // transient health-check error — keep polling
+          // transient health-check error - keep polling
         }
       }
     },

@@ -1,4 +1,4 @@
-"""checkout-api — the demo target service AutoSRE observes and remediates.
+"""checkout-api - the demo target service AutoSRE observes and remediates.
 
 It exposes a realistic retail checkout endpoint plus an admin surface to:
   * inject a failure mode (the "incident")
@@ -57,7 +57,7 @@ FAULTS = {
     # a 2-item menu: the agent must read the evidence, not pattern-match the metric.
     "dependency_rollback": {
         # Same SYMPTOM as payment_errors (failure-rate spike) but the flag is
-        # already OFF, so the reflex "disable the flag" does nothing — the fix is
+        # already OFF, so the reflex "disable the flag" does nothing - the fix is
         # to roll back the bad deploy. Decoy against toggle_feature_flag.
         "summary": "Checkout failure rate spiked to 18% after deploy v2.3.1 (gateway client regression)",
         "metric": "failure_rate",
@@ -71,7 +71,7 @@ FAULTS = {
     },
     "memory_leak": {
         # Same SYMPTOM as latency_spike (high p99) but CPU is NORMAL and pods are
-        # OOMKilled — adding replicas does not help (each new pod leaks too); the
+        # OOMKilled - adding replicas does not help (each new pod leaks too); the
         # fix is to roll back. Decoy against scale_service.
         "summary": "Checkout p99 latency climbed to 3800ms; pods OOMKilled and restarting",
         "metric": "p99_latency_ms",
@@ -155,7 +155,7 @@ def checkout(req: CheckoutRequest):
 # the mock MCP derives the problem card from it, so it MUST NOT leak the answer
 # key: root_cause (the prose explanation), correct_fix / alt_fix (the exact
 # remediation), or precondition. A real Davis problem surfaces a symptom (a title
-# + the impacted metric), never the fix — the agent has to reason its way there.
+# + the impacted metric), never the fix - the agent has to reason its way there.
 _OBSERVABLE_FAULT_FIELDS = ("summary", "metric", "bad_value")
 
 

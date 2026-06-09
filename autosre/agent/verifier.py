@@ -1,4 +1,4 @@
-"""Second-opinion verifier — a second, independent Gemini pass that critiques the
+"""Second-opinion verifier - a second, independent Gemini pass that critiques the
 proposed remediation BEFORE the human sees it.
 
 This adds a cheap adversarial check between the planner and the operator: a fresh

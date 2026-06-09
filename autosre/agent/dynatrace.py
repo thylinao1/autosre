@@ -31,7 +31,7 @@ from mcp import StdioServerParameters
 # Read-only Dynatrace tools the agent is allowed to use. The filter is an explicit
 # allow-list so a misconfigured tenant can never expose write tools (send_email,
 # send_slack_message, create_workflow_*, send_event, reset_grail_budget, ...) to
-# the agent — only observability reads pass through.
+# the agent - only observability reads pass through.
 #
 # Mock names mirror a Davis-problem workflow. Real names are the actual surface of
 # @dynatrace-oss/dynatrace-mcp-server v1.8.6 (verified by listing tools over MCP):

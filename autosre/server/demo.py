@@ -1,4 +1,4 @@
-"""DEMO_MODE — a deterministic, model-free incident replay.
+"""DEMO_MODE - a deterministic, model-free incident replay.
 
 When ``AUTOSRE_DEMO_MODE`` is set, an incident run is driven by ``DemoRunner``
 instead of the live Gemini/ADK runner. It replays the exact
@@ -60,7 +60,7 @@ def _operator_confirmed(message) -> bool:
 
     Turn 2 is resumed with `confirmation_response(id, approved)` (see server/loop.py),
     a FunctionResponse named `adk_request_confirmation` carrying {"confirmed": bool}.
-    Default to False — the replay must never apply a remediation it cannot confirm a
+    Default to False - the replay must never apply a remediation it cannot confirm a
     human approved, exactly like the live gate.
     """
     for part in getattr(message, "parts", None) or []:
@@ -98,7 +98,7 @@ class _DemoSessionService:
 
 
 class DemoRunner:
-    """Replays the incident loop deterministically — no model, real remediation.
+    """Replays the incident loop deterministically - no model, real remediation.
 
     Duck-types the slice of ``InMemoryRunner`` the run driver uses:
     ``session_service.create_session`` and ``run_async``. ``run_async`` is called
@@ -127,7 +127,7 @@ class DemoRunner:
             async for ev in self._detect_diagnose_act():
                 yield ev
             return
-        # Turn 2: resumed after the human decision. Honor a rejection — the gate is
+        # Turn 2: resumed after the human decision. Honor a rejection - the gate is
         # real in the replay too: stand down and apply nothing.
         if not _operator_confirmed(new_message):
             async for ev in self._stand_down():
@@ -141,7 +141,7 @@ class DemoRunner:
         action = "scale checkout-api" if self._fault == "latency_spike" else (
             "disable the 'new_payment_gateway' feature flag")
         yield _ev([types.Part(text=(
-            f"Operator rejected the proposal to {action}. Standing down — no change was "
+            f"Operator rejected the proposal to {action}. Standing down - no change was "
             "made to checkout-api, and the incident remains open for manual handling. "
             "The framework-enforced gate held: the agent cannot act without approval."))])
 
@@ -207,7 +207,7 @@ class DemoRunner:
             res = self._apply("/_admin/toggle_feature_flag", {"name": "new_payment_gateway", "enabled": False})
             yield _ev([_fr("toggle_feature_flag", res)])
 
-        # VERIFY: re-query Dynatrace — a successful fix clears the open problem.
+        # VERIFY: re-query Dynatrace - a successful fix clears the open problem.
         st = self._state()
         yield _ev([_fc("query_problems", {})])
         problems = [] if st.get("injected_fault") is None else [_problem_from_state(st)]

@@ -1,5 +1,5 @@
 // Contract-compliant types for AutoSRE SSE events
-// Mirrors CONTRACT.md §2 exactly — do NOT redefine these shapes.
+// Mirrors CONTRACT.md §2 exactly - do NOT redefine these shapes.
 
 export type Phase = "detect" | "diagnose" | "act" | "verify";
 export type Severity = "AVAILABILITY" | "PERFORMANCE" | "ERROR" | "RESOURCE" | "CUSTOM_ALERT";

@@ -160,7 +160,7 @@ Everyone in this track will demo *approve*. Almost no one demos *reject*. Spend 
 **Narration:**
 "First, watch what happens if I say no. I reject the fix. The agent stands down. It does not retry, it does not work around me, and production is untouched. The gate is enforced in the code, so the model cannot route around a human. Now I will approve it, and it recovers."
 
-**Criterion note — Idea + Tech:** the reject path is the proof that "autonomous, but accountable" is a real guarantee and not a slogan. It is the single most convincing demonstration that the human authority is genuine, and it is the beat the other entries will not have.
+**Criterion note - Idea + Tech:** the reject path is the proof that "autonomous, but accountable" is a real guarantee and not a slogan. It is the single most convincing demonstration that the human authority is genuine, and it is the beat the other entries will not have.
 
 ---
 
@@ -240,7 +240,7 @@ tenant over the official MCP server, with no mock. Verified end to end this sess
 - The real server is DQL-first: the trial tenant has no Davis problem, so the agent detects
   on `timeseries avg(checkout.failure_rate)`, not on a precomputed problem. The latency
   scenario queries `checkout.cpu_utilization` (a real OTel custom metric the service exports),
-  never a `builtin:kubernetes.*` metric — this tenant has no OneAgent, so builtins return
+  never a `builtin:kubernetes.*` metric - this tenant has no OneAgent, so builtins return
   nothing. The instruction pins the real metric keys so the agent cannot invent one.
 
 **Steps:**

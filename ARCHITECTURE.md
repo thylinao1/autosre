@@ -1,4 +1,4 @@
-# ARCHITECTURE.md — AutoSRE deploy topology
+# ARCHITECTURE.md - AutoSRE deploy topology
 
 **Status: LOCKED (2026-05-28).** Canonical deploy topology for the live hosted URL.
 Owned for implementation by Workstream C (`deploy/`). Consumed by all workstreams for
@@ -31,7 +31,7 @@ MCP** as its only sensory system (detect + diagnose) and a human-gated set of re
 tools to act on a demo `checkout-api` service. A web "Mission Control" UI streams the
 whole loop live.
 
-> Wording note (scoring point — use verbatim in README/video): *"AutoSRE is built with
+> Wording note (scoring point - use verbatim in README/video): *"AutoSRE is built with
 > the Agent Development Kit, the code-first surface of Google Cloud's Agent Platform
 > (Agent Builder), reasoning on Gemini 3 via Vertex AI, deployed on Cloud Run, and also
 > deployable to Vertex AI Agent Engine."* ADK is the code-first surface of Agent Builder;
@@ -47,7 +47,7 @@ whole loop live.
 |---|---|---|---|---|
 | **AutoSRE agent** | ADK `LlmAgent` (Gemini 3 via Vertex), served over HTTP by the self-hosted FastAPI app `python -m autosre.server` (ADK `InMemoryRunner`). Emits the SSE stream + approval/demo endpoints per `CONTRACT.md`. The same ADK `root_agent` is also deployable to **Vertex AI Agent Engine** via `deploy/agent_engine_deploy.py`. | **Cloud Run** (hosts the live demo); **Vertex AI Agent Engine** is the managed-runtime option | Yes (CORS-restricted to UI origin) | `autosre/`, `deploy/Dockerfile.agent`, `deploy/agent_engine_deploy.py` |
 | **checkout-api** | Demo target service the agent observes and remediates; exposes `/checkout`, `/healthz`, `/_internal/state`, `/_admin/*`. | **Cloud Run** | Internal/agent-only (the agent and demo-control proxy reach it server-side) | `autosre/target_service/`, `deploy/Dockerfile.target` |
-| **Mission-Control UI** | The web war-room app that streams the agent loop and renders the APPROVE/REJECT moment. | **Cloud Run** (containerized Next.js/Vite) **or Firebase Hosting** | Yes — **this is the public submission URL** | `web/` |
+| **Mission-Control UI** | The web war-room app that streams the agent loop and renders the APPROVE/REJECT moment. | **Cloud Run** (containerized Next.js/Vite) **or Firebase Hosting** | Yes - **this is the public submission URL** | `web/` |
 | **Dynatrace MCP** | Observability source (Davis problems, DQL). `remote` = tenant gateway; `mock`/`stdio` = local. The agent's senses. | External (Dynatrace tenant) or in-process mock | n/a | partner / `autosre/mock_dynatrace/` |
 
 The **single public URL** judges click is the **Mission-Control UI**. It talks to the
@@ -71,7 +71,7 @@ flowchart LR
     VERTEX["Vertex AI<br/>Gemini 3 (gemini-3-flash-preview)"]
   end
 
-  subgraph dt["Dynatrace (partner MCP — the agent's senses)"]
+  subgraph dt["Dynatrace (partner MCP - the agent's senses)"]
     MCP["Dynatrace MCP gateway<br/>query-problems · execute-dql ·<br/>get-events-for-kubernetes-cluster (read-only)"]
   end
 
@@ -120,7 +120,7 @@ The agent reads the allowed UI origin from `ALLOWED_ORIGIN` (see §5).
 
 ---
 
-## 5. Environment variables per service (names only — never commit values)
+## 5. Environment variables per service (names only - never commit values)
 
 `.env` is gitignored; secrets come from the environment / Google Secret Manager on
 Cloud Run. Names below match the existing code (`autosre/agent/agent.py`,
@@ -130,13 +130,13 @@ Cloud Run. Names below match the existing code (`autosre/agent/agent.py`,
 ### AutoSRE agent (Cloud Run; same agent also registerable on Vertex AI Agent Engine)
 | Env var | Purpose |
 |---|---|
-| `GOOGLE_GENAI_USE_VERTEXAI` | `TRUE` — route Gemini reasoning through Vertex AI (not AI-Studio key). |
+| `GOOGLE_GENAI_USE_VERTEXAI` | `TRUE` - route Gemini reasoning through Vertex AI (not AI-Studio key). |
 | `GOOGLE_CLOUD_PROJECT` | GCP project id for Vertex / Agent Engine. |
 | `GOOGLE_CLOUD_LOCATION` | Vertex region, e.g. `us-central1`. |
 | `AUTOSRE_MODEL` | Model id; default `gemini-3-flash-preview` (read at import in `agent.py`). `gemini-3-pro-preview` is an opt-in where pro is allowlisted. |
 | `DYNATRACE_MCP_MODE` | `mock` \| `stdio` \| `remote` (read in `dynatrace.py`). |
 | `DT_ENVIRONMENT` | Dynatrace tenant base URL (remote/stdio). **Secret-ish; from env/Secret Manager.** |
-| `DT_PLATFORM_TOKEN` | Dynatrace platform token (remote/stdio). **SECRET — Secret Manager only.** |
+| `DT_PLATFORM_TOKEN` | Dynatrace platform token (remote/stdio). **SECRET - Secret Manager only.** |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` / `OTEL_EXPORTER_OTLP_HEADERS` | Dynatrace OTLP ingest config; when set, enables the approval write-back to the tenant (Log Monitoring API v2). **Token in headers is SECRET.** |
 | `TARGET_SERVICE_URL` | The deployed `checkout-api` URL (read in `remediation.py`); also used by the demo-control proxy and `mock` MCP server. |
 | `ALLOWED_ORIGIN` | UI origin allowed for CORS (§4). |
@@ -190,4 +190,4 @@ The topology is identical regardless of `DYNATRACE_MCP_MODE`. `remote` points th
 at the tenant MCP gateway; `mock` runs the bundled MCP server in-process (it derives
 telemetry from `checkout-api`'s `/_internal/state`). The UI, the contract, and every
 other service are unchanged. For the demo, detect/diagnose may run `remote` (credibility)
-while act/verify runs `mock` (reliability) — purely an env choice on the agent service.
+while act/verify runs `mock` (reliability) - purely an env choice on the agent service.

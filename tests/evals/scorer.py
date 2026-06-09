@@ -1,7 +1,7 @@
 """Grading logic for the diagnosis eval.
 
 A proposed remediation is graded against the target's answer key (the full fault
-detail with correct_fix / alt_fix, read from /_internal/answer_key — a route the
+detail with correct_fix / alt_fix, read from /_internal/answer_key - a route the
 agent can never see). `action_resolves` mirrors the target's own _resolves
 semantics, so "correct" means "this action would actually fix the incident".
 """

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-# deploy/deploy_cloud_run.sh — AutoSRE one-command Cloud Run deploy
+# deploy/deploy_cloud_run.sh - AutoSRE one-command Cloud Run deploy
 # ============================================================================
 #
 # WHAT THIS SCRIPT DOES (in order):
@@ -9,7 +9,7 @@
 #                      ALLOWED_ORIGIN="*" as permissive placeholder
 #                      → capture AGENT_URL
 #   3. Build UI image  via Cloud Build (bakes NEXT_PUBLIC_AGENT_BASE_URL at
-#                      build time — required for Next.js NEXT_PUBLIC_ vars)
+#                      build time - required for Next.js NEXT_PUBLIC_ vars)
 #      Deploy          autosre-ui to Cloud Run                → capture UI_URL
 #   4. Tighten CORS:   update autosre ALLOWED_ORIGIN → UI_URL  (resolves the
 #                      circular dep: agent needs UI origin, UI needs agent URL)
@@ -28,7 +28,7 @@
 #     cloudbuild.googleapis.com \
 #     secretmanager.googleapis.com
 #
-# REQUIRED ENV VARS (no defaults — must be set before running):
+# REQUIRED ENV VARS (no defaults - must be set before running):
 #   PROJECT_ID          GCP project id
 #   REGION              Cloud Run / Vertex region, e.g. us-central1
 #
@@ -53,13 +53,13 @@ set -euo pipefail
 : "${REGION:=us-central1}"
 : "${DYNATRACE_MCP_MODE:=mock}"
 # Reasoning model. gemini-3-flash-preview is the Gemini 3 model verified available
-# on this project's Vertex (served from the `global` location — see VERTEX_LOCATION).
+# on this project's Vertex (served from the `global` location - see VERTEX_LOCATION).
 # gemini-3-pro-preview was NOT available on Vertex for this project at deploy time;
 # override AUTOSRE_MODEL once pro is allowlisted. On Vertex there is no free-tier
 # rate cap, so the loop runs without backoff.
 : "${AUTOSRE_MODEL:=gemini-3-flash-preview}"
 # Vertex AI location for the MODEL (independent of the Cloud Run REGION above).
-# Gemini 3 preview models are served from the `global` endpoint — regional
+# Gemini 3 preview models are served from the `global` endpoint - regional
 # (e.g. us-central1) returns 404 NOT_FOUND for them.
 : "${VERTEX_LOCATION:=global}"
 # Demo mode: when 1, the agent serves the deterministic, model-free replay so the
@@ -76,7 +76,7 @@ AGENT_IMAGE="gcr.io/${PROJECT_ID}/autosre:${IMAGE_TS}"
 
 # ── 1. checkout-api (demo target) ────────────────────────────────────────────
 # `gcloud run deploy --source` only honors a root Dockerfile, but our two Python
-# services need different Dockerfiles from the same repo root — so we build each
+# services need different Dockerfiles from the same repo root - so we build each
 # image via Cloud Build (deploy/cloudbuild.svc.yaml builds an arbitrary -f path)
 # then deploy by --image. (Cloud Build respects .gitignore, so .venv/node_modules
 # are not uploaded.)

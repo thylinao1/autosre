@@ -1,4 +1,4 @@
-# AutoSRE demo — recording transcript (~3 min)
+# AutoSRE demo - recording transcript (~3 min)
 
 Read the **SAY** lines out loud. Do the **DO** action, then keep talking over any
 wait (the gate takes about 10 to 16 seconds to appear, narrate the detection while
@@ -22,7 +22,7 @@ timer number stays tight.
 **DO:** Click **Run: Payment Errors**. Let the timeline fill while you talk.
 **SAY:** "So let me break payments. A bad deploy switched on a feature flag that fails on some cards. Watch the agent pick it up. It pulls the open problem from Dynatrace, sees the failure rate sitting at twenty-two percent, checks the deploy and the flags, and it even looks at how we handled this kind of thing before."
 
-### 4 (0:55) — the deny beat, lead with this
+### 4 (0:55) - the deny beat, lead with this
 **DO:** When the approval card appears, click **Reject**.
 **SAY:** "Here is the gate. The agent wants to disable that flag. First I am going to say no. Watch what it does. It stands down. Nothing changes, the incident stays open, and the refusal goes straight into the audit trail. The gate lives in the code, so the model cannot route around me. Almost nobody else will show you this."
 
@@ -34,7 +34,7 @@ timer number stays tight.
 **DO:** Move the cursor to the Audit trail panel (both Approved and Rejected, with the Dynatrace badge).
 **SAY:** "And here is the receipt. Both decisions, the approval and the refusal, are written down with who decided and what happened, and pushed back into the same Dynatrace tenant that caught the incident. So later, a compliance team can see exactly who said yes and why."
 
-### 7 (2:10) — the real-tenant cut (optional, but it is the strongest proof)
+### 7 (2:10) - the real-tenant cut (optional, but it is the strongest proof)
 **DO:** This is a SEPARATE short clip of YOUR terminal, not the browser demo. On your
 machine you run the agent against your real Dynatrace tenant and screen-record the
 terminal. The full repro steps are in `VIDEO-SCRIPT.md` (Appendix), but the short
@@ -49,7 +49,7 @@ back to your tenant live. Point at that badge instead and trim the line to the f
 two sentences.
 **SAY:** "What you are watching on the demo is the real Gemini 3 agent thinking, live. And against a real Dynatrace tenant, the same agent reads the real twenty-two percent spike from live telemetry over the official Dynatrace MCP server. We also score it. Across a set of incidents, including traps where the obvious fix is wrong, it chose the right action every time."
 
-### 8 (2:35) — close
+### 8 (2:35) - close
 **DO:** Scroll to the bottom of the demo page and rest on the **Stack ribbon**. That
 is the strip already on the page that lists Model: Gemini 3, Framework: Google ADK,
 Runtime: Vertex AI and Cloud Run, Senses: Dynatrace MCP, Human gate:

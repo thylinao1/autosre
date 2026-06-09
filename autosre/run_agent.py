@@ -1,4 +1,4 @@
-"""Interactive runner for the AutoSRE agent — the primary CLI demo entry point.
+"""Interactive runner for the AutoSRE agent - the primary CLI demo entry point.
 
 It drives the detect -> diagnose -> ACT -> verify loop. When the agent calls a
 remediation tool, ADK pauses for human-in-the-loop confirmation (the tools are
@@ -57,7 +57,7 @@ async def main(auto_approve: bool) -> None:
     session = await runner.session_service.create_session(app_name=APP, user_id=USER)
 
     print("=" * 70)
-    print("AutoSRE — autonomous incident response (human-in-the-loop)")
+    print("AutoSRE - autonomous incident response (human-in-the-loop)")
     print("=" * 70)
 
     message = L.start_message()
@@ -91,7 +91,7 @@ async def main(auto_approve: bool) -> None:
 
         message = L.confirmation_response(pending["id"], approved)
         if not approved:
-            print("Rejected — instructing the agent to stand down.")
+            print("Rejected - instructing the agent to stand down.")
 
     print("\nDone.")
 

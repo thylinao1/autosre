@@ -81,7 +81,7 @@ export function DqlPanel({ query, records, reasoning }: DqlPanelProps) {
 
   return (
     <div style={{ padding: "14px", display: "flex", flexDirection: "column", gap: "14px", overflowY: "auto", maxHeight: "100%" }}>
-      {/* Root cause — lead with the plain-English conclusion, not the query syntax */}
+      {/* Root cause - lead with the plain-English conclusion, not the query syntax */}
       {reasoning && (
         <div>
           <p style={{
@@ -113,7 +113,7 @@ export function DqlPanel({ query, records, reasoning }: DqlPanelProps) {
         </div>
       )}
 
-      {/* DQL query — the agent's own query, shown as the work behind the finding */}
+      {/* DQL query - the agent's own query, shown as the work behind the finding */}
       {query && (
         <div>
           <p style={{

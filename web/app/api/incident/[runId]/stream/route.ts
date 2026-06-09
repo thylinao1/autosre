@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 
-// Mock SSE stream — replays the happy-path event sequence from CONTRACT.md §2.9
+// Mock SSE stream - replays the happy-path event sequence from CONTRACT.md §2.9
 // on a timer with an approval pause.  Point NEXT_PUBLIC_AGENT_BASE_URL at the
 // real backend to bypass this entirely.
 
@@ -18,7 +18,7 @@ function makeEvents(runId: string, inject: string): object[] {
   const problemValue = isLatency ? 4200 : 22.0;
 
   return [
-    // 0 — detect phase marker
+    // 0 - detect phase marker
     {
       type: "step",
       run_id: runId,
@@ -26,7 +26,7 @@ function makeEvents(runId: string, inject: string): object[] {
       phase: "detect",
       status: "Pulling open problems from Dynatrace…",
     },
-    // 1 — tool call: query_problems
+    // 1 - tool call: query_problems
     {
       type: "tool_call",
       run_id: runId,
@@ -34,7 +34,7 @@ function makeEvents(runId: string, inject: string): object[] {
       name: "query_problems",
       args: { entity: "checkout-api" },
     },
-    // 2 — tool result: query_problems
+    // 2 - tool result: query_problems
     {
       type: "tool_result",
       run_id: runId,
@@ -60,7 +60,7 @@ function makeEvents(runId: string, inject: string): object[] {
         total: 1,
       },
     },
-    // 3 — diagnose phase marker
+    // 3 - diagnose phase marker
     {
       type: "step",
       run_id: runId,
@@ -68,7 +68,7 @@ function makeEvents(runId: string, inject: string): object[] {
       phase: "diagnose",
       status: "Running DQL evidence queries…",
     },
-    // 4 — tool call: execute_dql
+    // 4 - tool call: execute_dql
     {
       type: "tool_call",
       run_id: runId,
@@ -80,7 +80,7 @@ function makeEvents(runId: string, inject: string): object[] {
           : 'fetch events | filter event.kind == "DEPLOYMENT_EVENT" and entity.name == "checkout-api" | sort timestamp desc | limit 1',
       },
     },
-    // 5 — tool result: execute_dql
+    // 5 - tool result: execute_dql
     {
       type: "tool_result",
       run_id: runId,
@@ -101,7 +101,7 @@ function makeEvents(runId: string, inject: string): object[] {
             ],
       },
     },
-    // 6 — agent reasoning message
+    // 6 - agent reasoning message
     {
       type: "agent_message",
       run_id: runId,
@@ -111,7 +111,7 @@ function makeEvents(runId: string, inject: string): object[] {
         : "Root cause identified: deploy v2.3.1 (14:32 UTC) enabled feature flag 'new_payment_gateway'. This gateway throws an unhandled exception on AMEX cards, driving a 22% failure rate. Disabling the flag will immediately restore service.",
       done: true,
     },
-    // 7 — act phase marker
+    // 7 - act phase marker
     {
       type: "step",
       run_id: runId,
@@ -119,7 +119,7 @@ function makeEvents(runId: string, inject: string): object[] {
       phase: "act",
       status: "Proposing a remediation, awaiting your approval…",
     },
-    // 8 — approval_request (PAUSE HERE — client will send approval POST)
+    // 8 - approval_request (PAUSE HERE - client will send approval POST)
     {
       type: "approval_request",
       run_id: runId,
@@ -161,7 +161,7 @@ function makePostApprovalEvents(runId: string, inject: string, approved: boolean
   }
 
   return [
-    // 9 — approval_resolved
+    // 9 - approval_resolved
     {
       type: "approval_resolved",
       run_id: runId,
@@ -169,7 +169,7 @@ function makePostApprovalEvents(runId: string, inject: string, approved: boolean
       id: "adk-fc-mock-001",
       approved: true,
     },
-    // 10 — tool result for the remediation action
+    // 10 - tool result for the remediation action
     {
       type: "tool_result",
       run_id: runId,
@@ -182,7 +182,7 @@ function makePostApprovalEvents(runId: string, inject: string, approved: boolean
         ? { scaled: true, replicas: 8, message: "Deployment scaled successfully." }
         : { toggled: true, name: "new_payment_gateway", enabled: false, message: "Flag disabled." },
     },
-    // 11 — verify phase
+    // 11 - verify phase
     {
       type: "step",
       run_id: runId,
@@ -190,7 +190,7 @@ function makePostApprovalEvents(runId: string, inject: string, approved: boolean
       phase: "verify",
       status: "Verifying service health…",
     },
-    // 12 — get_service_health call
+    // 12 - get_service_health call
     {
       type: "tool_call",
       run_id: runId,
@@ -198,7 +198,7 @@ function makePostApprovalEvents(runId: string, inject: string, approved: boolean
       name: "get_service_health",
       args: { service: "checkout-api" },
     },
-    // 13 — health result
+    // 13 - health result
     {
       type: "tool_result",
       run_id: runId,
@@ -214,7 +214,7 @@ function makePostApprovalEvents(runId: string, inject: string, approved: boolean
         version: "v2.3.1",
       },
     },
-    // 14 — final
+    // 14 - final
     {
       type: "final",
       run_id: runId,

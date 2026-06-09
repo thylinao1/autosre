@@ -1,11 +1,11 @@
-"""Graduated autonomy — a risk policy over proposed remediations.
+"""Graduated autonomy - a risk policy over proposed remediations.
 
 Not every action carries the same blast radius. Disabling a bad feature flag is
 cheap and reversible; rolling a deployment or scaling down is heavier. This module
 classifies each proposed action into a risk tier and (optionally) lets an operator
 pre-authorize the low-risk tier so the agent only escalates the decisions that
 actually need a human. That reframes "autonomous, but accountable" from "ask for
-everything" to "make the safe calls, escalate the risky ones, log all of them" —
+everything" to "make the safe calls, escalate the risky ones, log all of them" -
 the question a real on-call org actually has.
 
 Default is conservative: AUTOSRE_AUTOAPPROVE_TIER is unset, so NOTHING
@@ -42,7 +42,7 @@ def classify(tool: str, args: dict[str, Any]) -> dict[str, Any]:
         return {"tier": "medium",
                 "rationale": "Rolling back changes the running version; verify the target."}
     return {"tier": "high",
-            "rationale": "Unrecognized action — always requires a human."}
+            "rationale": "Unrecognized action - always requires a human."}
 
 
 def auto_approve_tier() -> str | None:

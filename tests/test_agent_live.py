@@ -29,7 +29,7 @@ async def test_agent_remediates_payment_incident(target_service):
         await run_main(auto_approve=True)
     except Exception as err:  # noqa: BLE001
         # Free-tier Gemini can 503/exhaust mid-run after backoff. That's an
-        # upstream availability blip, not an agent defect — the deterministic
+        # upstream availability blip, not an agent defect - the deterministic
         # SSE/loop tests already guarantee the contract. Skip rather than fail.
         msg = str(err)
         if any(s in msg for s in ("503", "UNAVAILABLE", "RESOURCE_EXHAUSTED")):

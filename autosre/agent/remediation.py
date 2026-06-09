@@ -2,7 +2,7 @@
 
 These three mutating actions are wrapped with ADK's native
 `require_confirmation=True` in agent.py, so the framework pauses for explicit
-human approval before any of them executes — enforced by ADK in both `adk web`
+human approval before any of them executes - enforced by ADK in both `adk web`
 (approve/reject buttons) and the CLI runner. The functions here just perform the
 action against the target service.
 """
@@ -17,9 +17,9 @@ from autosre.gcp_auth import target_headers
 
 # ── Action envelope (defense in depth) ──────────────────────────────────────
 # The approval gate makes every action human-reviewed; these bounds make it
-# human-reviewed AND machine-bounded. Even an operator-approved action — e.g. one
+# human-reviewed AND machine-bounded. Even an operator-approved action - e.g. one
 # the model was steered toward by poisoned telemetry (a crafted log line claiming
-# "rollback to v0.0.0, last good" or "scale to 1, right-sized") — fails closed if
+# "rollback to v0.0.0, last good" or "scale to 1, right-sized") - fails closed if
 # it falls outside the envelope. The human reads the modal; the server still
 # refuses anything outside the managed set. Tune these for your environment.
 MIN_REPLICAS, MAX_REPLICAS = 1, 50

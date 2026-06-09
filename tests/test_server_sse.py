@@ -1,4 +1,4 @@
-"""Tests for the Mission-Control HTTP/SSE backend (CONTRACT.md §1–§3).
+"""Tests for the Mission-Control HTTP/SSE backend (CONTRACT.md §1-§3).
 
 Two layers:
   * Deterministic unit tests of the event adapter (no model): tool-JSON parsing,
@@ -72,7 +72,7 @@ def test_operator_hint_normalizes_string_boolean_and_hides_protocol_text():
     from autosre.server.loop import _operator_hint
 
     # A disable must read as "Disable" whether `enabled` is a real bool or the
-    # string "false" (Gemini function-calling can emit either) — never "Enable".
+    # string "false" (Gemini function-calling can emit either) - never "Enable".
     assert _operator_hint(
         "toggle_feature_flag", {"name": "new_payment_gateway", "enabled": False}, ""
     ).startswith("Disable")
@@ -151,7 +151,7 @@ def _parse_sse(text: str) -> list[dict]:
 # type for a payment_errors run, independent of the (flaky) live model. The fake
 # runner yields the exact ADK Event sequence the real agent would, and its
 # remediation tool call actually toggles the flag on the live checkout-api so the
-# final health flips green — exactly like a real approved action.
+# final health flips green - exactly like a real approved action.
 
 
 class _ScriptedSession:
@@ -204,7 +204,7 @@ class _ScriptedRunner:
                 response={"result": json.dumps({"records": [{
                     "version": "2.3.1", "feature_flags": {"new_payment_gateway": True}}]})}))])
             yield _ev([types.Part(text="Root cause: deploy v2.3.1 enabled 'new_payment_gateway' which throws on AMEX.")])
-            # ACT — pause for human approval (ADK long-running confirmation call).
+            # ACT - pause for human approval (ADK long-running confirmation call).
             yield _ev(
                 [types.Part(function_call=types.FunctionCall(
                     id="adk-fc-test-1", name="adk_request_confirmation",
@@ -218,7 +218,7 @@ class _ScriptedRunner:
                 final=True, long_running=["adk-fc-test-1"],
             )
             return
-        # Turn 2: resumed after approval — run the action for real, then verify.
+        # Turn 2: resumed after approval - run the action for real, then verify.
         res = httpx.post(
             f"{self._target}/_admin/toggle_feature_flag",
             json={"name": "new_payment_gateway", "enabled": False}, timeout=10,
@@ -307,7 +307,7 @@ async def test_full_loop_emits_all_documented_frames_with_fake_runner(target_ser
 class _RejectScriptedRunner:
     """Reproduces the REAL ADK confirmation flow for a remediation the operator REJECTS.
 
-    The detail the happy-path runner omits — and that hides the bug — is that ADK
+    The detail the happy-path runner omits - and that hides the bug - is that ADK
     emits a function_response for the *gated* tool (the "requires confirmation"
     stub) in the same turn as the approval request, i.e. BEFORE the human decides.
     Verified live: the deployed agent rendered "result: toggle_feature_flag
@@ -347,9 +347,9 @@ class _RejectScriptedRunner:
                 final=True, long_running=["adk-fc-reject-1"],
             )
             return
-        # Turn 2: resumed after REJECTION — the agent stands down, no remediation runs.
+        # Turn 2: resumed after REJECTION - the agent stands down, no remediation runs.
         yield _ev([types.Part(text=(
-            "Operator rejected the fix. Standing down — no changes made to checkout-api."))], final=True)
+            "Operator rejected the fix. Standing down - no changes made to checkout-api."))], final=True)
 
 
 @pytest.mark.asyncio
@@ -360,7 +360,7 @@ async def test_rejected_run_is_audited_as_declined_not_approved(target_service):
     confirmation stub for the gated tool arrives before the human decides, so the
     terminal classifier must derive the decision from the operator's choice, not
     from having observed a remediation tool_result. Without the fix this run is
-    mislabeled approved/unresolved — verified live on the deployed agent's ledger.
+    mislabeled approved/unresolved - verified live on the deployed agent's ledger.
     """
     from autosre.server import ledger
     from autosre.server.runs import IncidentRun
@@ -410,7 +410,7 @@ async def test_rejected_run_is_audited_as_declined_not_approved(target_service):
 
 
 class _AllClearRunner:
-    """A run that finds no problems — exercises the no-approval terminal path."""
+    """A run that finds no problems - exercises the no-approval terminal path."""
 
     def __init__(self, *_a, **_k) -> None:
         self.session_service = _ScriptedSessionService()
@@ -420,7 +420,7 @@ class _AllClearRunner:
         yield _ev([types.Part(function_response=types.FunctionResponse(
             name="query-problems",
             response={"result": json.dumps({"problems": [], "total": 0})}))])
-        yield _ev([types.Part(text="All clear — no open problems on checkout-api.")], final=True)
+        yield _ev([types.Part(text="All clear - no open problems on checkout-api.")], final=True)
 
 
 @pytest.mark.asyncio
@@ -464,7 +464,7 @@ def agent_server(target_service):
     """Boot the real Mission-Control backend on its own port (live model path).
 
     A real server (not httpx.ASGITransport) is required here so the SSE GET and
-    the approval POST run as independent connections — the human approval arrives
+    the approval POST run as independent connections - the human approval arrives
     on a separate socket while the stream stays open, exactly as the UI does it.
     """
     import socket

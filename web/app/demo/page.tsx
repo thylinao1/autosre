@@ -78,7 +78,7 @@ export default function DemoPage() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Page-level heading and live status, for assistive tech only. */}
-      <h1 className="visually-hidden">AutoSRE Mission Control — live incident response</h1>
+      <h1 className="visually-hidden">AutoSRE Mission Control - live incident response</h1>
       <div className="visually-hidden" role="status" aria-live="polite">
         {statusAnnouncement}
       </div>
@@ -497,25 +497,45 @@ function LeftSidebar({
         borderRight: "1px solid var(--color-border-subtle)",
         display: "flex",
         flexDirection: "column",
-        gap: "16px",
         padding: "20px 18px",
-        overflowY: "auto",
         minHeight: 0,
+        overflow: "hidden",
       }}
     >
-      {state.status === "error" && state.errorMessage && (
-        <ErrorBanner message={state.errorMessage} />
-      )}
-      {softNotice && <SoftNotice message={softNotice} />}
-      <ProblemCard
-        problem={state.problem}
-        status={state.status}
-        health={serviceHealth}
-        currentPhase={state.currentPhase}
-      />
-      {state.finalEvent && <FinalReport event={state.finalEvent} />}
-      <DemoControls status={state.status} onStart={onStart} onReset={onReset} />
-      <AuditTrail refreshKey={state.status} />
+      {/* Pinned controls - the problem card and the Run button must stay visible
+          no matter how full the audit trail gets, so they live in a non-scrolling
+          block at the top of the rail. */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px", flexShrink: 0 }}>
+        {state.status === "error" && state.errorMessage && (
+          <ErrorBanner message={state.errorMessage} />
+        )}
+        {softNotice && <SoftNotice message={softNotice} />}
+        <ProblemCard
+          problem={state.problem}
+          status={state.status}
+          health={serviceHealth}
+          currentPhase={state.currentPhase}
+        />
+        <DemoControls status={state.status} onStart={onStart} onReset={onReset} />
+      </div>
+
+      {/* History - final report + audit trail take the remaining height and
+          scroll internally, so a long trail can never push the controls or the
+          problem card off-screen. */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "16px",
+          flex: 1,
+          minHeight: 0,
+          overflowY: "auto",
+          marginTop: "16px",
+        }}
+      >
+        {state.finalEvent && <FinalReport event={state.finalEvent} />}
+        <AuditTrail refreshKey={state.status} />
+      </div>
     </aside>
   );
 }

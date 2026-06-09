@@ -1,6 +1,6 @@
 # AutoSRE: autonomous incident response, with you in the loop
 
-**Track: Dynatrace** · Built with **Gemini 3** on **Google Cloud Agent Builder** — specifically the **Agent Development Kit (ADK)**, the Python SDK of Google Cloud's Agent Builder / Gemini Enterprise Agent Platform (the rules' "Developer SDK" build path) — reasoning on **Gemini 3 via Vertex AI** and deployed on **Cloud Run** (the deploy script wires the Dynatrace token through **Secret Manager** for remote mode). The same ADK agent is also deployable to **Vertex AI Agent Engine** via `deploy/agent_engine_deploy.py`. Partner superpower via the **Dynatrace MCP server**.
+**Track: Dynatrace** · Built with **Gemini 3** on **Google Cloud Agent Builder** - specifically the **Agent Development Kit (ADK)**, the Python SDK of Google Cloud's Agent Builder / Gemini Enterprise Agent Platform (the rules' "Developer SDK" build path) - reasoning on **Gemini 3 via Vertex AI** and deployed on **Cloud Run** (the deploy script wires the Dynatrace token through **Secret Manager** for remote mode). The same ADK agent is also deployable to **Vertex AI Agent Engine** via `deploy/agent_engine_deploy.py`. Partner superpower via the **Dynatrace MCP server**.
 
 ## The Real-World Problem
 
@@ -29,7 +29,7 @@ The track is full of agents that read Dynatrace and remediate. The part almost n
 
 | Problem | Traditional Response | AutoSRE |
 |---|---|---|
-| **Time to identify root cause** | 30+ minutes (human triage) | seconds — live DQL + Gemini diagnosis (timed on-screen in the demo) |
+| **Time to identify root cause** | 30+ minutes (human triage) | seconds - live DQL + Gemini diagnosis (timed on-screen in the demo) |
 | **Human fatigue** | 3am wake-ups, hundreds of manual queries | On-call engineer just approves the fix |
 | **Safety** | Inconsistent process; remediation errors | Python-enforced approval gate plus server-side action allow-lists; an out-of-bounds action fails closed even if approved |
 | **Visibility** | Black-box response | Streaming timeline; operator sees every step live |
@@ -381,7 +381,7 @@ A: You're hitting Gemini's free-tier quota (~5 req/min). Get a free API key from
 A: Make sure the SSE backend is running (`python -m autosre.server`) and listening on the port the UI expects. By default, the UI looks for `localhost:8080`; set `NEXT_PUBLIC_AGENT_BASE_URL=http://127.0.0.1:8080` in `.env.local` in the `web/` directory if the backend is on a different port.
 
 **Q: I want to test against a real Dynatrace tenant but don't see any problems.**
-A: The `checkout-api` service must be running and injected with a fault first — the agent only reports a problem when one exists. In **mock** mode the bundled Dynatrace MCP surfaces the incident as soon as you inject a fault; against a **real** tenant the live path detects on a `timeseries avg(checkout.failure_rate)` DQL, so allow ~1-2 minutes for OpenTelemetry ingestion before the spike shows. Inject with: `curl -X POST localhost:8081/_admin/inject -H 'content-type: application/json' -d '{"fault":"payment_errors"}'`.
+A: The `checkout-api` service must be running and injected with a fault first - the agent only reports a problem when one exists. In **mock** mode the bundled Dynatrace MCP surfaces the incident as soon as you inject a fault; against a **real** tenant the live path detects on a `timeseries avg(checkout.failure_rate)` DQL, so allow ~1-2 minutes for OpenTelemetry ingestion before the spike shows. Inject with: `curl -X POST localhost:8081/_admin/inject -H 'content-type: application/json' -d '{"fault":"payment_errors"}'`.
 
 **Q: The approval modal never appears.**
 A: The agent may not be reaching the remediation step. Check the timeline in the UI. If it stops at DIAGNOSE, the agent may not have reasoned its way to a fix (wrong model, bad DQL results, or timeout). Check the agent logs for errors. If a remediation tool was called, ensure the `FunctionTool(require_confirmation=True)` is in place in `autosre/agent/remediation.py` (it should be; don't remove it for testing).

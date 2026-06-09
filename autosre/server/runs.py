@@ -73,13 +73,13 @@ class IncidentRun:
         self._pending: dict[str, Any] | None = None
         self._approval: asyncio.Future[bool] | None = None
         self._terminal = False
-        # Per-run state used to classify the terminal `outcome` (CONTRACT §2.7) —
+        # Per-run state used to classify the terminal `outcome` (CONTRACT §2.7) -
         # derived from THIS run, not the target's cumulative remediation log.
         self._declined = False  # operator rejected an approval
         self._acted = False  # set True only when the operator APPROVES the action
         self._auto_approved = False  # set True when policy auto-approved (no human)
         # Framework stand-downs are NOT operator decisions and must never be audited
-        # as a rejection — the ledger records who DECIDED, and a superseded/timed-out
+        # as a rejection - the ledger records who DECIDED, and a superseded/timed-out
         # run had no human decision. These suppress the audit entry entirely.
         self._superseded = False  # a newer run stood this one down
         self._timed_out = False  # the approval window elapsed with no decision
@@ -156,7 +156,7 @@ class IncidentRun:
                 result = L.TurnResult()
                 # Buffer this turn's narration; whether it is intermediate
                 # (`agent_message`) or the terminal report (`final`) is only known
-                # once the turn ends — a turn that pauses for approval narrated
+                # once the turn ends - a turn that pauses for approval narrated
                 # intermediate reasoning; the turn with no pending produced the
                 # closing report (CONTRACT §2.6/§2.7).
                 narration: list[dict[str, Any]] = []
@@ -215,7 +215,7 @@ class IncidentRun:
                         "args": self._pending["args"],
                     }
                     # The operator authorized it, so ADK now executes the tool.
-                    # Mark "acted" HERE, on the human decision — never on observing a
+                    # Mark "acted" HERE, on the human decision - never on observing a
                     # remediation tool_result, because ADK emits a confirmation stub
                     # for the gated tool BEFORE this point. Deriving it from the stub
                     # would mislabel a rejection as an approval (the deny-path bug).
@@ -228,7 +228,7 @@ class IncidentRun:
                 message = L.confirmation_response(self._pending["id"], approved)
                 self._pending = None
                 self._approval = None
-        except asyncio.CancelledError:  # abandoned/evicted — close quietly
+        except asyncio.CancelledError:  # abandoned/evicted - close quietly
             self._close()
             raise
         except Exception as err:  # noqa: BLE001 - any escape becomes an error frame
@@ -244,7 +244,7 @@ class IncidentRun:
         elif obs.kind == "tool_result":
             name = obs.payload["name"]
             response = E.parse_tool_response(obs.payload["response"])
-            # NB: a remediation tool_result is NOT what marks the run as "acted" —
+            # NB: a remediation tool_result is NOT what marks the run as "acted" -
             # ADK emits a confirmation stub for the gated tool before the operator
             # decides, so `_acted` is set on approval (see _drive), not here.
             problems = response.get("problems") or []
@@ -285,10 +285,10 @@ class IncidentRun:
         injected = state.get("injected_fault")
 
         # outcome is classified from THIS run's activity (CONTRACT §2.7):
-        #   all_clear  — DETECT found no problem and we took no action.
-        #   resolved   — we acted (operator-approved) and the fault is now cleared.
-        #   declined   — operator rejected the remediation; nothing ran.
-        #   unresolved — an action ran but the fault is still present.
+        #   all_clear  - DETECT found no problem and we took no action.
+        #   resolved   - we acted (operator-approved) and the fault is now cleared.
+        #   declined   - operator rejected the remediation; nothing ran.
+        #   unresolved - an action ran but the fault is still present.
         # incident_resolved: a problem existed and is cleared by our action.
         incident_resolved = (
             self._problem_found and self._acted and injected is None and service_healthy
@@ -307,7 +307,7 @@ class IncidentRun:
 
         # Audit ledger: one immutable record per sweep, then a best-effort
         # write-back to Dynatrace. A superseded/timed-out run is a FRAMEWORK
-        # stand-down, not a human decision, so it is NOT recorded — the audit must
+        # stand-down, not a human decision, so it is NOT recorded - the audit must
         # only ever contain real operator decisions and genuine outcomes, never a
         # framework eviction mislabeled as an operator rejection.
         if not (self._superseded or self._timed_out):

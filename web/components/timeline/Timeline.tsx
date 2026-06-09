@@ -335,7 +335,7 @@ export function Timeline({ entries, currentPhase, isBusy = false }: TimelineProp
           gap: "14px",
         }}
       >
-        {/* Icon — breathes gently when idle, pulses an accent ring when working */}
+        {/* Icon - breathes gently when idle, pulses an accent ring when working */}
         <div
           className={isBusy ? "animate-pulse-glow" : "animate-idle-breathe"}
           style={{
@@ -364,7 +364,7 @@ export function Timeline({ entries, currentPhase, isBusy = false }: TimelineProp
             letterSpacing: "-0.005em",
             fontWeight: isBusy ? 600 : 400,
           }}>
-            {isBusy ? "Agent waking — querying Dynatrace…" : "Run an incident to watch the agent work."}
+            {isBusy ? "Agent waking - querying Dynatrace…" : "Run an incident to watch the agent work."}
           </p>
           <p style={{
             fontSize: "12.5px",

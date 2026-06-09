@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ────────────────────────────────────────────────────────
-   AutoSRE — Design System v3
+   AutoSRE - Design System v3
    Aesthetic: dark AI-safety / editorial war-room
    Type: Bricolage Grotesque (display) · Inter (body) · JetBrains Mono (code/labels)
    Palette: near-black navy bg · electric cyan · gradient orange→pink→purple→cyan
@@ -13,7 +13,7 @@
   --font-sans:    var(--font-sans);
   --font-mono:    var(--font-mono);
 
-  /* Surfaces — deep navy, very dark */
+  /* Surfaces - deep navy, very dark */
   --color-bg:            #06090f;
   --color-surface-0:     #090c13;
   --color-surface-1:     #0d1120;
@@ -32,35 +32,35 @@
   --color-text-muted:    #445068;
   --color-text-dim:      #283040;
 
-  /* Accent — electric cyan */
+  /* Accent - electric cyan */
   --color-accent:        #00d4f0;
   --color-accent-dim:    rgba(0,212,240,0.12);
   --color-accent-glow:   rgba(0,212,240,0.4);
   --color-accent-subtle: rgba(0,212,240,0.05);
 
-  /* Gradient stops — hero headline gradient */
+  /* Gradient stops - hero headline gradient */
   --color-grad-orange:   #ff6b35;
   --color-grad-pink:     #e8408c;
   --color-grad-purple:   #8b5cf6;
   --color-grad-cyan:     #00d4f0;
 
-  /* Amber — approval / pending */
+  /* Amber - approval / pending */
   --color-amber:         #f2a832;
   --color-amber-dim:     rgba(242,168,50,0.13);
   --color-amber-glow:    rgba(242,168,50,0.42);
 
-  /* Red — AVAILABILITY / error */
+  /* Red - AVAILABILITY / error */
   --color-red:           #e03a48;
   --color-red-dim:       rgba(224,58,72,0.13);
   --color-red-glow:      rgba(224,58,72,0.36);
   --color-red-text:      #f07a84;
 
-  /* Orange — PERFORMANCE */
+  /* Orange - PERFORMANCE */
   --color-orange:        #e07830;
   --color-orange-dim:    rgba(224,120,48,0.13);
   --color-orange-text:   #f0a060;
 
-  /* Green — healthy / resolved */
+  /* Green - healthy / resolved */
   --color-green:         #20cc80;
   --color-green-dim:     rgba(32,204,128,0.13);
   --color-green-glow:    rgba(32,204,128,0.42);
@@ -75,7 +75,7 @@
 
 /* ── Motion + scale tokens ──
    Single source of truth for the type scale, durations and easing curves.
-   Colors and radius are intentionally omitted here — they're provided by the
+   Colors and radius are intentionally omitted here - they're provided by the
    @theme inline block above (and Tailwind defaults). */
 :root {
   /* Typography scale */
@@ -99,7 +99,7 @@
   --duration-xslow:   640ms;
   --duration-modal:   340ms;
 
-  /* Easing — exponential decelerations, no bounce */
+  /* Easing - exponential decelerations, no bounce */
   --ease-out-expo:    cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out-quart:   cubic-bezier(0.25, 1, 0.5, 1);
   --ease-out-quint:   cubic-bezier(0.22, 1, 0.36, 1);
@@ -125,7 +125,7 @@ body {
   font-size: 0.875rem;
   line-height: 1.5;
   min-height: 100vh;
-  /* Subtle grid texture — like the reference */
+  /* Subtle grid texture - like the reference */
   background-image:
     linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
@@ -316,7 +316,7 @@ body {
    Content is fully visible by default. The pre-reveal hidden state applies ONLY
    when scripting is enabled and motion is allowed, so no-JS / reduced-motion
    ships visible. A JS safety net (ScrollReveal) reveals everything if the
-   IntersectionObserver never fires — content never ships blank. */
+   IntersectionObserver never fires - content never ships blank. */
 @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
   [data-reveal] {
     opacity: 0;
@@ -327,7 +327,7 @@ body {
     transition-delay: calc(var(--reveal-i, 0) * 80ms);
     will-change: opacity, transform;
   }
-  /* opacity-only variant — safe for rows inside an overflow-hidden container */
+  /* opacity-only variant - safe for rows inside an overflow-hidden container */
   [data-reveal="fade"] {
     transform: none;
     transition: opacity 0.6s var(--ease-out-quint);
@@ -494,7 +494,7 @@ body {
   }
 }
 
-/* ── Landing section marker — rule + label reads as an intentional system,
+/* ── Landing section marker - rule + label reads as an intentional system,
    not a floating kicker on every section ── */
 .section-eyebrow {
   display: inline-flex;

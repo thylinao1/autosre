@@ -1,7 +1,7 @@
-# Devpost Submission Checklist — AutoSRE (Dynatrace track)
+# Devpost Submission Checklist - AutoSRE (Dynatrace track)
 
 ## Required deliverables
-- [x] **Hosted project URL** — **https://autosre-ui-vrf7h4n4ra-uc.a.run.app** — live
+- [x] **Hosted project URL** - **https://autosre-ui-vrf7h4n4ra-uc.a.run.app** - live
       Mission-Control web UI on Cloud Run; streams the full incident loop and the operator
       approval gate. Agent (ADK on Gemini 3 via Vertex AI, self-hosted FastAPI app
       `python -m autosre.server` on Cloud Run) + checkout-api also on Cloud Run.
@@ -13,12 +13,12 @@
   > Google-side bind on this project: `gemini-3-flash-preview` serves only from
   > `global`, while Agent Engine builds regionally. The agent runs on Cloud Run today;
   > eligibility is met via ADK + Gemini 3 on Vertex AI.
-- [x] **Public open-source repo** — **https://github.com/thylinao1/autosre** (public).
-- [x] **OSS license detectable in About** — `LICENSE` (MIT) at repo root; GitHub's
+- [x] **Public open-source repo** - **https://github.com/thylinao1/autosre** (public).
+- [x] **OSS license detectable in About** - `LICENSE` (MIT) at repo root; GitHub's
       license endpoint detects it as MIT, so the About sidebar shows "MIT".
-- [ ] **~3 minute demo video** — follow [VIDEO-SCRIPT.md](VIDEO-SCRIPT.md) (criterion-tagged beats). _(record + link)_
-- [x] **Track selected** — **Dynatrace**.
-- [ ] **Devpost form** completed — draft fields in [DEVPOST.md](DEVPOST.md). _(submit)_
+- [ ] **~3 minute demo video** - follow [VIDEO-SCRIPT.md](VIDEO-SCRIPT.md) (criterion-tagged beats). _(record + link)_
+- [x] **Track selected** - **Dynatrace**.
+- [ ] **Devpost form** completed - draft fields in [DEVPOST.md](DEVPOST.md). _(submit)_
 
 ## How we satisfy each judging requirement
 - **Beyond chat / uses tools** → agent calls Dynatrace MCP tools (detect/diagnose) and
@@ -65,8 +65,8 @@
 - [ ] **No leaked secrets:** `.env` is gitignored; no hardcoded API keys or tokens.
 
 ## Account setup still needed (you)
-1. **Gemini key** — fastest path: a free API key from Google AI Studio (no GCP
+1. **Gemini key** - fastest path: a free API key from Google AI Studio (no GCP
    billing). Put `GOOGLE_API_KEY=...` in `.env`. For the hosted deploy, use a GCP
    project with Vertex AI enabled instead.
-2. **Dynatrace** — a free trial tenant + a Platform token (scopes in README) for the
+2. **Dynatrace** - a free trial tenant + a Platform token (scopes in README) for the
    `remote` mode demo. Optional: the offline `mock` mode needs no Dynatrace account.

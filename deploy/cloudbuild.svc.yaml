@@ -1,4 +1,4 @@
-# deploy/cloudbuild.svc.yaml — generic Cloud Build config for the Python services.
+# deploy/cloudbuild.svc.yaml - generic Cloud Build config for the Python services.
 #
 # `gcloud run deploy --source` only honors a Dockerfile at the build-context root,
 # but checkout-api and the autosre agent need DIFFERENT Dockerfiles built from the

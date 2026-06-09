@@ -25,7 +25,7 @@ function relTime(ts: number): string {
 /**
  * The audit trail: an append-only record of every sweep's decision. When the
  * agent service has Dynatrace ingest configured, each approval is also written
- * back to the tenant as a log — surfaced here with a "Dynatrace" badge.
+ * back to the tenant as a log - surfaced here with a "Dynatrace" badge.
  */
 // Derive the compact Dynatrace badge from the writeback signals. `last_writeback`
 // reflects whether the most recent write actually landed (`ok`) and whether a

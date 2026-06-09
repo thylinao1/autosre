@@ -4,13 +4,13 @@ Both the interactive CLI (`autosre.run_agent`) and the HTTP/SSE server
 (`autosre.server.app`) drive the *same* ADK `InMemoryRunner` loop. This module
 owns that single source of truth so the wire behaviour is identical:
 
-  * `run_turn_observed` — runs one runner turn and yields a stream of typed
+  * `run_turn_observed` - runs one runner turn and yields a stream of typed
     *observations* (`tool_call` / `tool_result` / `approval_request` /
     `agent_message`), exactly mirroring the inspection in the reference
     `run_agent._run_turn`. It returns the terminal `(final_text, pending)`.
-  * `run_turn_resilient` — wraps a turn with the free-tier 429/RESOURCE_EXHAUSTED
+  * `run_turn_resilient` - wraps a turn with the free-tier 429/RESOURCE_EXHAUSTED
     backoff (identical policy to the CLI).
-  * `confirmation_response` — rebuilds the ADK HITL resume `Content` byte-for-byte
+  * `confirmation_response` - rebuilds the ADK HITL resume `Content` byte-for-byte
     as the contract (§3) requires.
 
 The agent stays the only planner; this module is pure transport plumbing.
@@ -33,7 +33,7 @@ APP = "autosre"
 USER = "operator"
 CONFIRM = "adk_request_confirmation"
 
-# The default sweep prompt — kept identical to run_agent.py:104 so the CLI and
+# The default sweep prompt - kept identical to run_agent.py:104 so the CLI and
 # the HTTP `start` endpoint kick off the agent with the same instruction.
 DEFAULT_PROMPT = (
     "Run an incident sweep on checkout-api. Detect open problems, diagnose the "
@@ -101,7 +101,7 @@ def _operator_hint(tool: str, args: dict[str, Any], raw_hint: str) -> str:
 def _extract_pending(fc: Any) -> dict[str, Any]:
     """Lift the wrapped remediation call out of an adk_request_confirmation fc.
 
-    Identical to run_agent.py:50-55 — the join key `id` is the ADK fc id. The hint
+    Identical to run_agent.py:50-55 - the join key `id` is the ADK fc id. The hint
     is normalized to an operator-facing string (see `_operator_hint`).
     """
     args = fc.args or {}
@@ -185,7 +185,7 @@ def retry_delay(err: Exception) -> int:
 
 
 def is_rate_limit(err: Exception) -> bool:
-    """True for free-tier 429 / RESOURCE_EXHAUSTED — drives the `error.retriable` hint."""
+    """True for free-tier 429 / RESOURCE_EXHAUSTED - drives the `error.retriable` hint."""
     s = str(err)
     return "RESOURCE_EXHAUSTED" in s or "429" in s
 
@@ -195,7 +195,7 @@ def is_transient(err: Exception) -> bool:
 
     Extends the reference 429 policy to also resume on 503 / UNAVAILABLE /
     overloaded so a brief model spike doesn't abort a live demo. This governs
-    only whether we back off + resume — it never bypasses the approval gate or
+    only whether we back off + resume - it never bypasses the approval gate or
     alters the agent's plan.
     """
     s = str(err)

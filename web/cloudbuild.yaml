@@ -1,4 +1,4 @@
-# web/cloudbuild.yaml — Cloud Build config for the Next.js UI container.
+# web/cloudbuild.yaml - Cloud Build config for the Next.js UI container.
 #
 # Used by deploy/deploy_cloud_run.sh step 3.
 # _NEXT_PUBLIC_AGENT_BASE_URL and _IMAGE are supplied by the deploy script

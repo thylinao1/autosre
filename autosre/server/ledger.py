@@ -1,4 +1,4 @@
-"""Approval ledger — an append-only audit record of every incident sweep.
+"""Approval ledger - an append-only audit record of every incident sweep.
 
 Each terminal run writes one immutable entry: what the incident was, the
 remediation the agent proposed, the human's decision (approved / rejected), who
@@ -11,8 +11,8 @@ Two surfaces:
   * `export_async()` writes the same record back into Dynatrace as a Log
     Monitoring v2 record (best-effort, gated on the OTLP creds), so the approval
     is annotated on the very platform that detected the incident. Wherever the
-    OTLP env vars are configured — including the hosted deploy when those vars are
-    set — the write-back is LIVE. `export_enabled()` reports whether creds are
+    OTLP env vars are configured - including the hosted deploy when those vars are
+    set - the write-back is LIVE. `export_enabled()` reports whether creds are
     configured; `last_writeback()` reports whether the most recent write actually
     landed (a 2xx), which are different things and both surfaced via /api/ledger.
 
@@ -99,7 +99,7 @@ def last_writeback() -> dict[str, Any]:
     return dict(_LAST_WRITEBACK)
 
 
-# ── Dynatrace write-back (Log Monitoring API v2 — JSON ingest) ───────────────
+# ── Dynatrace write-back (Log Monitoring API v2 - JSON ingest) ───────────────
 # The Dynatrace OTLP endpoint only accepts protobuf; the classic Log Monitoring
 # API v2 (/api/v2/logs/ingest) accepts JSON and uses the same logs.ingest token,
 # so the approval lands as a real, queryable log on the Dynatrace timeline.
@@ -161,7 +161,7 @@ async def export_async(entry: dict[str, Any]) -> bool:
     swallowed. Returns True on a 2xx. On success, fires a best-effort read-back;
     the UI shows "verified" only if that read-back confirms the record is queryable,
     and falls back to "sent" otherwise (the write landed but queryability is
-    unconfirmed — Grail ingest has a short lag, and the read-back needs query scopes).
+    unconfirmed - Grail ingest has a short lag, and the read-back needs query scopes).
     """
     endpoint = _logs_ingest_endpoint()
     auth = _auth_header()

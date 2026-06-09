@@ -244,7 +244,7 @@ function IncidentState({
             )}
           </p>
 
-          {/* Metrics — primary metric larger. Two columns while active (the long
+          {/* Metrics - primary metric larger. Two columns while active (the long
               flag name gets its own full-width row below so it never overflows);
               three when resolved (adds a Status cell). */}
           <div style={{ display: "grid", gridTemplateColumns: isResolved ? "repeat(3, 1fr)" : "repeat(2, 1fr)", gap: "10px" }}>

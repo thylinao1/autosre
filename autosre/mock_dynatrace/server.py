@@ -138,7 +138,7 @@ def get_events_for_kubernetes_cluster(clusterId: str = "") -> str:
         events.append({"reason": "Unhealthy", "object": "pod/checkout-api",
                        "message": "Readiness probe failed: CPU throttling at 98%"})
     if not st.get("healthy", True) and fault == "memory_leak":
-        # OOM signal: more replicas won't help — this points to a rollback.
+        # OOM signal: more replicas won't help - this points to a rollback.
         events.append({"reason": "OOMKilled", "object": "pod/checkout-api",
                        "message": "Container memory usage exceeded limit; killed and restarted (CPU nominal)"})
     return json.dumps({"events": events}, indent=2)

@@ -1,4 +1,4 @@
-"""FastAPI HTTP/SSE layer for AutoSRE — the Mission-Control backend.
+"""FastAPI HTTP/SSE layer for AutoSRE - the Mission-Control backend.
 
 Implements the six endpoints of CONTRACT.md §1 as a thin transport over the
 shared ADK loop (`autosre.server.loop` / `runs`). The agent remains the only

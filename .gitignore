@@ -49,3 +49,8 @@ web/playwright-report/
 *.log
 .gcloud/
 .council/
+
+# internal planning / agent docs - keep local, not in public repo
+ALL-IN-PLAN.md
+CONTRACT.md
+DECISION-LOG.md

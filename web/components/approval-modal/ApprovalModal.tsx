@@ -196,7 +196,7 @@ export function ApprovalModal({ event, onDecide, secondOpinion }: ApprovalModalP
         }}
       />
 
-      {/* Modal card — layered depth */}
+      {/* Modal card - layered depth */}
       <div
         ref={cardRef}
         className={clsx(
@@ -220,7 +220,7 @@ export function ApprovalModal({ event, onDecide, secondOpinion }: ApprovalModalP
           backgroundSize: "100% 3px",
         }}
       >
-        {/* Top accent bar — shimmer while pending, solid on decide */}
+        {/* Top accent bar - shimmer while pending, solid on decide */}
         <div
           style={{
             height: "2.5px",
@@ -239,7 +239,7 @@ export function ApprovalModal({ event, onDecide, secondOpinion }: ApprovalModalP
         {/* Header */}
         <div style={{ padding: "18px 22px 14px", borderBottom: "1px solid var(--color-border-subtle)" }}>
           <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", marginBottom: "10px" }}>
-            {/* Gate seal — the visual signature of the approval moment. A shield
+            {/* Gate seal - the visual signature of the approval moment. A shield
                 glyph framed by an amber ring, sitting over the tool icon, so the
                 hero moment reads as a deliberate gate rather than a generic dialog.
                 Color follows the pending/approved/rejected tokens. */}
@@ -333,7 +333,7 @@ export function ApprovalModal({ event, onDecide, secondOpinion }: ApprovalModalP
             </div>
           </div>
 
-          {/* Risk tier — makes graduated autonomy visible. Renders nothing when
+          {/* Risk tier - makes graduated autonomy visible. Renders nothing when
               the backend did not attach a risk assessment. */}
           {risk && (
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px", flexWrap: "wrap" }}>
@@ -406,7 +406,7 @@ export function ApprovalModal({ event, onDecide, secondOpinion }: ApprovalModalP
           </div>
         </div>
 
-        {/* Hint — agent note. The hint is model-controlled: truncated and rendered
+        {/* Hint - agent note. The hint is model-controlled: truncated and rendered
             as plain text, with a caption marking it as unverified. */}
         {event.hint && (
           <div style={{ padding: "0 22px 14px" }}>
@@ -449,7 +449,7 @@ export function ApprovalModal({ event, onDecide, secondOpinion }: ApprovalModalP
           </div>
         )}
 
-        {/* Second opinion — an independent critique of the proposed fix, when the
+        {/* Second opinion - an independent critique of the proposed fix, when the
             agent ran one. Surfaced so the operator sees the dissent before deciding. */}
         {secondOpinion && (
           <div style={{ padding: "0 22px 14px" }}>
@@ -499,7 +499,7 @@ export function ApprovalModal({ event, onDecide, secondOpinion }: ApprovalModalP
         <div style={{ padding: "0 22px 20px" }}>
           {decided === null ? (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-              {/* Reject — hover/active/focus live in CSS (.approval-btn-reject) so
+              {/* Reject - hover/active/focus live in CSS (.approval-btn-reject) so
                   keyboard and touch get the same affordances. */}
               <button
                 onClick={() => handleDecide(false)}
@@ -509,7 +509,7 @@ export function ApprovalModal({ event, onDecide, secondOpinion }: ApprovalModalP
                 Reject
               </button>
 
-              {/* Approve — see .approval-btn-approve. */}
+              {/* Approve - see .approval-btn-approve. */}
               <button
                 onClick={() => handleDecide(true)}
                 disabled={submitting}
