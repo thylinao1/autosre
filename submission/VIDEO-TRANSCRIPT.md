@@ -12,7 +12,7 @@ timer number stays tight.
 
 ### 1 (0:00)
 **DO:** Open `/demo`. Dashboard is healthy ("All systems operational").
-**SAY:** "When a checkout service goes down, the clock starts and money leaves with it. Most of that lost time is just figuring out what broke. Someone on call digs through dashboards and logs to find the one change that caused it. That can eat half an hour before anyone fixes a thing."
+**SAY:** "When a checkout service goes down, the clock starts and money leaves with it. Gartner's widely cited benchmark puts IT downtime at around $5,600 a minute, and more recent estimates run higher still. Most of that lost time is just figuring out what broke. Someone on call digs through dashboards and logs to find the one change that caused it. That can eat half an hour before anyone fixes a thing."
 
 ### 2 (0:15)
 **DO:** Slowly pan across the three panels.
@@ -34,10 +34,26 @@ timer number stays tight.
 **DO:** Move the cursor to the Audit trail panel (both Approved and Rejected, with the Dynatrace badge).
 **SAY:** "And here is the receipt. Both decisions, the approval and the refusal, are written down with who decided and what happened, and pushed back into the same Dynatrace tenant that caught the incident. So later, a compliance team can see exactly who said yes and why."
 
-### 7 (2:10) — the real-tenant cut
-**DO:** Cut to a terminal running the agent in `DYNATRACE_MCP_MODE=stdio` against the real tenant, where the DQL returns 22. (Repro steps are in `VIDEO-SCRIPT.md`.)
+### 7 (2:10) — the real-tenant cut (optional, but it is the strongest proof)
+**DO:** This is a SEPARATE short clip of YOUR terminal, not the browser demo. On your
+machine you run the agent against your real Dynatrace tenant and screen-record the
+terminal. The full repro steps are in `VIDEO-SCRIPT.md` (Appendix), but the short
+version is: start `checkout-api` with the OTLP env so it streams to your tenant,
+inject the payment fault, wait about 90 seconds for the data to land, then run
+`DYNATRACE_MCP_MODE=stdio python -m autosre.run_agent`. The terminal shows the
+official Dynatrace MCP server connect, the DQL run, and the result come back around
+22 percent. Cut that 10 to 15 second clip in here.
+**If you skip it:** the hosted demo already proves a real Dynatrace touch on its own.
+The Audit trail badge reads "✓ Dynatrace · sent" because each decision is written
+back to your tenant live. Point at that badge instead and trim the line to the first
+two sentences.
 **SAY:** "What you are watching on the demo is the real Gemini 3 agent thinking, live. And against a real Dynatrace tenant, the same agent reads the real twenty-two percent spike from live telemetry over the official Dynatrace MCP server. We also score it. Across a set of incidents, including traps where the obvious fix is wrong, it chose the right action every time."
 
 ### 8 (2:35) — close
-**DO:** Show the Stack ribbon (Gemini 3, Google ADK, Vertex AI and Cloud Run, Dynatrace MCP), then put the live URL and the GitHub link on screen.
+**DO:** Scroll to the bottom of the demo page and rest on the **Stack ribbon**. That
+is the strip already on the page that lists Model: Gemini 3, Framework: Google ADK,
+Runtime: Vertex AI and Cloud Run, Senses: Dynatrace MCP, Human gate:
+require_confirmation, Target: checkout-api. You are pointing the camera at it, not
+clicking anything. Then drop in an end card or a text overlay (added in your video
+editor, not on the page) with the two links: the live demo URL and the GitHub repo.
 **SAY:** "AutoSRE runs on Gemini 3 with Google Cloud Agent Builder, on Vertex AI and Cloud Run, with Dynatrace MCP for its senses. It does the slow detective work in seconds and leaves the decision, and the record of it, with me. That is the on-call engineer I would actually want at three in the morning. It is open source and live right now. Go break something and try it."
