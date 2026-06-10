@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import type { ApprovalRequestEvent, RiskTier } from "@/lib/types";
+import { cleanAgentText } from "@/lib/text";
 
 interface ApprovalModalProps {
   event: ApprovalRequestEvent;
@@ -16,7 +17,8 @@ interface ApprovalModalProps {
 const MAX_FIELD_CHARS = 240;
 
 function truncate(value: string): string {
-  return value.length > MAX_FIELD_CHARS ? value.slice(0, MAX_FIELD_CHARS) + "…" : value;
+  const clean = cleanAgentText(value);
+  return clean.length > MAX_FIELD_CHARS ? clean.slice(0, MAX_FIELD_CHARS) + "…" : clean;
 }
 
 const RISK_LABEL: Record<RiskTier, string> = {
@@ -225,8 +227,8 @@ export function ApprovalModal({ event, onDecide, secondOpinion }: ApprovalModalP
           style={{
             height: "2.5px",
             borderRadius: "12px 12px 0 0",
-            transition: "background var(--duration-slow) var(--ease-out-expo)",
-            background: decided !== null
+            transition: "background-image var(--duration-slow) var(--ease-out-expo)",
+            backgroundImage: decided !== null
               ? isApproved
                 ? "linear-gradient(90deg, transparent 0%, var(--color-green) 20%, var(--color-green-text) 50%, var(--color-green) 80%, transparent 100%)"
                 : "linear-gradient(90deg, transparent 0%, var(--color-red) 20%, var(--color-red-text) 50%, var(--color-red) 80%, transparent 100%)"

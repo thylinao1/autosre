@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import clsx from "clsx";
 import type { TimelineEntry, Phase } from "@/lib/types";
+import { cleanAgentText } from "@/lib/text";
 
 interface TimelineProps {
   entries: TimelineEntry[];
@@ -184,6 +185,20 @@ function PhaseHeader({ phase, isActive, isDone }: { phase: Phase; isActive: bool
           className="animate-pulse-glow"
         />
       )}
+      {/* Hairline rule in the phase color, fading right: gives each phase a
+          horizon line instead of a bare label. */}
+      <div
+        aria-hidden
+        style={{
+          flex: 1,
+          height: "1px",
+          marginLeft: "4px",
+          background: isActive
+            ? `linear-gradient(to right, color-mix(in srgb, ${cfg.color} 40%, transparent), transparent)`
+            : "linear-gradient(to right, var(--color-border-subtle), transparent)",
+          transition: "opacity 0.3s ease",
+        }}
+      />
     </div>
   );
 }
@@ -193,19 +208,24 @@ interface EntryRowProps {
   isLast: boolean;
   isNewest: boolean;
   staggerIndex: number;
+  phaseColor: string;
 }
 
-function EntryRow({ entry, isLast, isNewest, staggerIndex }: EntryRowProps) {
+function EntryRow({ entry, isLast, isNewest, staggerIndex, phaseColor }: EntryRowProps) {
   const cfg = entryKindConfig[entry.kind] ?? entryKindConfig.tool_call;
   const isStep = entry.kind === "step";
   const isApproval = entry.kind === "approval_request";
   const isError = entry.kind === "error";
   const isAgentMsg = entry.kind === "agent_message";
+  const isToolCall = entry.kind === "tool_call";
 
   if (isStep) return null;
 
   /* Emil stagger: 40ms per entry, cap at 200ms */
   const staggerDelay = Math.min(staggerIndex * 40, 200);
+
+  const label = cleanAgentText(entry.label);
+  const detail = entry.detail ? cleanAgentText(entry.detail) : null;
 
   return (
     <div
@@ -222,9 +242,8 @@ function EntryRow({ entry, isLast, isNewest, staggerIndex }: EntryRowProps) {
           : undefined),
       }}
     >
-      {/* Connector: dot + vertical line */}
+      {/* Connector: dot + a phase-tinted line that fades as it descends */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, width: "10px", marginTop: "1px" }}>
-        {/* Dot with icon overlay */}
         <div
           style={{
             width: "8px",
@@ -235,14 +254,17 @@ function EntryRow({ entry, isLast, isNewest, staggerIndex }: EntryRowProps) {
             backgroundColor: cfg.dotColor,
             boxShadow: cfg.dotGlow,
             transition: "all 0.3s ease",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "rgba(0,0,0,0.7)",
           }}
         />
         {!isLast && (
-          <div style={{ width: "1px", flex: 1, backgroundColor: "var(--color-border-subtle)", marginTop: "2px" }} />
+          <div
+            style={{
+              width: "1px",
+              flex: 1,
+              marginTop: "2px",
+              background: `linear-gradient(to bottom, color-mix(in srgb, ${phaseColor} 35%, transparent), var(--color-border-subtle))`,
+            }}
+          />
         )}
       </div>
 
@@ -254,31 +276,80 @@ function EntryRow({ entry, isLast, isNewest, staggerIndex }: EntryRowProps) {
           paddingBottom: "17px",
         }}
       >
-        <p
-          style={{
-            fontSize: "12px",
-            fontFamily: "var(--font-mono)",
-            lineHeight: 1.55,
-            color: isAgentMsg
-              ? "var(--color-text-secondary)"
-              : isApproval
-              ? "var(--color-amber)"
-              : isError
-              ? "var(--color-red-text)"
-              : "var(--color-text-primary)",
-            fontStyle: isAgentMsg ? "italic" : "normal",
-            fontWeight: isApproval ? 500 : 400,
-          }}
-        >
-          {entry.label}
-        </p>
-        {entry.detail && (
+        {isAgentMsg ? (
+          /* The agent thinking out loud: a quiet quote block in the body face,
+             visually distinct from the machine rows around it. */
+          <div
+            style={{
+              borderLeft: `2px solid color-mix(in srgb, var(--color-diagnose) 55%, transparent)`,
+              backgroundColor: "color-mix(in srgb, var(--color-diagnose) 6%, transparent)",
+              borderRadius: "0 8px 8px 0",
+              padding: "7px 11px 8px",
+            }}
+          >
+            <p
+              style={{
+                fontSize: "12.5px",
+                fontFamily: "var(--font-sans)",
+                lineHeight: 1.6,
+                letterSpacing: "-0.005em",
+                color: "var(--color-text-secondary)",
+              }}
+            >
+              {label}
+            </p>
+            {detail && (
+              <p
+                style={{
+                  fontSize: "12px",
+                  fontFamily: "var(--font-sans)",
+                  color: "var(--color-text-muted)",
+                  marginTop: "4px",
+                  lineHeight: 1.55,
+                  letterSpacing: "-0.005em",
+                  display: "-webkit-box",
+                  WebkitLineClamp: 3,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                }}
+              >
+                {detail}
+              </p>
+            )}
+          </div>
+        ) : (
+          <p
+            style={{
+              fontSize: "12px",
+              fontFamily: "var(--font-mono)",
+              lineHeight: 1.55,
+              color: isApproval
+                ? "var(--color-amber)"
+                : isError
+                ? "var(--color-red-text)"
+                : "var(--color-text-primary)",
+              fontWeight: isApproval ? 500 : 400,
+              ...(isToolCall
+                ? {
+                    display: "inline-block",
+                    padding: "2px 8px",
+                    borderRadius: "6px",
+                    backgroundColor: "color-mix(in srgb, var(--color-accent) 7%, transparent)",
+                    border: "1px solid color-mix(in srgb, var(--color-accent) 16%, transparent)",
+                  }
+                : undefined),
+            }}
+          >
+            {label}
+          </p>
+        )}
+        {detail && !isAgentMsg && (
           <p
             style={{
               fontSize: "11px",
               fontFamily: "var(--font-mono)",
               color: "var(--color-text-muted)",
-              marginTop: "3px",
+              marginTop: "4px",
               lineHeight: 1.5,
               display: "-webkit-box",
               WebkitLineClamp: 2,
@@ -286,7 +357,7 @@ function EntryRow({ entry, isLast, isNewest, staggerIndex }: EntryRowProps) {
               overflow: "hidden",
             }}
           >
-            {entry.detail}
+            {detail}
           </p>
         )}
       </div>
@@ -409,6 +480,7 @@ export function Timeline({ entries, currentPhase, isBusy = false }: TimelineProp
                     isLast={idx === arr.length - 1 && i === activePhaseIndex}
                     isNewest={isNewest}
                     staggerIndex={idx}
+                    phaseColor={phaseConfig[phase].color}
                   />
                 );
               })}
@@ -430,15 +502,21 @@ export function Timeline({ entries, currentPhase, isBusy = false }: TimelineProp
                       className="animate-status-blink"
                     />
                   </div>
-                  <p style={{
-                    fontSize: "11px",
-                    fontFamily: "var(--font-mono)",
-                    color: "var(--color-accent)",
-                    fontStyle: "italic",
-                    paddingTop: "3px",
-                  }}>
-                    processing…
-                  </p>
+                  <span style={{ display: "inline-flex", gap: "4px", alignItems: "center", paddingTop: "7px" }} aria-label="processing">
+                    {[0, 1, 2].map((d) => (
+                      <span
+                        key={d}
+                        className="typing-dot"
+                        style={{
+                          width: "4px",
+                          height: "4px",
+                          borderRadius: "50%",
+                          backgroundColor: "var(--color-accent)",
+                          animationDelay: `${d * 160}ms`,
+                        }}
+                      />
+                    ))}
+                  </span>
                 </div>
               )}
             </div>

@@ -1,13 +1,15 @@
 "use client";
 
 import type { FinalEvent } from "@/lib/types";
+import { cleanAgentText } from "@/lib/text";
 
 interface FinalReportProps {
   event: FinalEvent;
 }
 
 export function FinalReport({ event }: FinalReportProps) {
-  const { report, service_healthy, incident_resolved, outcome } = event;
+  const { service_healthy, incident_resolved, outcome } = event;
+  const report = cleanAgentText(event.report);
 
   const isSuccess = service_healthy && incident_resolved;
   const isDeclined = outcome === "declined";

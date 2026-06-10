@@ -229,6 +229,31 @@ export default function DemoPage() {
             blink={isBusy || state.status === "awaiting_approval"}
           />
           <StatusPill label="Dynatrace MCP" color="var(--color-accent)" glow="none" blink={false} />
+          {/* Eval scorecard chip: raw counts, links to the graded methodology. */}
+          <Link
+            href="/reliability"
+            className="hidden sm:inline-flex"
+            title="Graded diagnosis evals: every run scored against an answer key the agent can never see, including a no-action trap."
+            style={{
+              alignItems: "center",
+              gap: "6px",
+              padding: "3px 10px",
+              borderRadius: "9999px",
+              border: "1px solid var(--color-border)",
+              backgroundColor: "var(--color-green-dim)",
+              fontSize: "10px",
+              fontFamily: "var(--font-mono)",
+              fontWeight: 600,
+              letterSpacing: "0.02em",
+              color: "var(--color-green-text)",
+              textDecoration: "none",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}
+          >
+            <span aria-hidden="true" style={{ width: "5px", height: "5px", borderRadius: "50%", backgroundColor: "var(--color-green)", flexShrink: 0 }} />
+            Evals: 0/25 false actions
+          </Link>
           <div className="hidden md:flex" style={{
             alignItems: "center",
             gap: "6px",
