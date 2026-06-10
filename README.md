@@ -21,7 +21,7 @@ The track is full of agents that read Dynatrace and remediate. The part almost n
 - **It reads a real Dynatrace tenant, not only a mock.** checkout-api streams real OpenTelemetry into Dynatrace, and the agent detects the incident from a live DQL query (`timeseries avg(checkout.failure_rate)`) that returns the real failure-rate spike. The demo video shows that query running against the live tenant over the official Dynatrace MCP server.
 - **Autonomous diagnosis, human authority.** The agent does the slow 3 AM detective work in seconds. A person still owns every change that reaches production, and every decision is on the record. That is the line we care about: autonomous, but accountable.
 
-> **An honest note on the write-back.** Our trial Dynatrace tenant is OpenTelemetry-only, so the richer Davis problem and Smartscape topology write APIs are not available to us. We put each approval on the tenant's timeline through the Log Monitoring API v2 because it is the reproducible way to do it on the tenant we actually have. The write-back fires wherever the OTLP ingest credentials are set (the hosted demo included), and the API reports back whether the write actually landed and is queryable, not just whether it was attempted. The point is the auditable governance record on the platform that saw the incident, not the specific ingest API. The detection path, by contrast, is full live DQL against real telemetry.
+> **Why the audit trail uses the Log Monitoring API.** Our trial Dynatrace tenant is OpenTelemetry-only, so we deliberately built the write-back on the Log Monitoring API v2, the one ingest surface every Dynatrace tenant has. That proves the governance model works independently of premium APIs (Davis problems, Smartscape topology writes): swap the tenant and the audit trail still lands. The write-back fires wherever the ingest credentials are set (the hosted demo included), and the ledger distinguishes **sent** (the tenant acknowledged the write) from **verified** (a read-back DQL confirmed the record is queryable), never claiming more than what landed. The detection path, by contrast, is full live DQL against real telemetry.
 
 ---
 
@@ -90,7 +90,7 @@ AutoSRE targets **on-call SREs, DevOps teams, and ops platforms** in retail, fin
 
 ## What AutoSRE Does
 
-The agent runs a **6-step loop**, driven by **Gemini 3 reasoning on Vertex AI** through the ADK (Google Cloud's Agent Platform, code-first surface):
+The agent runs a **6-step loop**, driven by **Gemini 3 reasoning on Vertex AI** through the ADK (Google Cloud's Agent Platform, code-first surface), demonstrable entirely locally via a bundled deterministic mock, or live against a real Dynatrace tenant:
 
 1. **DETECT**: List open problems from Dynatrace (anomalies, threshold violations, deployment events).
 2. **DIAGNOSE**: Run DQL queries to correlate the problem with recent changes (deploys, feature flags, configuration).
@@ -169,6 +169,7 @@ The human gate is the headline, but it is backed by defenses that hold even when
 - **Untrusted-telemetry guardrail.** The agent instruction treats all Dynatrace data (problem titles, DQL rows, event and log messages, vulnerability text, service config) as untrusted evidence to summarize, never as instructions. That defends against indirect prompt injection through telemetry text.
 - **The demo target does not leak the answer key.** `/_internal/state` exposes only the observable symptom (a Davis-style title plus the impacted metric), never the prose `root_cause` or the exact `correct_fix`. The full fault detail lives behind a separate test-only `/_internal/answer_key` route the agent can never reach, so the diagnosis is genuine reasoning, not a lookup.
 - **Measured diagnosis quality.** Diagnosis is not asserted, it is scored. `tests/evals/` runs the real agent over a scenario set that includes two decoys (a failure-rate spike where the flag is already off, so the fix is a rollback not a toggle; a latency spike with normal CPU and OOMKilled pods, so the fix is a rollback not a scale-up) plus an all-clear, and grades tool-selection accuracy and false-action rate against the target's own answer key (which the agent never sees). On the latest run, `gemini-3-flash-preview` scored **5/5: 100% tool-selection accuracy, 0% false-action rate**, including both decoys and the all-clear (it correctly proposed nothing when nothing was wrong). Reproduce with `python -m tests.evals.run_evals`; the scorecard is committed at `tests/evals/last_run.json`.
+- **The agent's own failures fail safe.** Gemini rate limits and transient errors (429, 503) trigger a bounded backoff-and-resume in the shared loop (`autosre/server/loop.py`: up to 10 retries, honoring the API's suggested retry delay), surfaced in the UI as a live "retrying" note; exhausted retries end the run as a typed `error` frame, never a hang. An off-target DQL query or an unreachable backend returns an error or empty-result payload the model reads as evidence and adjusts to, and an out-of-bounds remediation returns a structured `blocked` result, so no failure path bypasses the gate or dies in an unhandled exception.
 - **Judging-day hardening.** Per-IP rate limits and a single-active-run guard on the public endpoints (`autosre/server/app.py`, `runs.py`); the deploy script pins `--min/--max-instances=1` so the in-memory run state and ledger stay coherent; the ledger seeds one labeled approved and one rejected example at startup so a cold redeploy never shows an empty audit trail; structured logging throughout.
 
 ---
@@ -195,7 +196,10 @@ pip install -r requirements.txt
 
 # 2. Copy the example environment (defaults to mock Dynatrace)
 cp .env.example .env
-# Add GOOGLE_API_KEY=... (free from Google AI Studio, no GCP billing needed)
+# Add GOOGLE_API_KEY=... from Google AI Studio (https://aistudio.google.com).
+# Recommended: a key from a project with billing enabled, so the loop never
+# waits on the free tier's ~5 req/min limit. A free key also works; the agent
+# backs off and resumes on 429s, it is just slower.
 
 # 3. Start the target service in one terminal
 python -m autosre.target_service.main
@@ -435,7 +439,7 @@ LICENSE                       # MIT
 ## Troubleshooting
 
 **Q: The agent times out or rate-limits.**
-A: You're hitting Gemini's free-tier quota (~5 req/min). Get a free API key from [Google AI Studio](https://aistudio.google.com) and put it in `.env` (no billing needed yet). If you enable billing on your GCP project, you can use `AUTOSRE_MODEL=gemini-3-pro-preview` for faster reasoning and higher quota.
+A: You're hitting Gemini's free-tier quota (~5 req/min). The loop backs off and resumes automatically (you'll see a "retrying" note), but for an uninterrupted run use an API key from a project with billing enabled; that lifts the per-minute cap so a full sweep never waits on a 429. With billing you can also opt into `AUTOSRE_MODEL=gemini-3-pro-preview` for deeper reasoning.
 
 **Q: The web UI shows "Connection refused" when I click "Run Incident Sweep".**
 A: Make sure the SSE backend is running (`python -m autosre.server`) and listening on the port the UI expects. By default, the UI looks for `localhost:8080`; set `NEXT_PUBLIC_AGENT_BASE_URL=http://127.0.0.1:8080` in `.env.local` in the `web/` directory if the backend is on a different port.

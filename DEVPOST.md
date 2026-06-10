@@ -5,37 +5,39 @@
 
 ---
 
-## Elevator Pitch (≤ 1 sentence)
+## Elevator Pitch (under 200 characters)
 
-AutoSRE detects production incidents from Dynatrace, diagnoses the root cause from live telemetry with Gemini 3 reasoning, proposes a fix, waits for your one-tap approval, executes it, and verifies recovery, collapsing incident MTTR from 30+ minutes to seconds, with a human gating every action.
+AutoSRE is an autonomous on-call agent that diagnoses Dynatrace incidents in seconds and queues up the fix, but cannot touch production without your one-tap approval.
 
 ---
 
 ## What It Does
 
-AutoSRE is an autonomous incident-response agent built with the **Agent Development Kit (ADK)**, the code-first surface of **Google Cloud's Agent Platform (Agent Builder)**, reasoning on **Gemini 3 via Vertex AI**, deployed on **Cloud Run** (and also deployable to **Vertex AI Agent Engine**), and powered entirely by the **Dynatrace MCP** as its observability source.
+AutoSRE **detects** a production incident from Dynatrace, **diagnoses** the root cause from live telemetry with Gemini 3, **proposes exactly one fix**, and **stops** until a human approves it.
 
-The agent runs a **6-step loop**:
+Built on the **Agent Development Kit (ADK)**, the code-first surface of **Google Cloud's Agent Platform**, reasoning on **Gemini 3 via Vertex AI**, deployed on **Cloud Run**, with the **Dynatrace MCP** as its only observability source.
 
-1. **DETECT**: Pull open problems from Dynatrace (anomalies, threshold violations, deployment events).
-2. **DIAGNOSE**: Run DQL queries to correlate the problem with recent changes (feature flags, deployments, config).
-3. **PROPOSE**: Reason about the root cause and name exactly one remediation (disable flag, rollback, scale service).
-4. **PAUSE**: Block until a human approves the proposed action (ADK-native `require_confirmation=True`, not a prompt).
-5. **ACT**: Execute the approved remediation.
-6. **VERIFY**: Re-check service health and confirm recovery.
+The agent runs a **6-step loop** (demonstrable entirely locally via a bundled deterministic mock, or live against a real Dynatrace tenant):
 
-**The core value proposition:** Compress incident triage from 30+ minutes of manual work to the seconds shown on the demo's live timer (detection through a verified fix), while keeping a human as the accountable decision-maker. The agent does the 3am grunt work; the operator just approves the fix.
+1. **DETECT**: pull open problems from Dynatrace.
+2. **DIAGNOSE**: run DQL queries to correlate the problem with recent changes.
+3. **PROPOSE**: name exactly one remediation (disable flag, rollback, scale).
+4. **PAUSE**: block until a human approves (ADK-native `require_confirmation=True`, not a prompt).
+5. **ACT**: execute the approved remediation.
+6. **VERIFY**: re-check service health and confirm recovery.
 
-**The web UI:** A dark ops "Mission Control" dashboard streams the loop live over SSE. The operator watches the agent pull the Dynatrace problem, run evidence queries, propose the fix, and then taps **APPROVE** to execute. The incident card flips green on recovery.
+**The value:** triage that takes an on-call engineer **30+ minutes** by hand happens in the **seconds** shown on the demo's live timer, with a human still owning every change that reaches production.
+
+**The web UI:** a dark "Mission Control" dashboard **streams the loop live** over SSE. The operator taps **APPROVE** and watches the incident card flip green on verified recovery.
 
 **Key differentiators:**
-- **The refusal is the product.** The remediation tools are wrapped in ADK `require_confirmation=True`, so the model physically cannot touch production without a human decision. Approve and it fixes the incident. Reject and it stands down, changes nothing, and does not route around you. The gate lives in the code (`autosre/agent/agent.py`), not the prompt.
-- **Two governed outcomes, both on Dynatrace's own timeline.** An append-only ledger records every decision (who, what, outcome) and writes each one back into the real Dynatrace tenant as a log. Approve gives `approved / resolved`; reject gives `rejected / declined` with production untouched. The platform that detected the incident also holds the proof of who authorized or refused the fix.
-- **Dynatrace MCP is load-bearing:** the agent's only sensory system for detect and diagnose. Detection runs on a live DQL query against real OpenTelemetry, not a canned reply.
-- **Mode-agnostic guarantee:** The agent code is identical across `DYNATRACE_MCP_MODE=mock | stdio | remote`. Offline (mock), local (official MCP server), or against a real tenant, the UI and events are byte-identical.
-- **The platform that watches production watches the agent.** AutoSRE is graded before it is trusted: a diagnosis eval scores the live agent against an answer key it can never see, across decoy incidents (where the reflex fix is wrong) and a no-action trap (where the only correct move is to do nothing). The graded results are exported into the same Dynatrace tenant the agent monitors (latest export: 26 records acknowledged, HTTP 204), next to the audit record of every live approve and reject, so the agent's own track record (accuracy, false-action rate, refusals) lives where the telemetry lives, one DQL away in Grail. The live demo renders the committed scorecard at `/reliability`. Who watches the watcher? The observability platform does.
+- **The refusal is the product.** Remediation tools are wrapped in ADK `require_confirmation=True`: the model **cannot touch production** without a human decision, and a rejection stands the agent down with nothing changed.
+- **Both outcomes are audited on Dynatrace's own timeline.** An append-only ledger records who decided, what, and the outcome, then **writes it back to the tenant**: `approved / resolved` or `rejected / declined`.
+- **Dynatrace MCP is load-bearing.** It is the agent's only sensory system; detection runs on a **live DQL query** against real OpenTelemetry, not a canned reply.
+- **Mode-agnostic guarantee.** Identical agent code across `DYNATRACE_MCP_MODE=mock | stdio | remote`; only env vars change.
+- **Graded, not vibes.** A 25-run eval grades the live agent against an **answer key it has no tool to reach**: 25/25 correct, 0/25 false actions (0%), 5/5 no-action traps refused, median 13.3s detect-to-proposal. Results export to the **same Dynatrace tenant the agent monitors** (queryable in Grail) and render live at `/reliability`.
 
-> **Honest note on the write-back:** our trial Dynatrace tenant is OpenTelemetry-only, so the richer Davis problem and Smartscape write APIs are not available to us. We put each approval on the tenant's timeline through the Log Monitoring API because it is the reproducible way to do it on the tenant we actually have. The value is the auditable governance record on the platform that saw the incident, not the specific ingest API. Detection, by contrast, is full live DQL against real telemetry.
+> **Why the audit trail uses the Log Monitoring API:** our tenant is OpenTelemetry-only, so we built the write-back on the one ingest API every Dynatrace tenant has. That is a deliberate choice: it proves the governance model works **independently of premium APIs** (Davis problems, Smartscape). The ledger still distinguishes **sent** (the tenant acknowledged the write) from **verified** (a read-back DQL confirmed it is queryable). Detection, by contrast, is full live DQL against real telemetry.
 
 ---
 
@@ -43,58 +45,58 @@ The agent runs a **6-step loop**:
 
 ### Tech Stack & Architecture
 
-- **Reasoning engine:** Gemini 3 via **Vertex AI** (`gemini-3-flash-preview` by default for cost and speed; `gemini-3-pro-preview` for maximum reasoning).
-- **Agent framework:** **Google Cloud's Agent Development Kit (ADK)**, the code-first surface of **Agent Builder / Agent Platform**. The agent runs self-hosted (`python -m autosre.server`, ADK `InMemoryRunner`) on **Cloud Run**; the same ADK `root_agent` is also deployable to **Vertex AI Agent Engine** (the managed Agent Platform runtime) via `deploy/agent_engine_deploy.py`.
-- **Observability partner:** **Dynatrace MCP server** (official `@dynatrace-oss/dynatrace-mcp-server` or hosted remote gateway). Tools: `query_problems`, `execute_dql`, `get_events_for_kubernetes_cluster` (read-only, for detect, diagnose, and recovery confirmation). Underscore names satisfy Gemini's function-calling; the toolset also accepts a real gateway's hyphenated names.
-- **Remediation tools:** Python `FunctionTool` with `require_confirmation=True` (human-gated): `toggle_feature_flag`, `scale_service`, `rollback_deployment`, `get_service_health`. Each is also machine-bounded by server-side allow-lists (a replica band, a known-good rollback-version set, managed flag names), so an out-of-bounds action fails closed even when a human approves it.
-- **Web UI:** Next.js 16 (App Router), Tailwind CSS v4, TypeScript. Streams SSE events and renders real-time timeline + approval modal.
-- **Backend:** FastAPI HTTP + SSE service. Per-run session management, pause/resume bridge for approval round-trip.
-- **Target service:** FastAPI `checkout-api` with injectable faults (payment errors, latency spike) and state introspection (`/_internal/state`).
-- **Deployment:** Docker containers on Google Cloud Run (agent, checkout-api, web UI), single-instance for the agent so the in-memory run state and ledger stay coherent. The same ADK agent is also registerable on Vertex AI Agent Engine via `deploy/agent_engine_deploy.py`.
+- **Reasoning engine:** **Gemini 3** via **Vertex AI** (`gemini-3-flash-preview` by default; `gemini-3-pro-preview` opt-in).
+- **Agent framework:** **Google Cloud's ADK** (code-first Agent Platform). Self-hosted on **Cloud Run**; also deployable to **Vertex AI Agent Engine** via `deploy/agent_engine_deploy.py`.
+- **Observability partner:** **Dynatrace MCP server** (official `@dynatrace-oss/dynatrace-mcp-server` or hosted gateway). Read-only tools (`query_problems`, `execute_dql`, `get_events_for_kubernetes_cluster`) drive detect, diagnose, and recovery confirmation.
+- **Remediation tools:** Python `FunctionTool` with `require_confirmation=True`, each **machine-bounded by server-side allow-lists** (replica band, known-good versions, managed flags) so out-of-bounds actions fail closed even when approved.
+- **Web UI:** Next.js 16, Tailwind CSS v4, TypeScript. Streams SSE; renders the live timeline and approval modal.
+- **Backend:** FastAPI HTTP + SSE. Per-run sessions and the pause/resume bridge for the approval round-trip.
+- **Target service:** FastAPI `checkout-api` with injectable faults and state introspection.
+- **Deployment:** Docker on **Cloud Run** (agent, checkout-api, web UI); the agent is pinned single-instance so run state and ledger stay coherent.
 
 ### Key Design Decisions
 
-1. **ADK-native HITL over prompt instruction:** The approval gate is a `FunctionTool(require_confirmation=True)` definition, not a system-prompt hack. The model cannot call the remediation tool without explicit human confirmation. This is stronger than any instruction.
+1. **ADK-native HITL over prompt instruction:** the gate is `FunctionTool(require_confirmation=True)`, **enforced by the framework**, not a system-prompt hack the model could talk itself out of.
 
-2. **Streaming events contract:** All comms between agent and UI are typed JSON SSE frames (8 event types: `step`, `tool_call`, `tool_result`, `approval_request`, `approval_resolved`, `agent_message`, `final`, `error`). This enables the web UI to render the agent's reasoning in real time.
+2. **Streaming events contract:** agent and UI speak **typed JSON SSE frames** (8 event types), so the UI renders the agent's reasoning in real time.
 
-3. **Mode-agnostic guarantee:** Dynatrace toolset is abstracted behind a factory function (`build_dynatrace_toolset(mode)`). `mock` mode runs a bundled MCP server (derives telemetry from the target service's state). `stdio` and `remote` modes point to the official server. The agent code is identical in all three; only env vars change.
+3. **Mode-agnostic guarantee:** the Dynatrace toolset sits behind one factory (`build_dynatrace_toolset`). `mock`, `stdio`, and `remote` swap with env vars; the **agent code never changes**.
 
-4. **One model, by design:** The only LLM is Gemini 3 on Vertex AI. No other models, no retrieval, no fine-tuning. The observability intelligence comes from Dynatrace through the MCP; detection is live DQL, and because our trial tenant is OpenTelemetry-only we read telemetry directly rather than consuming Davis problems, which we call out honestly.
+4. **One model, by design:** the only LLM is **Gemini 3 on Vertex AI**. The observability intelligence comes from Dynatrace through the MCP; detection is live DQL.
 
-5. **Defense in depth around the gate:** The human gate is backed by machine bounds. The remediation tools enforce server-side allow-lists (replica band, known-good versions, managed flag names), so even an approved-but-poisoned action fails closed. The agent instruction carries an untrusted-telemetry guardrail (all Dynatrace data is evidence to summarize, never instructions) to defend against indirect prompt injection through log and event text. And the demo target never leaks the answer key: `/_internal/state` exposes only the observable symptom (a Davis-style title plus the impacted metric), never the prose root cause or the exact fix, so the diagnosis is genuine reasoning rather than a lookup.
+5. **Defense in depth around the gate:** server-side **allow-lists fail closed** even on an approved-but-poisoned action; an **untrusted-telemetry guardrail** treats all Dynatrace data as evidence, never instructions; and the demo target **never leaks the answer key**, so the diagnosis is genuine reasoning, not a lookup.
+
+6. **The agent's own failures fail safe.** Gemini rate limits and transient errors (429, 503) trigger a bounded backoff-and-resume in the shared loop (`autosre/server/loop.py`: up to 10 retries, honoring the API's suggested retry delay, surfaced in the UI as a live "retrying" note), and exhausted retries end the run as a typed `error` frame instead of a hang. Bad tool traffic cannot crash the loop either: an off-target DQL query or an unreachable backend comes back as an error or empty-result payload the model reads as evidence and adjusts to, and an out-of-bounds remediation returns a structured `blocked` result from the allow-list, so every failure lands in the model's context or the audit trail, never in an unhandled exception.
 
 ---
 
 ## Challenges
 
-1. **Dynatrace MCP availability:** The official `@dynatrace-oss/dynatrace-mcp-server` was not available early; we built a deterministic mock MCP server with identical tool shapes to unblock development. This proved to be a feature: the `mock` mode is now a reliable fallback for offline demos.
+1. **Dynatrace MCP availability:** the official server was not available early, so we built a **deterministic mock MCP server** with the same protocol. It became a feature: `mock` mode is now the reliable offline demo path.
 
-2. **SSE streaming + approval pause:** Holding an SSE stream open while pausing for human input required careful session management. Solution: per-run state machine in `autosre/server/` tracks pending approvals and resumes the loop on decision POST.
+2. **SSE streaming + approval pause:** holding a stream open while blocking on a human required a **per-run state machine** (`autosre/server/runs.py`) that parks the loop on a future and resumes it on the decision POST.
 
-3. **Gemini rate-limiting on free tier:** `gemini-3-flash-preview` (free) allows ~5 req/min. A full incident loop makes 4-5 model calls. Solution: exponential backoff + retry in `run_agent.py`. For demo smoothness, use a free API key (no billing) or enable billing for higher quota.
+3. **Gemini rate limiting:** the free tier allows ~5 req/min and a full loop makes 4 to 5 model calls. The shared loop (`autosre/server/loop.py`) **backs off and resumes** on 429/503 (up to 10 retries, honoring the API's suggested retry delay) and surfaces the wait in the UI, so a rate-limited run completes instead of dying. For judging, use an **API key with real quota** (billing enabled) so a test run never waits on a 429.
 
-4. **Mode-agnostic testing:** Ensuring the agent behaves identically in `mock`, `stdio`, and `remote` modes required a unified toolset interface. Solution: `FunctionTool` list is built dynamically; tool names and response shapes are tested against the contract.
+4. **Mode-agnostic testing:** tool names and response shapes are **tested against the contract** so `mock`, `stdio`, and `remote` stay byte-identical to the UI.
 
-5. **CORS between Cloud Run instances:** The UI and agent run on different Cloud Run domains. Solution: explicit `ALLOWED_ORIGIN` env var with CORS headers on SSE and POST endpoints.
+5. **CORS between Cloud Run instances:** the UI and agent live on different domains; an explicit `ALLOWED_ORIGIN` env var scopes CORS on the SSE and POST endpoints.
 
-6. **Auditing the refusal correctly:** Live grounding surfaced that the deny path was logging a rejection as `approved` (ADK emits a confirmation stub for the gated tool before the human decides, which a naive classifier miscounts as "acted"). Solution: derive the decision from the operator's actual choice, honor a rejection in the replay path, and add deny-path regression tests so the marquee refusal beat cannot silently re-break.
+6. **Auditing the refusal correctly:** ADK emits a confirmation stub for the gated tool **before** the human decides, which a naive classifier miscounts as "acted". We derive the decision from the operator's actual choice and pinned it with **deny-path regression tests** so the marquee refusal beat cannot silently re-break.
 
 ---
 
 ## What's Next
 
-- **Multi-incident concurrency:** Currently supports one run per operator session. Extend to parallel incident tracking.
-- **Incident history & audit trail:** Store resolved incidents for post-mortem and compliance.
-- **Deeper Dynatrace integration:** Use Davis AI for richer problem context; correlate with change events, SLO violations, and custom metrics.
-- **More remediation types:** Extend beyond flags/rollback/scale to config changes, canary rollbacks, and upstream circuit-breaker trips.
-- **Slack / PagerDuty integration:** Alert escalation and approval via native chat / on-call tools.
-- **Real Kubernetes cluster:** Demo against a live k8s cluster instead of a mock checkout-api.
-- **Android / iOS native app:** Currently web-only; add native mobile interfaces for SREs on-the-go.
-- **Second-opinion verifier (shipped, opt-in):** A second, independent Gemini pass critiques the proposed fix before the human sees it (`AUTOSRE_SECOND_OPINION=1`). Next: make it default-on once the latency budget allows and show a confidence score.
-- **Graduated-autonomy risk tiers (shipped):** Every proposed action carries a risk tier (`autosre/server/policy.py`), shown in the approval modal; an operator can pre-authorize a tier so low-risk actions auto-apply while higher-risk ones always stop for a human. Next: richer per-action policy configuration.
-- **Ledger-as-memory (shipped):** The agent can call `get_recent_decisions` to cite how similar incidents were handled before. Next: semantic similarity over past incidents instead of recency.
-- **Diagnosis eval harness (shipped, multi-trial):** `tests/evals/` scores tool-selection accuracy, false-action rate, trap refusals, and detect-to-proposal latency without auto-approve, graded against a test-only answer key the agent never sees, under a pre-registered pass criterion. Latest committed run: 25/25 (20/20 tool selection, 0/25 false actions, 5/5 trap refusals, median 13.3s), with results exported to the Dynatrace tenant so the agent's track record is queryable in Grail. Next: broaden the scenario pool and wire it into CI as a regression gate.
+- **Multi-incident concurrency:** extend the one-run-per-session model to parallel incident tracking.
+- **Deeper Dynatrace integration:** Davis AI problem context, change events, SLO violations, custom metrics.
+- **More remediation types:** config changes, canary rollbacks, circuit-breaker trips.
+- **Slack / PagerDuty integration:** escalation and approval in the tools on-call teams already live in.
+- **Real Kubernetes cluster:** demo against live k8s instead of the mock checkout-api.
+- **Second-opinion verifier (shipped, opt-in):** an independent Gemini pass critiques the fix before the human sees it (`AUTOSRE_SECOND_OPINION=1`). Next: default-on with a confidence score.
+- **Graduated-autonomy risk tiers (shipped):** every action carries a risk tier (`autosre/server/policy.py`); an operator can pre-authorize a tier so low-risk actions auto-apply, audited. Next: richer per-action policy.
+- **Ledger-as-memory (shipped):** the agent cites past decisions via `get_recent_decisions`. Next: semantic similarity over past incidents instead of recency.
+- **Diagnosis eval harness (shipped, multi-trial):** `tests/evals/` grades the live agent against a test-only answer key under a pre-registered pass criterion. Latest committed run: **25/25 correct, 0/25 false actions, 5/5 trap refusals, median 13.3s**, exported to the Dynatrace tenant. Next: broaden the scenario pool and gate CI on it.
 
 ---
 
@@ -109,7 +111,7 @@ The agent runs a **6-step loop**:
 | Field | Content |
 |-------|---------|
 | **Project Name** | AutoSRE: The Autonomous On-Call Engineer |
-| **Tagline** | The on-call engineer that diagnoses and fixes production incidents from Dynatrace, but never acts without your approval. |
+| **Tagline** | AutoSRE is an autonomous on-call agent that diagnoses Dynatrace incidents in seconds and queues up the fix, but cannot touch production without your one-tap approval. |
 | **Demo video** | _‹paste your YouTube link here after recording›_ · ≤3:00, opens on the deny run, then the real-Dynatrace DQL cut, then approve → resolved; closes on the graded scorecard (trap refusals), the agent's track record queried from Grail, and the 3am line (see `submission/VIDEO-TRANSCRIPT.md` beat 8) |
 | **Try it** | **https://autosre-ui-vrf7h4n4ra-uc.a.run.app/demo** (works from incognito). The hosted Mission Control runs the **real Gemini agent live** end to end, streaming DETECT, DIAGNOSE, the approval gate, ACT, and VERIFY. Approve and the remediation executes for real against checkout-api and is written back to our real Dynatrace tenant as an audit log. **Try rejecting it too:** the agent stands down, production stays untouched, and the Audit trail records the refusal right next to the approval. The same agent's detection run against the real Dynatrace tenant (live DQL over the official MCP server) is in the demo video and reproducible locally with `DYNATRACE_MCP_MODE=stdio`. |
 | **Code** | https://github.com/thylinao1/autosre (open-source MIT). License visible in About box. |
@@ -131,7 +133,7 @@ The agent runs a **6-step loop**:
 - [ ] **Public GitHub repo:** `public` visibility; MIT license auto-detected in About box.
 - [ ] **~3 minute demo video:** Shows the full 6-step loop. Criterion-tagged (Tech / Design / Impact / Idea). Audio narration of the real-world pain stat ($5,600/min) and the value prop (30+ min → ~1 min).
 - [ ] **Devpost form:** All fields filled. Track selected: Dynatrace.
-- [ ] **Reproducibility:** Judges can clone the repo, set `GOOGLE_API_KEY=...` (free from Google AI Studio) and `DYNATRACE_MCP_MODE=mock`, and run the full demo offline in <5 minutes.
+- [ ] **Reproducibility:** Judges can clone the repo, set `GOOGLE_API_KEY=...` (from Google AI Studio; a billed key avoids free-tier 429 waits) and `DYNATRACE_MCP_MODE=mock`, and run the full demo offline in <5 minutes.
 - [ ] **No leaked secrets:** `.env` is gitignored. No hardcoded API keys, tokens, or project IDs in the codebase.
 - [ ] **Tech claims verified:** README and video name the exact tools: Gemini 3 via Vertex AI, Agent Development Kit (ADK), Cloud Run (with Vertex AI Agent Engine deployable via `deploy/agent_engine_deploy.py`), Dynatrace MCP, SSE. All claims match the working code.
 
