@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>AutoSRE notebook card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --navy:#090c11; --ink:#e9eef5; --muted:#7f8ea3; --dim:#445068;
+    --cyan:#22d3ee; --amber:#f2a832; --green:#20cc80;
+    --border:#1e2d48; --border-subtle:#141d30;
+  }
+  *{margin:0;box-sizing:border-box}
+  html,body{width:1800px;height:1200px;overflow:hidden;background:var(--navy);color:var(--ink);
+    font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .stage{width:1800px;height:1200px;position:relative;padding:72px 96px;
+    background:
+      radial-gradient(70% 80% at 50% 0%, rgba(34,211,238,.10), transparent 60%),
+      radial-gradient(60% 70% at 10% 100%, rgba(32,204,128,.06), transparent 55%),
+      linear-gradient(180deg,#0b1018,#090c11)}
+  .stage::before{content:"";position:absolute;inset:0;opacity:.45;pointer-events:none;
+    background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+    background-size:44px 44px;
+    -webkit-mask-image:radial-gradient(80% 80% at 50% 40%,#000 25%,transparent 85%)}
+  .inner{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;align-items:center}
+
+  .head{width:100%;display:flex;align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:14px}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--cyan);box-shadow:0 0 14px rgba(34,211,238,.8)}
+  .name{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:30px;letter-spacing:-.02em;color:#fff}
+  .pill{font-family:"JetBrains Mono",monospace;font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+    border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:9px 18px}
+
+  .title{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:52px;letter-spacing:-.02em;
+    line-height:1.08;margin-top:40px;text-align:center;max-width:1380px}
+  .title .accent{background:linear-gradient(90deg,#22d3ee,#20cc80);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+  .browser{margin-top:42px;border:1px solid var(--border);border-radius:18px;overflow:hidden;width:1270px;
+    box-shadow:0 50px 120px rgba(0,0,0,.6),0 0 80px rgba(34,211,238,.06)}
+  .chrome{height:46px;background:#10151d;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;gap:8px;padding:0 18px}
+  .chrome i{width:12px;height:12px;border-radius:50%;display:block}
+  .chrome i:nth-child(1){background:#e0564f}.chrome i:nth-child(2){background:#e0a93e}.chrome i:nth-child(3){background:#46b450}
+  .chrome .url{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--muted);margin-left:14px;
+    background:rgba(255,255,255,.05);border-radius:8px;padding:6px 14px}
+  .shot{display:block;width:1270px}
+
+  .strip{display:flex;gap:16px;margin-top:38px}
+  .stat{display:flex;align-items:baseline;gap:12px;border:1px solid var(--border);border-radius:14px;
+    background:rgba(13,18,25,.7);padding:18px 28px}
+  .stat .num{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:34px;color:var(--green)}
+  .stat .num.cy{color:var(--cyan)}
+  .stat .lab{font-family:"JetBrains Mono",monospace;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .caption{margin-top:26px;font-size:16px;color:var(--muted);text-align:center;max-width:1150px;line-height:1.55}
+  .caption code{font-family:"JetBrains Mono",monospace;font-size:14px;color:var(--cyan)}
+</style>
+</head>
+<body>
+<div class="stage"><div class="inner">
+
+  <div class="head">
+    <div class="brand"><span class="dot"></span><span class="name">autosre</span></div>
+    <div class="pill">Grail · Dynatrace Notebook</div>
+  </div>
+
+  <div class="title">The agent's track record lives <span class="accent">in the same tenant it monitors.</span></div>
+
+  <div class="browser">
+    <div class="chrome"><i></i><i></i><i></i><span class="url">dkr99558.apps.dynatrace.com · notebook: AutoSRE trust scorecard</span></div>
+    <img class="shot" src="assets/notebook-frame.png" alt="Dynatrace notebook querying AutoSRE eval records" />
+  </div>
+
+  <div class="strip">
+    <div class="stat"><span class="num">25</span><span class="lab">graded runs</span></div>
+    <div class="stat"><span class="num">0</span><span class="lab">false actions</span></div>
+    <div class="stat"><span class="num">25</span><span class="lab">correct</span></div>
+    <div class="stat"><span class="num cy">1 DQL</span><span class="lab">away in Grail</span></div>
+  </div>
+
+  <div class="caption">Graded eval results are exported as log records into the Dynatrace tenant and summarized with
+    <code>fetch logs | filter event.kind == "autosre.evals" | summarize runs, falseActions, correct</code>, right next to the audit trail of every live approve and reject.</div>
+
+</div></div>
+</body>
+</html>
