@@ -48,7 +48,11 @@ web/playwright-report/
 # Build / deploy
 *.log
 .gcloud/
-.council/
+
+# One-off local demo-prep and verification scripts (not part of the product)
+scripts/beat7-setup.sh
+scripts/beat7-cleanup.sh
+scripts/prove_bizevents_pipe.py
 
 # internal planning / agent docs - keep local, not in public repo
 ALL-IN-PLAN.md
