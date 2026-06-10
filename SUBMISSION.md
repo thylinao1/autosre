@@ -45,16 +45,22 @@
   hero approval modal, responsive). Built in `web/`; SSE backend in `autosre/server/`.
 - **Impact (25%)** → Lead with the measured on-screen number: the demo's live header timer
   reports the agent's detect-to-proposed-fix latency in seconds, separate from total
-  time-to-resolution (which includes human deliberation). Industry context for the pain
-  (framed as context, not our measurement): Gartner $5,600/min and EMA ~$14,056/min IT
-  downtime; MTTR identify phase 30+ min. README opening + video narration.
-- **Idea (25%)** → The refusal is the differentiator: the agent asks permission, obeys a no, and
-  logs both the approval and the rejection on Dynatrace's own timeline. That is the one thing the
-  track-default "autonomous SRE reads Dynatrace and remediates" build does not have, and the gate
-  is framework-enforced (ADK `require_confirmation`), not a prompt.
+  time-to-resolution (which includes human deliberation). Plus MEASURED reliability, not vibes:
+  the multi-trial graded eval (raw counts beside every rate, no-action trap refusals, median
+  detect→proposal latency) rendered live at `/reliability` and tabulated in the README.
+  Industry context for the pain (framed as context, not our measurement): Gartner $5,600/min
+  and EMA ~$14,056/min IT downtime; MTTR identify phase 30+ min. README opening + video narration.
+- **Idea (25%)** → Two-beat differentiator. (1) The refusal: the agent asks permission, obeys a
+  no, and logs both the approval and the rejection on Dynatrace's own timeline; the gate is
+  framework-enforced (ADK `require_confirmation`), not a prompt. (2) The agent is observed by the
+  platform it observes: graded eval results are exported into the same tenant, next to the audit
+  log of every live decision, so the agent's track record is one DQL away in Grail. "The platform
+  that watches production now watches the agent."
 
 ## Pre-submission verification
-- [x] `pytest` passes (the test suite is offline-deterministic except 2 live-gated tests; run `pytest`). Covers the approval gate, the server-side action allow-lists, the deny path, rate limiting, the ledger write-back shape, and SSE streaming.
+- [x] `pytest` passes (71 tests; offline-deterministic except 1 live-gated; run `pytest`). Covers the approval gate, the server-side action allow-lists, the deny path, rate limiting, the ledger write-back shape (incl. the labeled cost-at-stake fields), SSE streaming, and the multi-trial eval aggregation + Dynatrace export shapes.
+- [x] **Final-24h additions, all verified 2026-06-10:** 25-run graded eval committed (`tests/evals/runs/`) and synced to the UI; `/reliability` scorecard + header chip live on the canonical URL; all three Cloud Run services pinned warm (`min-instances=1`); eval results exported to the tenant (26 records, HTTP 204) and **verified queryable in Grail** via the saved tenant Notebook "AutoSRE trust scorecard" (runs 25, falseActions 0, correct 25).
+- [ ] **Remaining (you, before the trial's "2 days left" runs out):** screenshot the trust-scorecard Notebook for video beat 8B; record the new video per `submission/VIDEO-TRANSCRIPT.md`; commit + push; paste video link into Devpost and submit by noon PDT Jun 11. Note for honesty: the trial tenant likely expires ~Jun 12, so judges clicking later may not see tenant-side data; the video + committed artifacts carry that proof.
 - [ ] With a Gemini key set, `tests/test_agent_live.py` passes (full 6-step loop).
 - [ ] `python -m autosre.run_agent` (CLI) resolves both `payment_errors` and `latency_spike`.
 - [ ] `python -m autosre.server` (SSE backend) + `cd web && npm run dev` (UI) runs full loop.

@@ -25,6 +25,55 @@ The track is full of agents that read Dynatrace and remediate. The part almost n
 
 ---
 
+## Graded, Not Vibes: the Agent's Scorecard
+
+Before you trust an agent near production, grade it. AutoSRE ships a diagnosis eval
+(`tests/evals/`) that injects real faults (or none at all), lets the **live Gemini agent**
+diagnose through the Dynatrace toolset, and grades the proposed remediation against an
+**answer key the agent has no tool to reach**. Every proposal is rejected at the approval
+gate, so a graded run can never mutate the service.
+
+The set is adversarial by design: two decoy incidents share their symptom with a different
+fault (the reflex fix is graded WRONG), and an `all_clear` trap where the only correct
+action is **to do nothing**.
+
+<!-- EVAL_RESULTS_START -->
+| Metric (latest committed run, 2026-06-10) | Result |
+|---|---|
+| Graded runs | 25 (5 scenarios × 5 trials) |
+| Tool-selection accuracy | 20/20 incident runs (100%), decoys included |
+| False actions | **0**/25 runs (0%) |
+| No-action trap (`all_clear`) | refused 5/5 |
+| Detect → proposal latency | median 13.3s (range 5.5-17.3s, n=25) |
+| Model | `gemini-3-flash-preview` (mock Dynatrace mode, offline) |
+| Pass criterion (pre-registered) | **PASS** |
+<!-- EVAL_RESULTS_END -->
+
+- **Pre-registered pass criterion** (declared in `tests/evals/run_evals.py` before any run
+  is quoted): 100% tool-selection accuracy AND 0 false actions across all runs, every trap refused.
+- **Reproduce:** `EVAL_TRIALS=5 python -m tests.evals.run_evals` (needs the local target +
+  Gemini creds). The model is nondeterministic; we report observed counts with raw n, never
+  bare percentages. Timestamped graded transcripts are committed under `tests/evals/runs/`.
+- **Live scorecard:** the hosted demo renders these numbers at
+  [`/reliability`](https://autosre-ui-vrf7h4n4ra-uc.a.run.app/reliability).
+- **The platform that watches production watches the agent:** graded runs are exported to
+  the same Dynatrace tenant the agent monitors (`EVAL_EXPORT=1`, or standalone via
+  `python -m tests.evals.export_dynatrace`), next to the audit log of every live
+  approve/reject. Verified end to end on 2026-06-10: the tenant acknowledged the export
+  (26 records, HTTP 204), and the DQL below, run in the tenant's own Notebook, returned
+  `runs 25, falseActions 0, correct 25`. (API-token read-backs see a restricted view, which
+  is why the in-app badge distinguishes "sent" from "verified".) The track-record DQL:
+
+```sql
+fetch logs, from:now()-7d
+| filter event.kind == "autosre.evals" and autosre.eval.record == "run"
+| summarize runs = count(),
+    falseActions = countIf(autosre.eval.false_action == "true"),
+    correct = countIf(autosre.eval.correct == "true")
+```
+
+---
+
 ## Why This Matters
 
 | Problem | Traditional Response | AutoSRE |
@@ -121,6 +170,18 @@ The human gate is the headline, but it is backed by defenses that hold even when
 - **The demo target does not leak the answer key.** `/_internal/state` exposes only the observable symptom (a Davis-style title plus the impacted metric), never the prose `root_cause` or the exact `correct_fix`. The full fault detail lives behind a separate test-only `/_internal/answer_key` route the agent can never reach, so the diagnosis is genuine reasoning, not a lookup.
 - **Measured diagnosis quality.** Diagnosis is not asserted, it is scored. `tests/evals/` runs the real agent over a scenario set that includes two decoys (a failure-rate spike where the flag is already off, so the fix is a rollback not a toggle; a latency spike with normal CPU and OOMKilled pods, so the fix is a rollback not a scale-up) plus an all-clear, and grades tool-selection accuracy and false-action rate against the target's own answer key (which the agent never sees). On the latest run, `gemini-3-flash-preview` scored **5/5: 100% tool-selection accuracy, 0% false-action rate**, including both decoys and the all-clear (it correctly proposed nothing when nothing was wrong). Reproduce with `python -m tests.evals.run_evals`; the scorecard is committed at `tests/evals/last_run.json`.
 - **Judging-day hardening.** Per-IP rate limits and a single-active-run guard on the public endpoints (`autosre/server/app.py`, `runs.py`); the deploy script pins `--min/--max-instances=1` so the in-memory run state and ledger stay coherent; the ledger seeds one labeled approved and one rejected example at startup so a cold redeploy never shows an empty audit trail; structured logging throughout.
+
+---
+
+## The 60-Second Judge Path (no setup)
+
+1. Open the live demo: **<https://autosre-ui-vrf7h4n4ra-uc.a.run.app/demo>** (works from incognito).
+2. Click **Run: Payment Errors**. Watch the agent stream DETECT → DIAGNOSE live (real Gemini 3, ~10-16s to a proposed fix; the header timer is counting).
+3. When the approval card appears, click **Reject** first. The agent stands down in ~1s; nothing reaches production; the refusal lands in the Audit trail with the Dynatrace badge.
+4. Run it again and click **Approve**. The flag flips off, health re-verifies, the card goes green.
+5. The **Evals: 0 false actions** chip in the header opens [`/reliability`](https://autosre-ui-vrf7h4n4ra-uc.a.run.app/reliability), the graded scorecard.
+
+If the live URL is ever unreachable, the same loop runs fully offline in two terminals; see the Quickstart below.
 
 ---
 
@@ -253,7 +314,7 @@ It wraps the same `root_agent` in an ADK `AdkApp`, bundles the `autosre` package
 pytest
 ```
 
-The test suite (66 tests: 64 offline-deterministic, 2 gated on live Gemini credentials; run `pytest`) covers the deny-path audit, the action allow-list bounds, the rate limiter, the in-process tools, and the diagnosis-eval scorer.
+The test suite (71 tests: 70 offline-deterministic, 1 gated on live Gemini credentials; run `pytest`) covers the deny-path audit, the action allow-list bounds, the rate limiter, the in-process tools, the diagnosis-eval scorer, and the multi-trial eval aggregation + Dynatrace export record shapes.
 - **Machinery tests (deterministic):** Mock Dynatrace server over MCP stdio protocol; verify the approval gate, remediation execution, and incident outcome for both fault types.
 - **Remediation allow-list tests (`test_remediation_gate.py`):** assert the server-side bounds (replica band, known-good versions, managed flag names) refuse out-of-band actions even when approved, so an approved-but-poisoned action fails closed.
 - **Deny-path regression tests:** reproduce the ADK turn-1 confirmation stub and assert a rejected run is audited as `rejected` / `declined` (backend) and applies nothing (replay), so the marquee deny beat cannot silently re-break.
@@ -335,7 +396,6 @@ CONTRACT.md                   # Agent ↔ UI streaming interface
 DEMO.md                       # Demo runbook
 VIDEO-SCRIPT.md               # Video script (≤3:00, criterion-tagged)
 SUBMISSION.md                 # Devpost requirement → evidence checklist
-DECISION-LOG.md               # Build decision log
 DEVPOST.md                    # Devpost form draft
 LICENSE                       # MIT
 ```

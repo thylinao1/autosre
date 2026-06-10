@@ -151,7 +151,7 @@ From problem detection to root cause to fix approval to execution and verificati
 
 ## [LEAD WITH THIS: the deny run] Prove the gate is real, not theater (Idea)
 
-> Council guidance: this is the single most ownable beat in the whole video, because it is the one thing the track-default builds will not show. Strongly consider opening on it (reject first, then run again and approve), so the refusal is the first thing a judge sees, not a footnote. The path is now hardened end to end: the reject reaches a clean "Declined" card in about a second, production is untouched, and the Audit trail logs the refusal as `rejected / declined` right next to a prior approval. In DEMO_MODE the stand-down is instant.
+> Review note: this is the single most ownable beat in the whole video, because it is the one thing the track-default builds will not show. Strongly consider opening on it (reject first, then run again and approve), so the refusal is the first thing a judge sees, not a footnote. The path is now hardened end to end: the reject reaches a clean "Declined" card in about a second, production is untouched, and the Audit trail logs the refusal as `rejected / declined` right next to a prior approval. In DEMO_MODE the stand-down is instant.
 
 Everyone in this track will demo *approve*. Almost no one demos *reject*. Spend ~12 seconds proving the gate actually holds:
 
@@ -164,31 +164,42 @@ Everyone in this track will demo *approve*. Almost no one demos *reject*. Spend 
 
 ---
 
-## [2:20-2:50] CLOSE & VISION (Idea + Impact)
+## [2:30-2:55] THE CLOSE: trap → receipt → 3am (Idea + Impact)
 
-**Visual:** Show the complete, resolved incident card. Summary panel shows a brief narrative of what happened.
+> Review note: the old "stack ribbon + go try it" close was a credits
+> roll - it asked judges to admire a parts list at the exact moment the video must land
+> emotionally. The new close is three beats, every line captioned (triage viewing is
+> often MUTED - the close must work as text + image alone). The canonical word-for-word
+> version lives in `submission/VIDEO-TRANSCRIPT.md` beat 8.
 
-**Narration:**
-"AutoSRE is built on Gemini 3 via Google Cloud's Agent Platform, deployed to Vertex AI Agent Engine, and powered entirely by Dynatrace MCP for observability. It's the on-call engineer that never sleeps, never guesses, and never acts without your say-so.
+**Beat A - the trap (~10s, Idea):** rest on `/reliability` (scorecard page): stat cards +
+the no-action trap callout. Narrate the REAL committed counts (expected: 25/25 graded
+runs, 0 false actions, trap refused every time - read the page, never round up).
+"The scariest agent is one that acts when it shouldn't. This one knows when to do nothing."
 
-For SREs and DevOps teams in high-cost industries (retail, finance, e-commerce), this is incident response at scale. Detect anomalies in seconds. Diagnose with live telemetry. Propose the fix. Approve it. Execute it. Verify recovery. All with you in the loop.
+**Beat B - the receipt in Grail (~7s, Idea + Tech):** pre-composed screenshot of the
+trust-scorecard DQL with result rows from the real tenant. Caption: "The platform that
+watches production now watches the agent." Never live-type the query on camera.
 
-This is the future of production incident management: *autonomous, but accountable.*"
+**Beat C - back to 3am (~10s, Impact):** the frozen REJECT moment (Declined card, timer,
+audit trail). Small factual overlay: "Industry estimate: 30-min manual triage ≈ $168,000
+at $5,600/min (Gartner)." One beat of silence. "...the on-call engineer I would actually
+want at three a.m." is the LAST spoken line of the video.
 
-**Criterion note:**
-- **Idea:** The vision line ("autonomous, but accountable") is the one-liner. Sharp, memorable, different from both chatbots and reckless automation.
-- **Impact:** Positioning for real users (SREs, DevOps, high-cost industries) and the real benefit (incident MTTR collapse, human oversight).
+**Prep (off-camera, before recording):** run the eval export (`EVAL_TRIALS=5
+EVAL_EXPORT=1 python -m tests.evals.run_evals`), then run the scorecard DQL in the
+tenant's Notebook UI and screenshot query + result rows together. That screenshot is
+beat B. Plant the seed at the audit-trail beat mid-video (caption: "Every decision
+becomes Dynatrace telemetry. Remember this.") so the close pays off something planted.
 
 ---
 
-## [2:50-3:00] CALL TO ACTION
+## [2:55-3:00] END CARD
 
-**Visual:** Show the GitHub repo URL and the live hosted Mission Control URL on screen:
-- Live demo: `autosre-ui-vrf7h4n4ra-uc.a.run.app/demo`
-- Code: `github.com/thylinao1/autosre`
+**Visual:** Live demo URL + GitHub repo, with the stack demoted to one small line of
+print: "Gemini 3 · Google ADK / Agent Builder · Vertex AI · Cloud Run · Dynatrace MCP · MIT".
 
-**Narration:**
-"AutoSRE is open source, deployed live on Google Cloud, and ready to be your on-call engineer. Try it yourself."
+**Narration:** "It is open source and live right now. Go break something, and watch it ask first."
 
 ---
 

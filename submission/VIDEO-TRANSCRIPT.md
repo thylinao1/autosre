@@ -1,59 +1,81 @@
-# AutoSRE demo - recording transcript (~3 min)
+# AutoSRE demo video - recording script
 
-Read the **SAY** lines out loud. Do the **DO** action, then keep talking over any
-wait (the gate takes about 10 to 16 seconds to appear, narrate the detection while
-it loads). Record on the live demo: https://autosre-ui-vrf7h4n4ra-uc.a.run.app/demo
+The final video is three pieces, and two are already done or trivial:
 
-Before you hit record: run one throwaway loop so the model is warm, set the browser
-to 1440 wide, and reset to standby. Approve promptly when the gate shows so the
-timer number stays tight.
+1. **The terminal clip** - DONE, already recorded with its own narration.
+2. **The main recording** - ONE continuous screen recording of your browser,
+   you narrating, steps 1 to 9 below.
+3. **The end card** - a title slide with the two links, added in the editor.
+
+Assembly in the editor: play the main recording, cut it once at the marked
+point after step 6, insert the terminal clip there (keep its audio), resume
+the main recording, end card at the end. One cut, one insert. Done.
 
 ---
 
-### 1 (0:00)
-**DO:** Open `/demo`. Dashboard is healthy ("All systems operational").
-**SAY:** "When a checkout service goes down, the clock starts and money leaves with it. Gartner's widely cited benchmark puts IT downtime at around $5,600 a minute, and more recent estimates run higher still. Most of that lost time is just figuring out what broke. Someone on call digs through dashboards and logs to find the one change that caused it. That can eat half an hour before anyone fixes a thing."
+## Prep (10 minutes, before you hit record)
 
-### 2 (0:15)
-**DO:** Slowly pan across the three panels.
-**SAY:** "This is AutoSRE. It watches a service through Dynatrace, finds what went wrong, and proposes a fix. Here is the part I care about most. It will not touch production on its own. It waits for me to say yes."
+1. Browser at 1440 wide, bookmarks bar hidden, notifications off.
+2. **Tab 1:** https://autosre-ui-vrf7h4n4ra-uc.a.run.app/demo
+3. **Tab 2:** the Dynatrace Notebook "AutoSRE trust scorecard"
+   (dkr99558.apps.dynatrace.com > Notebooks). Click Run once now to confirm it
+   returns runs 25, falseActions 0, correct 25. Leave the tab open.
+4. Warm-up on Tab 1: click **Run: Payment Errors**, wait for the gate, click
+   **Reject**, then **Reset to Standby**. This makes your on-camera runs fast.
+5. When you approve on camera, do it within 2-3 seconds so the timer number
+   stays tight.
 
-### 3 (0:35)
-**DO:** Click **Run: Payment Errors**. Let the timeline fill while you talk.
-**SAY:** "So let me break payments. A bad deploy switched on a feature flag that fails on some cards. Watch the agent pick it up. It pulls the open problem from Dynatrace, sees the failure rate sitting at twenty-two percent, checks the deploy and the flags, and it even looks at how we handled this kind of thing before."
+---
 
-### 4 (0:55) - the deny beat, lead with this
-**DO:** When the approval card appears, click **Reject**.
-**SAY:** "Here is the gate. The agent wants to disable that flag. First I am going to say no. Watch what it does. It stands down. Nothing changes, the incident stays open, and the refusal goes straight into the audit trail. The gate lives in the code, so the model cannot route around me. Almost nobody else will show you this."
+## The main recording - one continuous take
 
-### 5 (1:20)
-**DO:** Click **Run Payment Errors Again**. When the gate shows, click **Approve**. Wait for the card to flip green.
-**SAY:** "Now I run it again and approve. The flag flips off, the agent re-checks health through Dynatrace, and the incident clears. The timer up top shows two numbers. The agent reached its fix in about ten seconds. The total also counts the time I spent reading it. By hand, this is thirty minutes or more."
+### Step 1
+**DO:** Start recording. Tab 1, dashboard healthy ("All systems operational"). Hold still.
+**SAY:** "When a checkout service goes down, the cost is immediate. Gartner's widely cited benchmark puts IT downtime at around $5,600 a minute, and more recent estimates run higher still. Most of that lost time goes to figuring out what broke. An on-call engineer works through dashboards and logs to find the one change that caused it, and that can take half an hour before anyone fixes a thing."
 
-### 6 (1:45)
-**DO:** Move the cursor to the Audit trail panel (both Approved and Rejected, with the Dynatrace badge).
-**SAY:** "And here is the receipt. Both decisions, the approval and the refusal, are written down with who decided and what happened, and pushed back into the same Dynatrace tenant that caught the incident. So later, a compliance team can see exactly who said yes and why."
+### Step 2
+**DO:** Slowly pan the cursor across the three panels, then rest it for a second on the green **Evals: 0/25 false actions** chip in the header. Do not click it.
+**SAY:** "This is AutoSRE. It watches a service through Dynatrace, finds what went wrong, and proposes a fix. Two things matter here. It will not touch production on its own; it waits for me to say yes. And it is graded. That green chip in the header is a real scorecard, and we will come back to it."
 
-### 7 (2:10) - the real-tenant cut (optional, but it is the strongest proof)
-**DO:** This is a SEPARATE short clip of YOUR terminal, not the browser demo. On your
-machine you run the agent against your real Dynatrace tenant and screen-record the
-terminal. The full repro steps are in `VIDEO-SCRIPT.md` (Appendix), but the short
-version is: start `checkout-api` with the OTLP env so it streams to your tenant,
-inject the payment fault, wait about 90 seconds for the data to land, then run
-`DYNATRACE_MCP_MODE=stdio python -m autosre.run_agent`. The terminal shows the
-official Dynatrace MCP server connect, the DQL run, and the result come back around
-22 percent. Cut that 10 to 15 second clip in here.
-**If you skip it:** the hosted demo already proves a real Dynatrace touch on its own.
-The Audit trail badge reads "✓ Dynatrace · sent" because each decision is written
-back to your tenant live. Point at that badge instead and trim the line to the first
-two sentences.
-**SAY:** "What you are watching on the demo is the real Gemini 3 agent thinking, live. And against a real Dynatrace tenant, the same agent reads the real twenty-two percent spike from live telemetry over the official Dynatrace MCP server. We also score it. Across a set of incidents, including traps where the obvious fix is wrong, it chose the right action every time."
+### Step 3
+**DO:** Click **Run: Payment Errors**. Talk while the timeline fills.
+**SAY:** "Now I will break payment processing on purpose. A bad deploy switched on a feature flag that fails on some cards. Watch the agent pick it up. It pulls the problem from Dynatrace, sees the failure rate sitting at twenty-two percent, checks the deploy and the flags, and reviews how similar incidents were handled before."
 
-### 8 (2:35) - close
-**DO:** Scroll to the bottom of the demo page and rest on the **Stack ribbon**. That
-is the strip already on the page that lists Model: Gemini 3, Framework: Google ADK,
-Runtime: Vertex AI and Cloud Run, Senses: Dynatrace MCP, Human gate:
-require_confirmation, Target: checkout-api. You are pointing the camera at it, not
-clicking anything. Then drop in an end card or a text overlay (added in your video
-editor, not on the page) with the two links: the live demo URL and the GitHub repo.
-**SAY:** "AutoSRE runs on Gemini 3 with Google Cloud Agent Builder, on Vertex AI and Cloud Run, with Dynatrace MCP for its senses. It does the slow detective work in seconds and leaves the decision, and the record of it, with me. That is the on-call engineer I would actually want at three in the morning. It is open source and live right now. Go break something and try it."
+### Step 4
+**DO:** When the approval card appears, pause one second so the viewer can read it, then click **Reject**.
+**SAY:** "Here is the gate. The agent wants to disable that flag. First, I am going to say no. Watch what it does. It stands down. Nothing changes, the incident stays open, and the refusal goes straight into the audit trail. The gate is enforced in the code, so the model cannot route around me. Very few demos will show you this moment."
+
+### Step 5
+**DO:** Click **Run Payment Errors Again**. When the gate shows, click **Approve** within 2-3 seconds. Wait for the card to flip green.
+**SAY:** "Now I run it again and approve. The flag is disabled, the agent re-checks health through Dynatrace, and the incident clears. The timer at the top shows two numbers. The agent reached its proposed fix in about ten seconds; the total also counts the time I spent reviewing it. Done manually, this takes thirty minutes or more."
+
+### Step 6
+**DO:** Move the cursor to the **Audit trail** panel (Approved and Rejected entries, Dynatrace badge).
+**SAY:** "And here is the record. Both decisions, the approval and the refusal, are written down with who decided and what happened, then pushed back into the same Dynatrace tenant that caught the incident. Keep that in mind; it will matter again in a moment. A compliance team can see exactly who said yes, and why."
+
+> ✂️ **EDITOR MARK: cut here. Insert the terminal clip (it has its own audio). Then resume.**
+
+### Step 7
+**DO:** Click the **Evals: 0/25 false actions** chip. The scorecard page opens. Rest on the stat cards and the highlighted trap line.
+**SAY:** "Before you trust an agent, grade it. We ran twenty-five scored incidents past this one, including decoys where the obvious fix is wrong, and a trap where nothing is broken at all. Twenty-five out of twenty-five correct. Zero false actions. It refused the trap all five times. The most dangerous agent is one that acts when it should not. This one knows when to do nothing."
+
+### Step 8
+**DO:** Switch to **Tab 2** (the Dynatrace Notebook). Click **Run**. The result row appears: runs 25, falseActions 0, correct 25.
+**SAY:** "And that report card does not live on our website. It lives in Dynatrace, next to every approval and every refusal. The platform that watches production now watches the agent, and its track record can be queried like any other telemetry."
+
+### Step 9
+**DO:** Switch back to **Tab 1** (the resolved green board, frozen timer). Hold it through the lines, then one second of silence, then stop recording.
+**SAY:** "So that's the whole system. It does the slow investigation work in seconds, it asks before it touches anything, and when I said no earlier, it actually stopped. All of those decisions are now sitting in Dynatrace, where anyone can go back and check them later. For me, that's really what I'd want from something on call at three in the morning. It's open source and running live right now, so you're welcome to go try it yourself and see how it behaves."
+
+---
+
+## In the editor (15 minutes)
+
+1. Cut the main recording at the editor mark after step 6; insert the terminal
+   clip; trim its start to the "Initializing Dynatrace MCP Server" line and its
+   end to the RECOVERED report.
+2. End card after step 9: the live demo URL and the GitHub repo, with one small
+   line under them: "Gemini 3 · Google ADK / Agent Builder · Vertex AI · Cloud Run · Dynatrace MCP · MIT".
+3. Watch it once muted. If the reject moment and the 25/25 scorecard still land
+   with no sound, you are done. Target length about three minutes; if you are
+   over, trim silences, not sentences.
