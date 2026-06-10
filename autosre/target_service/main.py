@@ -21,7 +21,15 @@ from pydantic import BaseModel
 
 from . import otel
 
-app = FastAPI(title="checkout-api", version="2.3.1")
+# Auto-docs disabled: the demo target has a fixed admin/internal surface and no
+# reason to publish an OpenAPI schema of it publicly.
+app = FastAPI(
+    title="checkout-api",
+    version="2.3.1",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+)
 
 # A fault encodes what's wrong AND what the single correct remediation is, so the
 # end-to-end test can assert the agent reasoned its way to the right action.

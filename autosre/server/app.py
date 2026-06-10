@@ -68,7 +68,16 @@ def _client_key(request: Request) -> str:
     first = xff.split(",")[0].strip()
     return first or (request.client.host if request.client else "anon")
 
-app = FastAPI(title="autosre-mission-control", version="1.0.0")
+# Auto-docs (/docs, /redoc, /openapi.json) are disabled: this is a fixed-surface
+# service with a handful of known endpoints, not a public API, so there is no
+# reason to publish a machine-readable schema of it to a scanner.
+app = FastAPI(
+    title="autosre-mission-control",
+    version="1.0.0",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+)
 
 _allowed = os.environ.get("ALLOWED_ORIGIN", "*")
 app.add_middleware(
