@@ -138,6 +138,14 @@ def _summary(entry: dict[str, Any]) -> str:
     )
 
 
+# Industry-rate context for the audit record (labeled as such, never claimed as
+# our measurement): Gartner's widely cited $5,600/min IT-downtime figure x the
+# ~30 min manual identify-phase baseline the demo narrative compares against.
+_DOWNTIME_USD_PER_MIN = 5600
+_MANUAL_MTTR_MIN = 30
+_COST_BASIS = "industry estimate: Gartner $5,600/min x 30min manual MTTR baseline"
+
+
 def _log_record(entry: dict[str, Any]) -> dict[str, Any]:
     """One Dynatrace log record (content + searchable custom attributes)."""
     action = entry.get("action") or {}
@@ -150,6 +158,8 @@ def _log_record(entry: dict[str, Any]) -> dict[str, Any]:
         "autosre.action": str(action.get("tool", "")),
         "autosre.outcome": str(entry.get("outcome", "")),
         "autosre.operator": str(entry.get("operator", OPERATOR)),
+        "autosre.downtime_cost_at_stake_usd": str(_DOWNTIME_USD_PER_MIN * _MANUAL_MTTR_MIN),
+        "autosre.cost_basis": _COST_BASIS,
     }
 
 

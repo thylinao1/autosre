@@ -58,3 +58,6 @@ def test_log_record_carries_decision_and_action():
     assert rec["autosre.action"] == "toggle_feature_flag"
     assert rec["autosre.outcome"] == "resolved"
     assert rec["event.kind"] == "autosre.approval"
+    # the audited dollar context is present and labeled as an estimate
+    assert rec["autosre.downtime_cost_at_stake_usd"] == "168000"
+    assert "estimate" in rec["autosre.cost_basis"]
